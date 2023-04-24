@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[ltryee's blog]]></title>
-  <link href="https://ltryee.gitee.io/atom.xml" rel="self"/>
-  <link href="https://ltryee.gitee.io/"/>
-  <updated>2022-10-08T10:53:43+08:00</updated>
-  <id>https://ltryee.gitee.io/</id>
+  <link href="https://ltryee.github.io/atom.xml" rel="self"/>
+  <link href="https://ltryee.github.io/"/>
+  <updated>2023-04-24T15:02:03+08:00</updated>
+  <id>https://ltryee.github.io/</id>
   <author>
     <name><![CDATA[]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[使用 framework 转换 XCFramework]]></title>
-    <link href="https://ltryee.gitee.io/16566860725573.html"/>
+    <link href="https://ltryee.github.io/16566860725573.html"/>
     <updated>2022-07-01T22:34:32+08:00</updated>
-    <id>https://ltryee.gitee.io/16566860725573.html</id>
+    <id>https://ltryee.github.io/16566860725573.html</id>
     <content type="html"><![CDATA[
 <div class="mweb_toc"><ul>
 <li><a href="#xcframework%E7%AE%80%E4%BB%8B">XCFramework 简介</a>
@@ -139,9 +139,9 @@ rm -rf &quot;$NAKED_NAME-reworked&quot;
   
   <entry>
     <title type="html"><![CDATA[记一次私有 pod 发布报错]]></title>
-    <link href="https://ltryee.gitee.io/16558196375003.html"/>
+    <link href="https://ltryee.github.io/16558196375003.html"/>
     <updated>2022-06-21T21:53:57+08:00</updated>
-    <id>https://ltryee.gitee.io/16558196375003.html</id>
+    <id>https://ltryee.github.io/16558196375003.html</id>
     <content type="html"><![CDATA[
 <div class="mweb_toc"><ul>
 <li><a href="#%E4%B8%B4%E6%97%B6%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88">临时解决方案</a></li>
@@ -229,9 +229,9 @@ s.vendored_frameworks = 'Protobuf/Protobuf.framework'
   
   <entry>
     <title type="html"><![CDATA[玩转 CocoaPods 需要了解的 Ruby 基础知识]]></title>
-    <link href="https://ltryee.gitee.io/wan-zhuan-cocoapods-xu-yao-le.html"/>
+    <link href="https://ltryee.github.io/wan-zhuan-cocoapods-xu-yao-le.html"/>
     <updated>2022-01-13T18:43:05+08:00</updated>
-    <id>https://ltryee.gitee.io/wan-zhuan-cocoapods-xu-yao-le.html</id>
+    <id>https://ltryee.github.io/wan-zhuan-cocoapods-xu-yao-le.html</id>
     <content type="html"><![CDATA[
 <div class="mweb_toc"><ul>
 <li><a href="#%E8%A1%A8%E8%BE%BE%E5%BC%8F">表达式</a></li>
@@ -570,9 +570,9 @@ end
   
   <entry>
     <title type="html"><![CDATA[使用 LLDB Python API 自动存储后台请求数据用于单元测试]]></title>
-    <link href="https://ltryee.gitee.io/16553980014674.html"/>
+    <link href="https://ltryee.github.io/16553980014674.html"/>
     <updated>2022-06-17T00:46:41+08:00</updated>
-    <id>https://ltryee.gitee.io/16553980014674.html</id>
+    <id>https://ltryee.github.io/16553980014674.html</id>
     <content type="html"><![CDATA[
 <div class="mweb_toc"><ul>
 <li><a href="#%E5%B7%B2%E6%9C%89%E6%96%B9%E6%B3%95">已有方法</a></li>
@@ -690,9 +690,9 @@ For more information on any command, type 'help &lt;command-name&gt;'.
   
   <entry>
     <title type="html"><![CDATA[JavaScript for Automation(JXA) 入门]]></title>
-    <link href="https://ltryee.gitee.io/15372506301626.html"/>
+    <link href="https://ltryee.github.io/15372506301626.html"/>
     <updated>2018-09-18T14:03:50+08:00</updated>
-    <id>https://ltryee.gitee.io/15372506301626.html</id>
+    <id>https://ltryee.github.io/15372506301626.html</id>
     <content type="html"><![CDATA[
 <div class="mweb_toc"><ul>
 <li><a href="#0%E5%AD%A6%E4%B9%A0%E4%B8%80%E4%B8%AA%E6%96%B0%E5%B7%A5%E5%85%B7%E7%9A%84%E6%97%B6%E5%80%99%EF%BC%8C%E6%88%91%E4%BB%AC%E5%88%B0%E5%BA%95%E5%9C%A8%E5%AD%A6%E4%BB%80%E4%B9%88%EF%BC%9F">0. 学习一个新工具的时候，我们到底在学什么？</a></li>
@@ -942,9 +942,9 @@ var isDir = isDirRef[0]     //get the data from the variable
   
   <entry>
     <title type="html"><![CDATA[《iOS面试之道》读书笔记 - 网络请求相关]]></title>
-    <link href="https://ltryee.gitee.io/15366534889994.html"/>
+    <link href="https://ltryee.github.io/15366534889994.html"/>
     <updated>2018-09-11T16:11:28+08:00</updated>
-    <id>https://ltryee.gitee.io/15366534889994.html</id>
+    <id>https://ltryee.github.io/15366534889994.html</id>
     <content type="html"><![CDATA[
 <div class="mweb_toc"><ul>
 <li><a href="#url-loading-system">URL Loading System</a>
@@ -1203,9 +1203,9 @@ var isDir = isDirRef[0]     //get the data from the variable
   
   <entry>
     <title type="html"><![CDATA[《iOS面试之道》读书笔记 - 远程通知服务器]]></title>
-    <link href="https://ltryee.gitee.io/15365724007469.html"/>
+    <link href="https://ltryee.github.io/15365724007469.html"/>
     <updated>2018-09-10T17:40:00+08:00</updated>
-    <id>https://ltryee.gitee.io/15365724007469.html</id>
+    <id>https://ltryee.github.io/15365724007469.html</id>
     <content type="html"><![CDATA[
 <blockquote>
 <p>设置服务器以生成通知并将其推送到用户设备</p>
@@ -1225,9 +1225,9 @@ var isDir = isDirRef[0]     //get the data from the variable
   
   <entry>
     <title type="html"><![CDATA[《iOS面试之道》读书笔记 - UserNotifications框架概况]]></title>
-    <link href="https://ltryee.gitee.io/15365446737230.html"/>
+    <link href="https://ltryee.github.io/15365446737230.html"/>
     <updated>2018-09-10T09:57:53+08:00</updated>
-    <id>https://ltryee.gitee.io/15365446737230.html</id>
+    <id>https://ltryee.github.io/15365446737230.html</id>
     <content type="html"><![CDATA[
 <div class="mweb_toc"><ul>
 <li><a href="#%E8%AF%B7%E6%B1%82%E4%BD%BF%E7%94%A8%E6%9D%83%E9%99%90">请求使用权限</a>
@@ -1616,9 +1616,9 @@ didReceiveNotificationResponse:(UNNotificationResponse *)response
   
   <entry>
     <title type="html"><![CDATA[《iOS面试之道》读书笔记 - 并发编程]]></title>
-    <link href="https://ltryee.gitee.io/15362253776879.html"/>
+    <link href="https://ltryee.github.io/15362253776879.html"/>
     <updated>2018-09-06T17:16:17+08:00</updated>
-    <id>https://ltryee.gitee.io/15362253776879.html</id>
+    <id>https://ltryee.github.io/15362253776879.html</id>
     <content type="html"><![CDATA[
 <div class="mweb_toc"><ul>
 <li><a href="#os-x%E5%92%8C-ios%E4%B8%AD%E7%9A%84%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B-api">OS X 和 iOS 中的并发编程API</a>
@@ -1696,9 +1696,9 @@ didReceiveNotificationResponse:(UNNotificationResponse *)response
   
   <entry>
     <title type="html"><![CDATA[《iOS面试之道》读书笔记 - atomic/nonatomic]]></title>
-    <link href="https://ltryee.gitee.io/15360488544502.html"/>
+    <link href="https://ltryee.github.io/15360488544502.html"/>
     <updated>2018-09-04T16:14:14+08:00</updated>
-    <id>https://ltryee.gitee.io/15360488544502.html</id>
+    <id>https://ltryee.github.io/15360488544502.html</id>
     <content type="html"><![CDATA[
 <div class="mweb_toc"><ul>
 <li><a href="#%E4%BD%BF%E7%94%A8atomic%E4%BF%AE%E9%A5%B0%E7%9A%84-property%E6%98%AF%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E5%8E%9F%E5%AD%90%E6%80%A7%E7%9A%84%EF%BC%9F">使用 atomic 修饰的 property 是如何保证原子性的？</a></li>
@@ -1800,9 +1800,9 @@ static inline void reallySetProperty(id self, SEL _cmd, id newValue, ptrdiff_t o
   
   <entry>
     <title type="html"><![CDATA[《iOS面试之道》读书笔记 - NSRunLoop]]></title>
-    <link href="https://ltryee.gitee.io/ios-mian-shi-zhi-dao-du-shu-bi.html"/>
+    <link href="https://ltryee.github.io/ios-mian-shi-zhi-dao-du-shu-bi.html"/>
     <updated>2018-09-04T13:40:02+08:00</updated>
-    <id>https://ltryee.gitee.io/ios-mian-shi-zhi-dao-du-shu-bi.html</id>
+    <id>https://ltryee.github.io/ios-mian-shi-zhi-dao-du-shu-bi.html</id>
     <content type="html"><![CDATA[
 <div class="mweb_toc"><ul>
 <li><a href="#run-loop%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5">Run Loop 基本概念</a></li>
@@ -1870,9 +1870,9 @@ RunLoop为了节省资源，并不会在非常准确的时间点回调这个Time
   
   <entry>
     <title type="html"><![CDATA[使用XcodeCoverage统计单元测试覆盖率]]></title>
-    <link href="https://ltryee.gitee.io/15220556376633.html"/>
+    <link href="https://ltryee.github.io/15220556376633.html"/>
     <updated>2018-03-26T17:13:57+08:00</updated>
-    <id>https://ltryee.gitee.io/15220556376633.html</id>
+    <id>https://ltryee.github.io/15220556376633.html</id>
     <content type="html"><![CDATA[
 <div class="mweb_toc"><ul>
 <li><a href="#%E4%B8%BA%E5%B7%A5%E7%A8%8B%E6%B7%BB%E5%8A%A0xcodecoverage%E4%BB%A3%E7%A0%81">为工程添加XcodeCoverage代码</a></li>
@@ -1941,9 +1941,9 @@ fi
   
   <entry>
     <title type="html"><![CDATA[使用XcodeCoverage统计增量代码单元测试覆盖率]]></title>
-    <link href="https://ltryee.gitee.io/15220417245604.html"/>
+    <link href="https://ltryee.github.io/15220417245604.html"/>
     <updated>2018-03-26T13:22:04+08:00</updated>
-    <id>https://ltryee.gitee.io/15220417245604.html</id>
+    <id>https://ltryee.github.io/15220417245604.html</id>
     <content type="html"><![CDATA[
 <div class="mweb_toc"><ul>
 <li><a href="#%E8%8E%B7%E5%8F%96%E4%B8%80%E4%B8%AA%E7%89%88%E6%9C%AC%E5%91%A8%E6%9C%9F%E5%86%85%E5%AD%98%E5%9C%A8%E4%BF%AE%E6%94%B9%E7%9A%84%E4%BB%A3%E7%A0%81%E6%96%87%E4%BB%B6%E5%88%97%E8%A1%A8">获取一个版本周期内存在修改的代码文件列表</a></li>
@@ -2187,9 +2187,9 @@ Done.
   
   <entry>
     <title type="html"><![CDATA[在Taf NodeJS工程中使用node-gyp]]></title>
-    <link href="https://ltryee.gitee.io/15089947525979.html"/>
+    <link href="https://ltryee.github.io/15089947525979.html"/>
     <updated>2017-10-26T13:12:32+08:00</updated>
-    <id>https://ltryee.gitee.io/15089947525979.html</id>
+    <id>https://ltryee.github.io/15089947525979.html</id>
     <content type="html"><![CDATA[
 <div class="mweb_toc"><ul>
 <li><a href="#%E5%BC%80%E5%8F%91%E8%BF%87%E7%A8%8B">开发过程</a>
@@ -2484,9 +2484,9 @@ gyp ERR! not ok
   
   <entry>
     <title type="html"><![CDATA[依赖注入实现内存释放]]></title>
-    <link href="https://ltryee.gitee.io/14822246956860.html"/>
+    <link href="https://ltryee.github.io/14822246956860.html"/>
     <updated>2016-12-20T17:04:55+08:00</updated>
-    <id>https://ltryee.gitee.io/14822246956860.html</id>
+    <id>https://ltryee.github.io/14822246956860.html</id>
     <content type="html"><![CDATA[
 <p>本文介绍了一种名为<strong>依赖注入</strong>(Dependency Injection)的设计模式，并使用这种模式释放不必一直持有的对象，用来达到释放内存的效果。</p>
 <h2><a id="%E4%BB%80%E4%B9%88%E6%98%AF%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>什么是依赖注入</h2>
@@ -2612,9 +2612,9 @@ gyp ERR! not ok
   
   <entry>
     <title type="html"><![CDATA[iOS 控件设置圆角（上）]]></title>
-    <link href="https://ltryee.gitee.io/14822246957173.html"/>
+    <link href="https://ltryee.github.io/14822246957173.html"/>
     <updated>2016-12-20T17:04:55+08:00</updated>
-    <id>https://ltryee.gitee.io/14822246957173.html</id>
+    <id>https://ltryee.github.io/14822246957173.html</id>
     <content type="html"><![CDATA[
 <div class="mweb_toc"><ul>
 <li><a href="#%E4%B8%80%E7%A7%8D%E8%AE%BE%E7%BD%AE%E5%9C%86%E8%A7%92%E7%9A%84%E7%AE%80%E5%8D%95%E6%96%B9%E6%B3%95">一种设置圆角的简单方法</a></li>
@@ -2675,9 +2675,9 @@ view.layer.masksToBounds = YES;
   
   <entry>
     <title type="html"><![CDATA[iOS 控件设置圆角（下）]]></title>
-    <link href="https://ltryee.gitee.io/14822246957408.html"/>
+    <link href="https://ltryee.github.io/14822246957408.html"/>
     <updated>2016-12-20T17:04:55+08:00</updated>
-    <id>https://ltryee.gitee.io/14822246957408.html</id>
+    <id>https://ltryee.github.io/14822246957408.html</id>
     <content type="html"><![CDATA[
 <div class="mweb_toc"><ul>
 <li><a href="#%E6%8F%90%E5%8D%87%E6%80%A7%E8%83%BD%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E6%B3%95">提升性能的几种方法</a>

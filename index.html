@@ -1,90 +1,136 @@
-
-<!DOCTYPE html>
-<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
-<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
-<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js"><!--<![endif]-->
+<!DOCTYPE HTML>
+<html>
 <head>
-  <meta charset="utf-8">
-  <title>
-    
-  ltryee's blog
-  
-
-  </title>
-  <meta name="author" content="">
-  <meta name="description" content="ltryee's blog">
+	<meta charset="utf-8">
+	<title>  
+	  
+  	ltryee's blog
+  	
+	</title>
 
   <meta name="HandheldFriendly" content="True">
   <meta name="MobileOptimized" content="320">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  
-  <link href="asset/css/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
-  <link href="atom.xml" rel="alternate" title="ltryee's blog" type="application/atom+xml">
-  <script src="asset/js/modernizr-2.0.js"></script>
-  <script src="asset/js/jquery.min.js"></script>
-  <style type="text/css">
-  .cat-children-p{ padding: 6px 0px;}
-  .hljs{background: none;}
-  </style>
-  <script type="text/javascript">
-  var isAddSildbar = true;
-  </script>
-  <script src="asset/js/octopress.js" type="text/javascript"></script>
-</head>
-<script type="text/javascript">
-//链接新开窗口
-function addBlankTargetForLinks () {
-  $('a[href^="http"]').each(function(){
-      $(this).attr('target', '_blank');
-  });
+
+	<link href="atom.xml" rel="alternate" title="ltryee's blog" type="application/atom+xml">
+
+	<link href="asset/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link href="asset/stylesheets/font-awesome.min.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<script src="asset/javascripts/jquery.min.js"></script>
+	
+
+	<!--[if lt IE 9]><script src="asset/javascripts/html5.js"></script><![endif]-->
+	<!-- <link href='http://fonts.googleapis.com/css?family=Nunito:400,300,700' rel='stylesheet' type='text/css'> -->
+	<style type="text/css">
+/* latin */
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Nunito-Light'), url(asset/font/1TiHc9yag0wq3lDO9cw0voX0hVgzZQUfRDuZrPvH3D8.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
 }
-$(document).ready(function(event) {
-  addBlankTargetForLinks();
-});
-</script>
-<body   >
-  <header role="banner"><hgroup>
-  <h1><a href="index.html">ltryee's blog</a></h1>
+/* latin */
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Nunito-Regular'), url(asset/font/6TbRXKWJjpj6V2v_WyRbMX-_kf6ByYO6CLYdB4HQE-Y.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+}
+/* latin */
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Nunito-Bold'), url(asset/font/TttUCfJ272GBgSKaOaD7KoX0hVgzZQUfRDuZrPvH3D8.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+}
+	</style>
+	
+	<style type="text/css">
+	.container .left-col{ opacity: 1;}
+	#pagenavi a{ font-size: 1.3em;}
+	#pagenavi .next:before{ top: 3px;}
+	#pagenavi .prev:before{ top: 3px;}
+	.container .mid-col .mid-col-container #content .archives .title{ font-size: 1.5em;}
+	.container .mid-col .mid-col-container #content article{ padding: 15px 0px;}
+	#header .subtitle {
+		line-height: 1.2em;
+		padding-top: 8px;
+	}
+	article pre{ background: none; border: none; padding: 0;}
+	article .entry-content{text-align: left;}
+	.share-comment{ padding: 25px 0px; clear: both;}
+	hr{ margin: 20px 0px;border: 0; border-top:solid 1px #ddd;}
+	</style>
   
-    <h2>ltryee's blog</h2>
-  
-</hgroup>
 
-</header>
-  <nav role="navigation"><ul class="subscription" data-subscription="rss">
-  <li><a href="atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
-  
-</ul>
-  
-<form action="http://google.com/search" method="get">
-  <fieldset role="search">
-    <input type="hidden" name="q" value="site:ltryee.gitee.io" />
-    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
-  </fieldset>
-</form>
-  
-<ul class="main-navigation">
+</head>
 
-  <li id=""><a target="_self" href="index.html">Home</a></li>
 
-  <li id=""><a target="_self" href="archives.html">Archives</a></li>
+<body>
+	<div class="container">
+		<div class="left-col">
+			<div class="intrude-less">
+				<header id="header" class="inner">
+				 
+					
+					<h1><a href="index.html">ltryee's blog</a></h1>
+					<p class="subtitle">ltryee's blog</p>
+					<nav id="main-nav">
+						<ul class="main">
+						
+						  <li id=""><a target="_self" href="index.html">Home</a></li>
+						
+						  <li id=""><a target="_self" href="archives.html">Archives</a></li>
+						
+						</ul>
+					</nav>
 
-</ul>
+					<nav id="sub-nav">
+						<div class="social">
 
-</nav>
-  <div id="main">
-    <div id="content"> 
-<div class="blog-index">
 
-	<article>
-		 <header>
-		  	<h1 class="entry-title"><a href="16566860725573.html">使用 framework 转换 XCFramework</a></h1>
-			<p class="meta"><time datetime="2022-07-01T22:34:32+08:00" 
-			pubdate data-updated="true">2022/07/01</time></p>
-		 </header>
-	  	<div class="entry-content">
-		  	
-		  	<div class="mweb_toc"><ul>
+
+
+
+
+
+
+
+
+
+
+
+								
+
+								<a class="rss" href="atom.xml" title="RSS">RSS</a>
+							
+						</div>
+					</nav>
+				</header>				
+			</div>
+		</div>	
+		<div class="mid-col">
+			<div class="mid-col-container"> <div id="content" class="inner">
+<div itemscope itemtype="http://schema.org/Blog">
+
+
+	<article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+		<div class="meta">
+			<div class="date">
+				<time datetime="2022-07-01T22:34:32+08:00" itemprop="datePublished">2022/07/01</time>
+			</div>
+			
+			 
+			
+		</div>
+		<h1 class="title" itemprop="name"><a href="16566860725573.html" itemprop="url">
+		使用 framework 转换 XCFramework</a></h1>
+		<div class="entry-content" itemprop="articleBody">
+			
+			<div class="mweb_toc"><ul>
 <li><a href="#xcframework%E7%AE%80%E4%BB%8B">XCFramework 简介</a>
 <ul>
 <li><a href="#xcframework%E9%87%8C%E6%9C%89%E4%BB%80%E4%B9%88">XCFramework 里有什么</a></li>
@@ -200,21 +246,26 @@ rm -rf &quot;$NAKED_NAME-reworked&quot;
 </section>
 
 
+			
+			
 		</div>
-
-		
 
 	</article>
  
-	<article>
-		 <header>
-		  	<h1 class="entry-title"><a href="16558196375003.html">记一次私有 pod 发布报错</a></h1>
-			<p class="meta"><time datetime="2022-06-21T21:53:57+08:00" 
-			pubdate data-updated="true">2022/06/21</time></p>
-		 </header>
-	  	<div class="entry-content">
-		  	
-		  	<div class="mweb_toc"><ul>
+	<article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+		<div class="meta">
+			<div class="date">
+				<time datetime="2022-06-21T21:53:57+08:00" itemprop="datePublished">2022/06/21</time>
+			</div>
+			
+			 
+			
+		</div>
+		<h1 class="title" itemprop="name"><a href="16558196375003.html" itemprop="url">
+		记一次私有 pod 发布报错</a></h1>
+		<div class="entry-content" itemprop="articleBody">
+			
+			<div class="mweb_toc"><ul>
 <li><a href="#%E4%B8%B4%E6%97%B6%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88">临时解决方案</a></li>
 <li><a href="#%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90">深入分析</a>
 <ul>
@@ -296,21 +347,26 @@ s.vendored_frameworks = 'Protobuf/Protobuf.framework'
 </section>
 
 
+			
+			
 		</div>
-
-		
 
 	</article>
  
-	<article>
-		 <header>
-		  	<h1 class="entry-title"><a href="wan-zhuan-cocoapods-xu-yao-le.html">玩转 CocoaPods 需要了解的 Ruby 基础知识</a></h1>
-			<p class="meta"><time datetime="2021-12-18T18:43:05+08:00" 
-			pubdate data-updated="true">2021/12/18</time></p>
-		 </header>
-	  	<div class="entry-content">
-		  	
-		  	<div class="mweb_toc"><ul>
+	<article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+		<div class="meta">
+			<div class="date">
+				<time datetime="2021-12-18T18:43:05+08:00" itemprop="datePublished">2021/12/18</time>
+			</div>
+			
+			 
+			
+		</div>
+		<h1 class="title" itemprop="name"><a href="wan-zhuan-cocoapods-xu-yao-le.html" itemprop="url">
+		玩转 CocoaPods 需要了解的 Ruby 基础知识</a></h1>
+		<div class="entry-content" itemprop="articleBody">
+			
+			<div class="mweb_toc"><ul>
 <li><a href="#%E8%A1%A8%E8%BE%BE%E5%BC%8F">表达式</a></li>
 <li><a href="#%E5%87%BD%E6%95%B0">函数</a>
 <ul>
@@ -643,21 +699,26 @@ end
 </ul>
 
 
+			
+			
 		</div>
-
-		
 
 	</article>
  
-	<article>
-		 <header>
-		  	<h1 class="entry-title"><a href="16553980014674.html">使用 LLDB Python API 自动存储后台请求数据用于单元测试</a></h1>
-			<p class="meta"><time datetime="2020-02-25T00:46:41+08:00" 
-			pubdate data-updated="true">2020/02/25</time></p>
-		 </header>
-	  	<div class="entry-content">
-		  	
-		  	<div class="mweb_toc"><ul>
+	<article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+		<div class="meta">
+			<div class="date">
+				<time datetime="2020-02-25T00:46:41+08:00" itemprop="datePublished">2020/02/25</time>
+			</div>
+			
+			 
+			
+		</div>
+		<h1 class="title" itemprop="name"><a href="16553980014674.html" itemprop="url">
+		使用 LLDB Python API 自动存储后台请求数据用于单元测试</a></h1>
+		<div class="entry-content" itemprop="articleBody">
+			
+			<div class="mweb_toc"><ul>
 <li><a href="#%E5%B7%B2%E6%9C%89%E6%96%B9%E6%B3%95">已有方法</a></li>
 <li><a href="#%E5%9F%BA%E4%BA%8Elldb-python-api%E7%9A%84%E6%96%B9%E6%A1%88">基于 LLDB Python API 的方案</a>
 <ul>
@@ -769,21 +830,26 @@ For more information on any command, type 'help &lt;command-name&gt;'.
 </ul>
 
 
+			
+			
 		</div>
-
-		
 
 	</article>
  
-	<article>
-		 <header>
-		  	<h1 class="entry-title"><a href="15372506301626.html">JavaScript for Automation(JXA) 入门</a></h1>
-			<p class="meta"><time datetime="2018-09-18T14:03:50+08:00" 
-			pubdate data-updated="true">2018/09/18</time></p>
-		 </header>
-	  	<div class="entry-content">
-		  	
-		  	<div class="mweb_toc"><ul>
+	<article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+		<div class="meta">
+			<div class="date">
+				<time datetime="2018-09-18T14:03:50+08:00" itemprop="datePublished">2018/09/18</time>
+			</div>
+			
+			 
+			
+		</div>
+		<h1 class="title" itemprop="name"><a href="15372506301626.html" itemprop="url">
+		JavaScript for Automation(JXA) 入门</a></h1>
+		<div class="entry-content" itemprop="articleBody">
+			
+			<div class="mweb_toc"><ul>
 <li><a href="#0%E5%AD%A6%E4%B9%A0%E4%B8%80%E4%B8%AA%E6%96%B0%E5%B7%A5%E5%85%B7%E7%9A%84%E6%97%B6%E5%80%99%EF%BC%8C%E6%88%91%E4%BB%AC%E5%88%B0%E5%BA%95%E5%9C%A8%E5%AD%A6%E4%BB%80%E4%B9%88%EF%BC%9F">0. 学习一个新工具的时候，我们到底在学什么？</a></li>
 <li><a href="#1-jxa%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5">1. JXA 基本概念</a>
 <ul>
@@ -1027,21 +1093,28 @@ var isDir = isDirRef[0]     //get the data from the variable
 </section>
 
 
+			
+			
 		</div>
-
-		
 
 	</article>
  
-	<article>
-		 <header>
-		  	<h1 class="entry-title"><a href="15366534889994.html">《iOS面试之道》读书笔记 - 网络请求相关</a></h1>
-			<p class="meta"><time datetime="2018-09-11T16:11:28+08:00" 
-			pubdate data-updated="true">2018/09/11</time></p>
-		 </header>
-	  	<div class="entry-content">
-		  	
-		  	<div class="mweb_toc"><ul>
+	<article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+		<div class="meta">
+			<div class="date">
+				<time datetime="2018-09-11T16:11:28+08:00" itemprop="datePublished">2018/09/11</time>
+			</div>
+			<div class="tags">posted in 
+			
+			    <a class='category' href='%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html'>《iOS面试之道》读书笔记</a>&nbsp;
+			 
+			</div>
+		</div>
+		<h1 class="title" itemprop="name"><a href="15366534889994.html" itemprop="url">
+		《iOS面试之道》读书笔记 - 网络请求相关</a></h1>
+		<div class="entry-content" itemprop="articleBody">
+			
+			<div class="mweb_toc"><ul>
 <li><a href="#url-loading-system">URL Loading System</a>
 <ul>
 <li><a href="#nsurlsession">NSURLSession</a>
@@ -1294,21 +1367,28 @@ var isDir = isDirRef[0]     //get the data from the variable
 </section>
 
 
+			
+			
 		</div>
-
-		
 
 	</article>
  
-	<article>
-		 <header>
-		  	<h1 class="entry-title"><a href="15365724007469.html">《iOS面试之道》读书笔记 - 远程通知服务器</a></h1>
-			<p class="meta"><time datetime="2018-09-10T17:40:00+08:00" 
-			pubdate data-updated="true">2018/09/10</time></p>
-		 </header>
-	  	<div class="entry-content">
-		  	
-		  	<blockquote>
+	<article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+		<div class="meta">
+			<div class="date">
+				<time datetime="2018-09-10T17:40:00+08:00" itemprop="datePublished">2018/09/10</time>
+			</div>
+			<div class="tags">posted in 
+			
+			    <a class='category' href='%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html'>《iOS面试之道》读书笔记</a>&nbsp;
+			 
+			</div>
+		</div>
+		<h1 class="title" itemprop="name"><a href="15365724007469.html" itemprop="url">
+		《iOS面试之道》读书笔记 - 远程通知服务器</a></h1>
+		<div class="entry-content" itemprop="articleBody">
+			
+			<blockquote>
 <p>设置服务器以生成通知并将其推送到用户设备</p>
 </blockquote>
 <h2><a id="%E6%A6%82%E5%86%B5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>概况</h2>
@@ -1322,21 +1402,28 @@ var isDir = isDirRef[0]     //get the data from the variable
 <h2><a id="%E4%B8%8Eapns%E5%BB%BA%E7%AB%8B%E5%9F%BA%E4%BA%8E%E8%AF%81%E4%B9%A6%E7%9A%84%E8%BF%9E%E6%8E%A5-certificate-based-connection" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>与APNs建立基于证书的连接(Certificate-Based Connection)</h2>
 
 
+			
+			
 		</div>
-
-		
 
 	</article>
  
-	<article>
-		 <header>
-		  	<h1 class="entry-title"><a href="15365446737230.html">《iOS面试之道》读书笔记 - UserNotifications框架概况</a></h1>
-			<p class="meta"><time datetime="2018-09-10T09:57:53+08:00" 
-			pubdate data-updated="true">2018/09/10</time></p>
-		 </header>
-	  	<div class="entry-content">
-		  	
-		  	<div class="mweb_toc"><ul>
+	<article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+		<div class="meta">
+			<div class="date">
+				<time datetime="2018-09-10T09:57:53+08:00" itemprop="datePublished">2018/09/10</time>
+			</div>
+			<div class="tags">posted in 
+			
+			    <a class='category' href='%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html'>《iOS面试之道》读书笔记</a>&nbsp;
+			 
+			</div>
+		</div>
+		<h1 class="title" itemprop="name"><a href="15365446737230.html" itemprop="url">
+		《iOS面试之道》读书笔记 - UserNotifications框架概况</a></h1>
+		<div class="entry-content" itemprop="articleBody">
+			
+			<div class="mweb_toc"><ul>
 <li><a href="#%E8%AF%B7%E6%B1%82%E4%BD%BF%E7%94%A8%E6%9D%83%E9%99%90">请求使用权限</a>
 <ul>
 <li><a href="#%E5%9C%A8app%E5%90%AF%E5%8A%A8%E6%97%B6%E8%AF%B7%E6%B1%82%E6%8E%88%E6%9D%83">在app启动时请求授权</a></li>
@@ -1719,21 +1806,28 @@ didReceiveNotificationResponse:(UNNotificationResponse *)response
 </section>
 
 
+			
+			
 		</div>
-
-		
 
 	</article>
  
-	<article>
-		 <header>
-		  	<h1 class="entry-title"><a href="15362253776879.html">《iOS面试之道》读书笔记 - 并发编程</a></h1>
-			<p class="meta"><time datetime="2018-09-06T17:16:17+08:00" 
-			pubdate data-updated="true">2018/09/06</time></p>
-		 </header>
-	  	<div class="entry-content">
-		  	
-		  	<div class="mweb_toc"><ul>
+	<article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+		<div class="meta">
+			<div class="date">
+				<time datetime="2018-09-06T17:16:17+08:00" itemprop="datePublished">2018/09/06</time>
+			</div>
+			<div class="tags">posted in 
+			
+			    <a class='category' href='%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html'>《iOS面试之道》读书笔记</a>&nbsp;
+			 
+			</div>
+		</div>
+		<h1 class="title" itemprop="name"><a href="15362253776879.html" itemprop="url">
+		《iOS面试之道》读书笔记 - 并发编程</a></h1>
+		<div class="entry-content" itemprop="articleBody">
+			
+			<div class="mweb_toc"><ul>
 <li><a href="#os-x%E5%92%8C-ios%E4%B8%AD%E7%9A%84%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B-api">OS X 和 iOS 中的并发编程API</a>
 <ul>
 <li><a href="#dispatch-queues">Dispatch Queues</a></li>
@@ -1805,21 +1899,28 @@ didReceiveNotificationResponse:(UNNotificationResponse *)response
 </section>
 
 
+			
+			
 		</div>
-
-		
 
 	</article>
  
-	<article>
-		 <header>
-		  	<h1 class="entry-title"><a href="15360488544502.html">《iOS面试之道》读书笔记 - atomic/nonatomic</a></h1>
-			<p class="meta"><time datetime="2018-09-04T16:14:14+08:00" 
-			pubdate data-updated="true">2018/09/04</time></p>
-		 </header>
-	  	<div class="entry-content">
-		  	
-		  	<div class="mweb_toc"><ul>
+	<article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+		<div class="meta">
+			<div class="date">
+				<time datetime="2018-09-04T16:14:14+08:00" itemprop="datePublished">2018/09/04</time>
+			</div>
+			<div class="tags">posted in 
+			
+			    <a class='category' href='%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html'>《iOS面试之道》读书笔记</a>&nbsp;
+			 
+			</div>
+		</div>
+		<h1 class="title" itemprop="name"><a href="15360488544502.html" itemprop="url">
+		《iOS面试之道》读书笔记 - atomic/nonatomic</a></h1>
+		<div class="entry-content" itemprop="articleBody">
+			
+			<div class="mweb_toc"><ul>
 <li><a href="#%E4%BD%BF%E7%94%A8atomic%E4%BF%AE%E9%A5%B0%E7%9A%84-property%E6%98%AF%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E5%8E%9F%E5%AD%90%E6%80%A7%E7%9A%84%EF%BC%9F">使用 atomic 修饰的 property 是如何保证原子性的？</a></li>
 <li><a href="#%E4%BD%BF%E7%94%A8atomic%E4%BF%AE%E9%A5%B0%E7%9A%84-property%E6%98%AF%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E7%9A%84%E5%90%97%EF%BC%9F">使用 atomic 修饰的 property 是线程安全的吗？</a></li>
 <li><a href="#%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81property%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E6%80%A7%EF%BC%9F">如何保证 property 的线程安全性？</a></li>
@@ -1915,21 +2016,28 @@ static inline void reallySetProperty(id self, SEL _cmd, id newValue, ptrdiff_t o
 </section>
 
 
+			
+			
 		</div>
-
-		
 
 	</article>
  
-	<article>
-		 <header>
-		  	<h1 class="entry-title"><a href="ios-mian-shi-zhi-dao-du-shu-bi.html">《iOS面试之道》读书笔记 - NSRunLoop</a></h1>
-			<p class="meta"><time datetime="2018-09-04T13:40:02+08:00" 
-			pubdate data-updated="true">2018/09/04</time></p>
-		 </header>
-	  	<div class="entry-content">
-		  	
-		  	<div class="mweb_toc"><ul>
+	<article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+		<div class="meta">
+			<div class="date">
+				<time datetime="2018-09-04T13:40:02+08:00" itemprop="datePublished">2018/09/04</time>
+			</div>
+			<div class="tags">posted in 
+			
+			    <a class='category' href='%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html'>《iOS面试之道》读书笔记</a>&nbsp;
+			 
+			</div>
+		</div>
+		<h1 class="title" itemprop="name"><a href="ios-mian-shi-zhi-dao-du-shu-bi.html" itemprop="url">
+		《iOS面试之道》读书笔记 - NSRunLoop</a></h1>
+		<div class="entry-content" itemprop="articleBody">
+			
+			<div class="mweb_toc"><ul>
 <li><a href="#run-loop%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5">Run Loop 基本概念</a></li>
 <li><a href="#run-loop%E4%B8%8E%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%85%B3%E7%B3%BB">Run Loop 与线程的关系</a></li>
 <li><a href="#run-loop%E7%9A%84%E7%BB%84%E6%88%90%E9%83%A8%E5%88%86">Run Loop 的组成部分</a></li>
@@ -1991,21 +2099,26 @@ RunLoop为了节省资源，并不会在非常准确的时间点回调这个Time
 </section>
 
 
+			
+			
 		</div>
-
-		
 
 	</article>
  
-	<article>
-		 <header>
-		  	<h1 class="entry-title"><a href="15220556376633.html">使用XcodeCoverage统计单元测试覆盖率</a></h1>
-			<p class="meta"><time datetime="2018-03-26T17:13:57+08:00" 
-			pubdate data-updated="true">2018/03/26</time></p>
-		 </header>
-	  	<div class="entry-content">
-		  	
-		  	<div class="mweb_toc"><ul>
+	<article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+		<div class="meta">
+			<div class="date">
+				<time datetime="2018-03-26T17:13:57+08:00" itemprop="datePublished">2018/03/26</time>
+			</div>
+			
+			 
+			
+		</div>
+		<h1 class="title" itemprop="name"><a href="15220556376633.html" itemprop="url">
+		使用XcodeCoverage统计单元测试覆盖率</a></h1>
+		<div class="entry-content" itemprop="articleBody">
+			
+			<div class="mweb_toc"><ul>
 <li><a href="#%E4%B8%BA%E5%B7%A5%E7%A8%8B%E6%B7%BB%E5%8A%A0xcodecoverage%E4%BB%A3%E7%A0%81">为工程添加XcodeCoverage代码</a></li>
 <li><a href="#%E6%9B%B4%E6%96%B0xcode%E5%B7%A5%E7%A8%8Bscheme">更新Xcode工程Scheme</a></li>
 <li><a href="#%E6%9B%B4%E6%96%B0pods%E7%9A%84xcconfig%E6%96%87%E4%BB%B6">更新Pods的xcconfig文件</a></li>
@@ -2068,21 +2181,26 @@ fi
 </ul>
 
 
+			
+			
 		</div>
-
-		
 
 	</article>
  
-	<article>
-		 <header>
-		  	<h1 class="entry-title"><a href="15220417245604.html">使用XcodeCoverage统计增量代码单元测试覆盖率</a></h1>
-			<p class="meta"><time datetime="2018-03-26T13:22:04+08:00" 
-			pubdate data-updated="true">2018/03/26</time></p>
-		 </header>
-	  	<div class="entry-content">
-		  	
-		  	<div class="mweb_toc"><ul>
+	<article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+		<div class="meta">
+			<div class="date">
+				<time datetime="2018-03-26T13:22:04+08:00" itemprop="datePublished">2018/03/26</time>
+			</div>
+			
+			 
+			
+		</div>
+		<h1 class="title" itemprop="name"><a href="15220417245604.html" itemprop="url">
+		使用XcodeCoverage统计增量代码单元测试覆盖率</a></h1>
+		<div class="entry-content" itemprop="articleBody">
+			
+			<div class="mweb_toc"><ul>
 <li><a href="#%E8%8E%B7%E5%8F%96%E4%B8%80%E4%B8%AA%E7%89%88%E6%9C%AC%E5%91%A8%E6%9C%9F%E5%86%85%E5%AD%98%E5%9C%A8%E4%BF%AE%E6%94%B9%E7%9A%84%E4%BB%A3%E7%A0%81%E6%96%87%E4%BB%B6%E5%88%97%E8%A1%A8">获取一个版本周期内存在修改的代码文件列表</a></li>
 <li><a href="#%E8%8E%B7%E5%8F%96xcode%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E7%94%9F%E6%88%90%E7%9A%84%E6%AF%8F%E4%B8%AA%E4%BB%A3%E7%A0%81%E6%96%87%E4%BB%B6%E7%9A%84%E8%A6%86%E7%9B%96%E7%8E%87%E6%95%B0%E6%8D%AE">获取Xcode单元测试生成的每个代码文件的覆盖率数据</a>
 <ul>
@@ -2320,21 +2438,26 @@ Done.
 </ul>
 
 
+			
+			
 		</div>
-
-		
 
 	</article>
  
-	<article>
-		 <header>
-		  	<h1 class="entry-title"><a href="15089947525979.html">在Taf NodeJS工程中使用node-gyp</a></h1>
-			<p class="meta"><time datetime="2017-10-26T13:12:32+08:00" 
-			pubdate data-updated="true">2017/10/26</time></p>
-		 </header>
-	  	<div class="entry-content">
-		  	
-		  	<div class="mweb_toc"><ul>
+	<article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+		<div class="meta">
+			<div class="date">
+				<time datetime="2017-10-26T13:12:32+08:00" itemprop="datePublished">2017/10/26</time>
+			</div>
+			
+			 
+			
+		</div>
+		<h1 class="title" itemprop="name"><a href="15089947525979.html" itemprop="url">
+		在Taf NodeJS工程中使用node-gyp</a></h1>
+		<div class="entry-content" itemprop="articleBody">
+			
+			<div class="mweb_toc"><ul>
 <li><a href="#%E5%BC%80%E5%8F%91%E8%BF%87%E7%A8%8B">开发过程</a>
 <ul>
 <li><a href="#%E7%BC%96%E5%86%99%E4%BB%A3%E7%A0%81">编写代码</a></li>
@@ -2623,21 +2746,26 @@ gyp ERR! not ok
 </ul>
 
 
+			
+			
 		</div>
-
-		
 
 	</article>
  
-	<article>
-		 <header>
-		  	<h1 class="entry-title"><a href="14822246956860.html">依赖注入实现内存释放</a></h1>
-			<p class="meta"><time datetime="2016-12-20T17:04:55+08:00" 
-			pubdate data-updated="true">2016/12/20</time></p>
-		 </header>
-	  	<div class="entry-content">
-		  	
-		  	<p>本文介绍了一种名为<strong>依赖注入</strong>(Dependency Injection)的设计模式，并使用这种模式释放不必一直持有的对象，用来达到释放内存的效果。</p>
+	<article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+		<div class="meta">
+			<div class="date">
+				<time datetime="2016-12-20T17:04:55+08:00" itemprop="datePublished">2016/12/20</time>
+			</div>
+			
+			 
+			
+		</div>
+		<h1 class="title" itemprop="name"><a href="14822246956860.html" itemprop="url">
+		依赖注入实现内存释放</a></h1>
+		<div class="entry-content" itemprop="articleBody">
+			
+			<p>本文介绍了一种名为<strong>依赖注入</strong>(Dependency Injection)的设计模式，并使用这种模式释放不必一直持有的对象，用来达到释放内存的效果。</p>
 <h2><a id="%E4%BB%80%E4%B9%88%E6%98%AF%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>什么是依赖注入</h2>
 <p>举个栗子：</p>
 <blockquote>
@@ -2757,21 +2885,26 @@ gyp ERR! not ok
 <p>属性注入保证了调用者（高级类）不必关心被调用对象的初始化情况，所以即使被调用对象已经释放，通过调用注入接口，仍然可以在需要时生成。利用这一特性，我们可以在收到内存警告时释放掉暂时不用的对象，同时也必须注意，<strong>被释放的对象必须是可恢复的</strong>。</p>
 
 
+			
+			
 		</div>
-
-		
 
 	</article>
  
-	<article>
-		 <header>
-		  	<h1 class="entry-title"><a href="14822246957173.html">iOS 控件设置圆角（上）</a></h1>
-			<p class="meta"><time datetime="2016-12-20T17:04:55+08:00" 
-			pubdate data-updated="true">2016/12/20</time></p>
-		 </header>
-	  	<div class="entry-content">
-		  	
-		  	<div class="mweb_toc"><ul>
+	<article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+		<div class="meta">
+			<div class="date">
+				<time datetime="2016-12-20T17:04:55+08:00" itemprop="datePublished">2016/12/20</time>
+			</div>
+			
+			 
+			
+		</div>
+		<h1 class="title" itemprop="name"><a href="14822246957173.html" itemprop="url">
+		iOS 控件设置圆角（上）</a></h1>
+		<div class="entry-content" itemprop="articleBody">
+			
+			<div class="mweb_toc"><ul>
 <li><a href="#%E4%B8%80%E7%A7%8D%E8%AE%BE%E7%BD%AE%E5%9C%86%E8%A7%92%E7%9A%84%E7%AE%80%E5%8D%95%E6%96%B9%E6%B3%95">一种设置圆角的简单方法</a></li>
 <li><a href="#%E6%80%A7%E8%83%BD%E6%8D%9F%E8%80%97%EF%BC%9A%E6%8E%89%E5%B8%A7">性能损耗：掉帧</a>
 <ul>
@@ -2826,21 +2959,26 @@ view.layer.masksToBounds = YES;
 </ol>
 
 
+			
+			
 		</div>
-
-		
 
 	</article>
  
-	<article>
-		 <header>
-		  	<h1 class="entry-title"><a href="14822246957408.html">iOS 控件设置圆角（下）</a></h1>
-			<p class="meta"><time datetime="2016-12-20T17:04:55+08:00" 
-			pubdate data-updated="true">2016/12/20</time></p>
-		 </header>
-	  	<div class="entry-content">
-		  	
-		  	<div class="mweb_toc"><ul>
+	<article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+		<div class="meta">
+			<div class="date">
+				<time datetime="2016-12-20T17:04:55+08:00" itemprop="datePublished">2016/12/20</time>
+			</div>
+			
+			 
+			
+		</div>
+		<h1 class="title" itemprop="name"><a href="14822246957408.html" itemprop="url">
+		iOS 控件设置圆角（下）</a></h1>
+		<div class="entry-content" itemprop="articleBody">
+			
+			<div class="mweb_toc"><ul>
 <li><a href="#%E6%8F%90%E5%8D%87%E6%80%A7%E8%83%BD%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E6%B3%95">提升性能的几种方法</a>
 <ul>
 <li><a href="#%E5%85%89%E6%A0%85%E5%8C%96">光栅化</a></li>
@@ -2977,102 +3115,32 @@ label.layer.cornerRadius = 5;
 </ol>
 
 
+			
+			
 		</div>
-
-		
 
 	</article>
   
-	<div class="pagination">
-	
-<a href="archives.html">Blog Archives</a>
-	 
-	    
-	</div>
+
 </div>
- <aside class="sidebar"> 
-
-	<section>
-	  <h1>Categories</h1>
-	  <ul id="recent_posts">
-	  
-	      <li class="post">
-	        <a href="%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html"><strong>《iOS面试之道》读书笔记&nbsp;(6)</strong></a>
-	        
-	        
-	        
-	      </li>
-	   
-	  </ul>
-	</section>
-	<section>
-	  <h1>Recent Posts</h1>
-	  <ul id="recent_posts">
-	  
-	      
-		      <li class="post">
-		        <a href="16566860725573.html">使用 framework 转换 XCFramework</a>
-		      </li>
-	     
-	  
-	      
-		      <li class="post">
-		        <a href="16558196375003.html">记一次私有 pod 发布报错</a>
-		      </li>
-	     
-	  
-	      
-		      <li class="post">
-		        <a href="wan-zhuan-cocoapods-xu-yao-le.html">玩转 CocoaPods 需要了解的 Ruby 基础知识</a>
-		      </li>
-	     
-	  
-	      
-		      <li class="post">
-		        <a href="16553980014674.html">使用 LLDB Python API 自动存储后台请求数据用于单元测试</a>
-		      </li>
-	     
-	  
-	      
-		      <li class="post">
-		        <a href="15372506301626.html">JavaScript for Automation(JXA) 入门</a>
-		      </li>
-	     
-	  
-	      
-	  
-	      
-	  
-	      
-	  
-	      
-	  
-	      
-	  
-	      
-	  
-	      
-	  
-	      
-	  
-	      
-	  
-	      
-	  
-	      
-	  
-	      
-	   
-	  </ul>
-	</section>
+<nav id="pagenavi">
+	 
 	
-</aside> </div></div>
-  <footer role="contentinfo"><p>
-  Copyright &copy; 2014 -  -
-  <span class="credit">Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a> &nbsp;&nbsp; Theme by <a href="http://octopress.org">Octopress</a></span>
-</p>
+	<div class="center"><a href="archives.html">Blog Archives</a></div>
 
-</footer>
+</nav>
+
+</div>
+
+
+
+        </div>
+			<footer id="footer" class="inner">Copyright &copy; 2014
+Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a> &nbsp;&nbsp; 
+Theme by <a href="http://shashankmehta.in/archive/2012/greyshade.html">Shashank Mehta</a>
+      </footer>
+		</div>
+	</div>
 
 
 
@@ -3092,49 +3160,27 @@ label.layer.cornerRadius = 5;
 
 
 <style type="text/css">
-  
+figure{margin: 1em 0;padding: 0;}
+  figcaption{text-align:center;}
+
 /* PrismJS 1.14.0
-https://prismjs.com/download.html#themes=prism-solarizedlight&languages=markup+css+clike+javascript */
-/*
- Solarized Color Schemes originally by Ethan Schoonover
- http://ethanschoonover.com/solarized
-
- Ported for PrismJS by Hector Matos
- Website: https://krakendev.io
- Twitter Handle: https://twitter.com/allonsykraken)
-*/
-
-/*
-SOLARIZED HEX
---------- -------
-base03    #002b36
-base02    #073642
-base01    #586e75
-base00    #657b83
-base0     #839496
-base1     #93a1a1
-base2     #eee8d5
-base3     #fdf6e3
-yellow    #b58900
-orange    #cb4b16
-red       #dc322f
-magenta   #d33682
-violet    #6c71c4
-blue      #268bd2
-cyan      #2aa198
-green     #859900
-*/
+https://prismjs.com/download.html#themes=prism-coy&languages=markup+css+clike+javascript */
+/**
+ * prism.js Coy theme for JavaScript, CoffeeScript, CSS and HTML
+ * Based on https://github.com/tshedor/workshop-wp-theme (Example: http://workshop.kansan.com/category/sessions/basics or http://workshop.timshedor.com/category/sessions/basics);
+ * @author Tim  Shedor
+ */
 
 code[class*="language-"],
 pre[class*="language-"] {
-  color: #657b83; /* base00 */
+  color: black;
+  background: none;
   font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
   text-align: left;
   white-space: pre;
   word-spacing: normal;
   word-break: normal;
   word-wrap: normal;
-
   line-height: 1.5;
 
   -moz-tab-size: 4;
@@ -3147,93 +3193,146 @@ pre[class*="language-"] {
   hyphens: none;
 }
 
-pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
-code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
-  background: #073642; /* base02 */
-}
-
-pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
-code[class*="language-"]::selection, code[class*="language-"] ::selection {
-  background: #073642; /* base02 */
-}
-
 /* Code blocks */
 pre[class*="language-"] {
-  padding: 1em;
+  position: relative;
   margin: .5em 0;
-  overflow: auto;
-  border-radius: 0.3em;
+  overflow: visible;
+  padding: 0;
+}
+pre[class*="language-"]>code {
+  position: relative;
+  border-left: 10px solid #358ccb;
+  box-shadow: -1px 0px 0px 0px #358ccb, 0px 0px 0px 1px #dfdfdf;
+  background-color: #fdfdfd;
+  background-image: linear-gradient(transparent 50%, rgba(69, 142, 209, 0.04) 50%);
+  background-size: 3em 3em;
+  background-origin: content-box;
+  background-attachment: local;
 }
 
+code[class*="language"] {
+  max-height: inherit;
+  height: inherit;
+  padding: 0 1em;
+  display: block;
+  overflow: auto;
+}
+
+/* Margin bottom to accomodate shadow */
 :not(pre) > code[class*="language-"],
 pre[class*="language-"] {
-  background-color: #fdf6e3; /* base3 */
+  background-color: #fdfdfd;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  margin-bottom: 1em;
 }
 
 /* Inline code */
 :not(pre) > code[class*="language-"] {
-  padding: .1em;
-  border-radius: .3em;
+  position: relative;
+  padding: .2em;
+  border-radius: 0.3em;
+  color: #c92c2c;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: inline;
+  white-space: normal;
+}
+
+pre[class*="language-"]:before,
+pre[class*="language-"]:after {
+  content: '';
+  z-index: -2;
+  display: block;
+  position: absolute;
+  bottom: 0.75em;
+  left: 0.18em;
+  width: 40%;
+  height: 20%;
+  max-height: 13em;
+  box-shadow: 0px 13px 8px #979797;
+  -webkit-transform: rotate(-2deg);
+  -moz-transform: rotate(-2deg);
+  -ms-transform: rotate(-2deg);
+  -o-transform: rotate(-2deg);
+  transform: rotate(-2deg);
+}
+
+:not(pre) > code[class*="language-"]:after,
+pre[class*="language-"]:after {
+  right: 0.75em;
+  left: auto;
+  -webkit-transform: rotate(2deg);
+  -moz-transform: rotate(2deg);
+  -ms-transform: rotate(2deg);
+  -o-transform: rotate(2deg);
+  transform: rotate(2deg);
 }
 
 .token.comment,
+.token.block-comment,
 .token.prolog,
 .token.doctype,
 .token.cdata {
-  color: #93a1a1; /* base1 */
+  color: #7D8B99;
 }
 
 .token.punctuation {
-  color: #586e75; /* base01 */
-}
-
-.namespace {
-  opacity: .7;
+  color: #5F6364;
 }
 
 .token.property,
 .token.tag,
 .token.boolean,
 .token.number,
+.token.function-name,
 .token.constant,
 .token.symbol,
 .token.deleted {
-  color: #268bd2; /* blue */
+  color: #c92c2c;
 }
 
 .token.selector,
 .token.attr-name,
 .token.string,
 .token.char,
+.token.function,
 .token.builtin,
-.token.url,
 .token.inserted {
-  color: #2aa198; /* cyan */
+  color: #2f9c0a;
 }
 
-.token.entity {
-  color: #657b83; /* base00 */
-  background: #eee8d5; /* base2 */
+.token.operator,
+.token.entity,
+.token.url,
+.token.variable {
+  color: #a67f59;
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .token.atrule,
 .token.attr-value,
-.token.keyword {
-  color: #859900; /* green */
-}
-
-.token.function,
+.token.keyword,
 .token.class-name {
-  color: #b58900; /* yellow */
+  color: #1990b8;
 }
 
 .token.regex,
-.token.important,
-.token.variable {
-  color: #cb4b16; /* orange */
+.token.important {
+  color: #e90;
 }
 
-.token.important,
+.language-css .token.string,
+.style .token.string {
+  color: #a67f59;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.token.important {
+  font-weight: normal;
+}
+
 .token.bold {
   font-weight: bold;
 }
@@ -3245,6 +3344,52 @@ pre[class*="language-"] {
   cursor: help;
 }
 
+.namespace {
+  opacity: .7;
+}
+
+@media screen and (max-width: 767px) {
+  pre[class*="language-"]:before,
+  pre[class*="language-"]:after {
+    bottom: 14px;
+    box-shadow: none;
+  }
+
+}
+
+/* Plugin styles */
+.token.tab:not(:empty):before,
+.token.cr:before,
+.token.lf:before {
+  color: #e0d7d1;
+}
+
+/* Plugin styles: Line Numbers */
+pre[class*="language-"].line-numbers.line-numbers {
+  padding-left: 0;
+}
+
+pre[class*="language-"].line-numbers.line-numbers code {
+  padding-left: 3.8em;
+}
+
+pre[class*="language-"].line-numbers.line-numbers .line-numbers-rows {
+  left: 0;
+}
+
+/* Plugin styles: Line Highlight */
+pre[class*="language-"][data-line] {
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 0;
+}
+pre[data-line] code {
+  position: relative;
+  padding-left: 4em;
+}
+pre .line-highlight {
+  margin-top: 0;
+}
 
 pre[class*="language-"].line-numbers {
     position: relative;
