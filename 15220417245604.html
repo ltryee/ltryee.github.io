@@ -1,0 +1,664 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>
+    
+  使用XcodeCoverage统计增量代码单元测试覆盖率 - ltryee's blog
+  
+
+  </title>
+  <meta name="author" content="">
+  <meta name="description" content="ltryee's blog">
+
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link href="asset/css/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="atom.xml" rel="alternate" title="ltryee's blog" type="application/atom+xml">
+  <script src="asset/js/modernizr-2.0.js"></script>
+  <script src="asset/js/jquery.min.js"></script>
+  <style type="text/css">
+  .cat-children-p{ padding: 6px 0px;}
+  .hljs{background: none;}
+  </style>
+  <script type="text/javascript">
+  var isAddSildbar = true;
+  </script>
+  <script src="asset/js/octopress.js" type="text/javascript"></script>
+</head>
+<script type="text/javascript">
+//链接新开窗口
+function addBlankTargetForLinks () {
+  $('a[href^="http"]').each(function(){
+      $(this).attr('target', '_blank');
+  });
+}
+$(document).ready(function(event) {
+  addBlankTargetForLinks();
+});
+</script>
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="index.html">ltryee's blog</a></h1>
+  
+    <h2>ltryee's blog</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:ltryee.gitee.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+
+  <li id=""><a target="_self" href="index.html">Home</a></li>
+
+  <li id=""><a target="_self" href="archives.html">Archives</a></li>
+
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content"> 
+<div>
+	<article class="hentry" role="article">
+	<header>
+			  	<h1 class="entry-title">使用XcodeCoverage统计增量代码单元测试覆盖率</h1>
+				<p class="meta"><time datetime="2018-03-26T13:22:04+08:00" pubdate data-updated="true">2018/03/26</time></p>
+			 </header>
+		  	<div class="entry-content">
+			  	<div class="mweb_toc"><ul>
+<li><a href="#%E8%8E%B7%E5%8F%96%E4%B8%80%E4%B8%AA%E7%89%88%E6%9C%AC%E5%91%A8%E6%9C%9F%E5%86%85%E5%AD%98%E5%9C%A8%E4%BF%AE%E6%94%B9%E7%9A%84%E4%BB%A3%E7%A0%81%E6%96%87%E4%BB%B6%E5%88%97%E8%A1%A8">获取一个版本周期内存在修改的代码文件列表</a></li>
+<li><a href="#%E8%8E%B7%E5%8F%96xcode%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E7%94%9F%E6%88%90%E7%9A%84%E6%AF%8F%E4%B8%AA%E4%BB%A3%E7%A0%81%E6%96%87%E4%BB%B6%E7%9A%84%E8%A6%86%E7%9B%96%E7%8E%87%E6%95%B0%E6%8D%AE">获取Xcode单元测试生成的每个代码文件的覆盖率数据</a>
+<ul>
+<li><a href="#xcode%E6%89%A7%E8%A1%8C%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E6%97%B6%E6%8F%90%E5%8F%96%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F">Xcode执行单元测试时提取环境变量</a></li>
+<li><a href="#%E6%8F%90%E5%8F%96%E8%A6%86%E7%9B%96%E7%8E%87%E6%95%B0%E6%8D%AE">提取覆盖率数据</a></li>
+</ul>
+</li>
+<li><a href="#%E7%AD%9B%E9%80%89%E5%B9%B6%E8%AE%A1%E7%AE%97">筛选并计算</a></li>
+<li><a href="#tips">Tips</a></li>
+<li><a href="#%E5%8F%82%E8%80%83">参考</a></li>
+</ul>
+</div>
+<p><a href="https://github.com/jonreid/XcodeCoverage"><code>XcodeCoverage</code></a> 是一个基于<a href="https://github.com/linux-test-project/lcov"><code>lcov</code></a>的统计工具，用于计算Xcode项目的单元测试覆盖率，且能生成html格式的统计报表。<br />
+现在需要统计在一个版本周期中增量代码的覆盖率，而XcodeCoverage只能统计全量的覆盖率，因此需要借助XcodeCoverage生成的数据，手动计算版本周期中修改过的文件的覆盖率。问题可以分解为三个子问题：</p>
+<ol>
+<li>获取一个版本周期内存在修改的代码文件列表</li>
+<li>获取Xcode单元测试生成的每个代码文件的覆盖率数据</li>
+<li>筛选并计算</li>
+</ol>
+<h2><a id="%E8%8E%B7%E5%8F%96%E4%B8%80%E4%B8%AA%E7%89%88%E6%9C%AC%E5%91%A8%E6%9C%9F%E5%86%85%E5%AD%98%E5%9C%A8%E4%BF%AE%E6%94%B9%E7%9A%84%E4%BB%A3%E7%A0%81%E6%96%87%E4%BB%B6%E5%88%97%E8%A1%A8" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>获取一个版本周期内存在修改的代码文件列表</h2>
+<p>在版本库中，只要确定当某个本周期的<strong>起始</strong>和<strong>结束</strong>commit，就可以利用<code>git diff</code>命令筛选出我们想要的文件列表。<br />
+结束commit容易确定，如果统计当前正在开发的版本，那么结束commit对应的就是版本库的<code>HEAD</code>。<br />
+而起始commit的确定依赖于手动标记，本项目会对每个发布版本打一个tag，所以最新的一个tag对应的commit即为上个版本的发布commit，亦即当前版本的起始commit。</p>
+<pre class="line-numbers"><code class="language-sh"># get_modified_file_list.sh
+
+#!/bin/bash
+
+tag=`git --no-pager tag | sort -V | tail -1` #1
+beginCommit=`git --no-pager show $tag --pretty=raw | head -1 | awk '{print $2}'` #2
+endCommit=`git --no-pager log --max-count=1 --no-decorate | head -1 | awk '{print $2}'` #3
+
+# echo Calculation will start from $beginCommit to endCommit, since $tag
+
+git --no-pager diff $beginCommit $endCommit --name-status \ #4
+| awk '$2 ~ /\.m$/ {print $2}' \ #5
+| awk -F '/' '{print $NF}' #6
+</code></pre>
+<ol>
+<li>
+<p>获取最新的tag，这里需注意，tag名是符合<code>SemVer</code>规则描述的版本号，因此可以使用<code>sort</code>命令排序</p>
+<pre class="line-numbers"><code class="language-sh">➜  MttHD_vector git:(develop) git --no-pager tag | sort -V | tail -1
+v6.4.1
+</code></pre>
+</li>
+<li>
+<p>根据上个版本的tag获取起始commit</p>
+<pre class="line-numbers"><code class="language-sh">➜  MttHD_vector git:(develop) git --no-pager show $tag --pretty=raw | head -1 | awk '{print $2}'
+32a6c5e3434357cbb0584c647e3e8e2ec1e9df1d
+</code></pre>
+</li>
+<li>
+<p>获取结束commit</p>
+<pre class="line-numbers"><code class="language-sh">➜  MttHD_vector git:(develop) git --no-pager log --max-count=1 --no-decorate | head -1 | awk '{print $2}'
+7a7a538e1cbecc57023e3e26ecaa336d51fc6d08
+</code></pre>
+</li>
+<li>
+<p>打印起始/结束commit之间存在修改的文件列表</p>
+<pre class="line-numbers"><code class="language-sh">➜  MttHD_vector git:(develop) tag=`git --no-pager tag | sort -V | tail -1` #1
+beginCommit=`git --no-pager show $tag --pretty=raw | head -1 | awk '{print $2}'` #2
+endCommit=`git --no-pager log --max-count=1 --no-decorate | head -1 | awk '{print $2}'` #3
+➜  MttHD_vector git:(develop) git --no-pager diff $beginCommit $endCommit --name-status
+M	.gitignore
+M	MttHD.xcodeproj/project.pbxproj
+M	MttHD.xcodeproj/xcshareddata/xcschemes/MttHD.xcscheme
+A	MttHD/BundleResources/Data/adblockplus/easylistchina_iOS11_custom.txt
+M	MttHD/BundleResources/Data/adblockplus/mainlist.txt
+M	MttHD/BundleResources/Data/categoryconfig/categoryconfig.plist
+M	MttHD/BundleResources/Entitlements/MttHD.entitlements
+M	MttHD/BundleResources/Patch/MttPatchResDefaults.plist
+
+...
+</code></pre>
+</li>
+<li>
+<p>提取文件路径</p>
+<pre class="line-numbers"><code class="language-sh">➜  MttHD_vector git:(develop) git --no-pager diff $beginCommit $endCommit --name-status | awk '$2 ~ /\.m$/ {print $2}' 
+MttHD/src/AppMain/MttAppDelegate.m
+MttHD/src/AppMain/MttMainViewController.m
+MttHD/src/Business/Browser/BrowserWindow/BrowserUnit/MttBrowserUnitNativeNewTabViewController.m
+MttHD/src/Business/Browser/BrowserWindow/BrowserUnit/MttNativeNewTabFeedsWrapperView.m
+MttHD/src/Business/Browser/BrowserWindow/BrowserUnit/MttNativeNewTabSettings.m
+MttHD/src/Business/Browser/BrowserWindow/BrowserUnit/MttNewTabFeedView.m
+MttHD/src/Business/Browser/BrowserWindow/BrowserUnit/NewTabFeeds/LocalNews/MttLocalNewsFeedView.m
+    
+...
+</code></pre>
+</li>
+<li>
+<p>提取文件名</p>
+<pre class="line-numbers"><code class="language-sh">➜  MttHD_vector git:(develop) git --no-pager diff $beginCommit $endCommit --name-status | awk '$2 ~ /\.m$/ {print $2}' | awk -F '/' '{print $NF}'
+MttAppDelegate.m
+MttMainViewController.m
+MttBrowserUnitNativeNewTabViewController.m
+MttNativeNewTabFeedsWrapperView.m
+MttNativeNewTabSettings.m
+MttNewTabFeedView.m
+MttLocalNewsFeedView.m
+
+...
+</code></pre>
+</li>
+</ol>
+<h2><a id="%E8%8E%B7%E5%8F%96xcode%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E7%94%9F%E6%88%90%E7%9A%84%E6%AF%8F%E4%B8%AA%E4%BB%A3%E7%A0%81%E6%96%87%E4%BB%B6%E7%9A%84%E8%A6%86%E7%9B%96%E7%8E%87%E6%95%B0%E6%8D%AE" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>获取Xcode单元测试生成的每个代码文件的覆盖率数据</h2>
+<p>通过分析XcodeCoverage的脚本可以知道，执行Xcode单元测试之后生成的覆盖率数据文件在</p>
+<pre class="line-numbers"><code class="language-plain_text">~/Library/Developer/Xcode/DerivedData/MttHD-axxzxbxzjokinpghkkhgihkbcrgo/Build/ProfileData/F76FA0C5-258D-4233-BE5A-C672666F0D1C/Coverage.profdata
+</code></pre>
+<p>生成的二进制包在</p>
+<pre class="line-numbers"><code class="language-plain_text">~/Library/Developer/Xcode/DerivedData/MttHD-axxzxbxzjokinpghkkhgihkbcrgo/Build/Products/Debug-iphonesimulator/MttHD.app/MttHD
+</code></pre>
+<p>其中<code>~/Library/Developer/Xcode/DerivedData/MttHD-axxzxbxzjokinpghkkhgihkbcrgo/Build/</code>这个路径，在脚本的执行过程中存储在环境变量<code>BUILD_ROOT</code>中，而<code>F76FA0C5-258D-4233-BE5A-C672666F0D1C</code>代表测试设备的UUID，存储在环境变量<code>TARGET_DEVICE_IDENTIFIER</code>中。因此只需要仿照XcodeCoverage导入环境变量的方式，自己实现一个<code>exportsnv.sh</code>，在单元测试运行时将我们需要的路径注入到<code>env.sh</code>，待计算覆盖率时使用<code>source</code>命令导入即可。</p>
+<h3><a id="xcode%E6%89%A7%E8%A1%8C%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E6%97%B6%E6%8F%90%E5%8F%96%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Xcode执行单元测试时提取环境变量</h3>
+<p>将<code>exportsnv.sh</code>加到Project相应的Scheme的Run Scripts中，Xcode执行单元测试时即可将所需的环境变量导入到<code>env.sh</code>。</p>
+<pre class="line-numbers"><code class="language-sh"># exportsnv.sh
+
+#!/bin/bash
+
+scripts=&quot;$( cd &quot;$( dirname &quot;${BASH_SOURCE[0]}&quot; )&quot; &amp;&amp; pwd )&quot;
+export | egrep '(TARGET_DEVICE_IDENTIFIER)|(BUILD_ROOT)|(TARGET_NAME)' &gt; &quot;${scripts}/env.sh&quot;
+</code></pre>
+<pre class="line-numbers"><code class="language-sh"># env.sh
+
+declare -x BUILD_ROOT=&quot;/Users/vectorliu_1/Library/Developer/Xcode/DerivedData/MttHD-bxynohvelscfkufcyzjsxmqxonmn/Build/Products&quot;
+declare -x TARGET_DEVICE_IDENTIFIER=&quot;6C2F1A5C-31E0-4495-9802-B870196E0399&quot;
+declare -x TARGET_NAME=&quot;MttHD&quot;
+</code></pre>
+<h3><a id="%E6%8F%90%E5%8F%96%E8%A6%86%E7%9B%96%E7%8E%87%E6%95%B0%E6%8D%AE" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>提取覆盖率数据</h3>
+<p>覆盖率数据通过<code>xcrun llvm-cov report</code>命令导出。</p>
+<pre class="line-numbers"><code class="language-sh">xcrun llvm-cov report -instr-profile \
+    ~/Library/Developer/Xcode/DerivedData/MttHD-axxzxbxzjokinpghkkhgihkbcrgo/Build/ProfileData/F76FA0C5-258D-4233-BE5A-C672666F0D1C/Coverage.profdata \
+    ~/Library/Developer/Xcode/DerivedData/MttHD-axxzxbxzjokinpghkkhgihkbcrgo/Build/Products/Debug-iphonesimulator/MttHD.app/MttHD \
+    &gt; file_level_coverage.txt
+</code></pre>
+<h2><a id="%E7%AD%9B%E9%80%89%E5%B9%B6%E8%AE%A1%E7%AE%97" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>筛选并计算</h2>
+<pre class="line-numbers"><code class="language-sh"># analize_coverage.sh
+
+#!/bin/bash
+
+ScriptsPath=&quot;$( cd &quot;$( dirname &quot;${BASH_SOURCE[0]}&quot; )&quot; &amp;&amp; pwd )&quot;
+
+XcodeCoveragePath=&quot;${ScriptsPath}/../Pods/XcodeCoverage&quot;
+source &quot;${XcodeCoveragePath}/envcov.sh&quot; #1
+
+source &quot;./env.sh&quot; #2
+
+CoverageDataName=&quot;Coverage.profdata&quot;
+CoverageDataPath=&quot;${BUILD_ROOT}/../ProfileData/${TARGET_DEVICE_IDENTIFIER}/${CoverageDataName}&quot;
+BinPackagePath=&quot;${BUILT_PRODUCTS_DIR}/${TARGET_NAME}.app/${TARGET_NAME}&quot;
+
+# test
+xcodebuild test \
+	-workspace ../MttHD.xcworkspace \
+	-scheme ${TARGET_NAME} \
+	-destination 'platform=iOS Simulator,name=iPad Pro (12.9-inch) (2nd generation)' \
+	-only-testing:MttHDUnitTests \
+	-enableCodeCoverage YES #3
+
+# get modified files during current app version from repo
+echo Fetching modified files...
+fileList=&quot;$(./get_modified_file_list.sh | tr '\n' '|')&quot;
+fileList=${fileList%?} #4
+
+TotalLines=11
+MissLines=12
+
+# convert coverage data to humanity-readable format
+echo Calculating...
+CoverageDataName=&quot;file_level_coverage.txt&quot;
+xcrun llvm-cov report -instr-profile ${CoverageDataPath} ${BinPackagePath} \ #5
+| awk -v total=$TotalLines -v miss=$MissLines 'NR&gt;=3 &amp;&amp; $1 ~ /'&quot;$fileList&quot;'/ {print $1,$total,$miss}' \ #6
+| awk -f cal_coverage.awk #7
+
+echo Done.
+</code></pre>
+<pre class="line-numbers"><code class="language-awk"># cal_coverage.awk
+
+#!/bin/awk -f
+
+BEGIN {
+	totalsum = 0
+	misssum = 0
+}
+{
+	totalsum += $2
+	misssum += $3
+}
+END	{
+	printf &quot;Coverage rate: %.2f%%\n&quot;, (totalsum - misssum) / totalsum * 100
+}
+</code></pre>
+<ol>
+<li>
+<p>导入XcodeCoverage生成的环境变量</p>
+</li>
+<li>
+<p>导入自己生成的环境变量</p>
+</li>
+<li>
+<p><code>-enableCodeCoverage</code>设置为<code>YES</code>，才能生成<code>Coverage.profdata</code>文件</p>
+</li>
+<li>
+<p>导入文件名列表，并修改成awk命令中正则表达式的格式</p>
+</li>
+<li>
+<p>导入所有文件的单元测试覆盖率</p>
+</li>
+<li>
+<p>筛选出<code>$fileList</code>中相应文件的覆盖率数据</p>
+</li>
+<li>
+<p>计算增量代码覆盖率</p>
+<pre class="line-numbers"><code class="language-sh">➜  scripts git:(develop) ✗ ./analize_coverage.sh
+Feching modified files...
+Calculating...
+Coverage rate: 10.42%
+Done.
+</code></pre>
+</li>
+</ol>
+<h2><a id="tips" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Tips</h2>
+<ul>
+<li><code>--no-pager</code>: Do not pipe Git output into a pager</li>
+<li><code>$( cd &quot;$( dirname &quot;${BASH_SOURCE[0]}&quot; )&quot; &amp;&amp; pwd )</code>用于输出当前执行的脚本所在目录</li>
+</ul>
+<h2><a id="%E5%8F%82%E8%80%83" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>参考</h2>
+<ul>
+<li><a href="https://github.com/jonreid/XcodeCoverage">XcodeCoverage</a></li>
+<li><a href="https://github.com/linux-test-project/lcov">lcov</a></li>
+<li><a href="http://www.cnblogs.com/turtle-fly/archive/2013/01/09/2851474.html">gcov lcov 覆盖c/c++项目入门</a></li>
+<li><a href="https://git-scm.com/book/zh/v1/Git-%E5%9F%BA%E7%A1%80-%E6%89%93%E6%A0%87%E7%AD%BE">Git 基础 - 打标签</a></li>
+<li><a href="https://llvm.org/docs/CommandGuide/llvm-cov.html#llvm-cov-report">llvm-cov</a></li>
+<li><a href="https://coolshell.cn/articles/9070.html">AWK 简明教程</a></li>
+<li><a href="http://www.runoob.com/linux/linux-comm-awk.html">Linux awk 命令</a></li>
+<li><a href="https://linux.cn/article-7586-1.html">awk 系列：如何使用 awk 和正则表达式过滤文本或文件中的字符串</a></li>
+</ul>
+
+			</div>
+
+		
+	  
+		<footer>
+		 <p class="meta">
+
+			
+			<span class="categories">
+			 
+			</span>
+		    </p>
+		    <p class="meta">
+		      
+		 </p>
+	    
+		<div class="sharing">
+		  
+          
+
+          
+
+		</div>
+
+	    <p class="meta">
+	    
+	        <a class="basic-alignment left" href="15220556376633.html" 
+	        title="Previous Post: 使用XcodeCoverage统计单元测试覆盖率">&laquo; 使用XcodeCoverage统计单元测试覆盖率</a>
+	    
+	    
+	        <a class="basic-alignment right" href="15089947525979.html" 
+	        title="Next Post: 在Taf NodeJS工程中使用node-gyp">在Taf NodeJS工程中使用node-gyp &raquo;</a>
+	    
+	    </p>
+	  </footer>
+	</article>
+</div>
+ <aside class="sidebar"> 
+
+	<section>
+	  <h1>Categories</h1>
+	  <ul id="recent_posts">
+	  
+	      <li class="post">
+	        <a href="%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html"><strong>《iOS面试之道》读书笔记&nbsp;(6)</strong></a>
+	        
+	        
+	        
+	      </li>
+	   
+	  </ul>
+	</section>
+	<section>
+	  <h1>Recent Posts</h1>
+	  <ul id="recent_posts">
+	  
+	      
+		      <li class="post">
+		        <a href="16566860725573.html">使用 framework 转换 XCFramework</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16558196375003.html">记一次私有 pod 发布报错</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="wan-zhuan-cocoapods-xu-yao-le.html">玩转 CocoaPods 需要了解的 Ruby 基础知识</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16553980014674.html">使用 LLDB Python API 自动存储后台请求数据用于单元测试</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="15372506301626.html">JavaScript for Automation(JXA) 入门</a>
+		      </li>
+	     
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	   
+	  </ul>
+	</section>
+	
+</aside> </div></div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 -  -
+  <span class="credit">Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a> &nbsp;&nbsp; Theme by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="asset/prism.js"></script>
+
+
+<style type="text/css">
+  
+/* PrismJS 1.14.0
+https://prismjs.com/download.html#themes=prism-solarizedlight&languages=markup+css+clike+javascript */
+/*
+ Solarized Color Schemes originally by Ethan Schoonover
+ http://ethanschoonover.com/solarized
+
+ Ported for PrismJS by Hector Matos
+ Website: https://krakendev.io
+ Twitter Handle: https://twitter.com/allonsykraken)
+*/
+
+/*
+SOLARIZED HEX
+--------- -------
+base03    #002b36
+base02    #073642
+base01    #586e75
+base00    #657b83
+base0     #839496
+base1     #93a1a1
+base2     #eee8d5
+base3     #fdf6e3
+yellow    #b58900
+orange    #cb4b16
+red       #dc322f
+magenta   #d33682
+violet    #6c71c4
+blue      #268bd2
+cyan      #2aa198
+green     #859900
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #657b83; /* base00 */
+  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+
+  line-height: 1.5;
+
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+  background: #073642; /* base02 */
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+  background: #073642; /* base02 */
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+  padding: 1em;
+  margin: .5em 0;
+  overflow: auto;
+  border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  background-color: #fdf6e3; /* base3 */
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+  padding: .1em;
+  border-radius: .3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #93a1a1; /* base1 */
+}
+
+.token.punctuation {
+  color: #586e75; /* base01 */
+}
+
+.namespace {
+  opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #268bd2; /* blue */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.url,
+.token.inserted {
+  color: #2aa198; /* cyan */
+}
+
+.token.entity {
+  color: #657b83; /* base00 */
+  background: #eee8d5; /* base2 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #859900; /* green */
+}
+
+.token.function,
+.token.class-name {
+  color: #b58900; /* yellow */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #cb4b16; /* orange */
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+
+pre[class*="language-"].line-numbers {
+    position: relative;
+    padding-left: 3.8em;
+    counter-reset: linenumber;
+}
+
+pre[class*="language-"].line-numbers > code {
+    position: relative;
+    white-space: inherit;
+}
+
+.line-numbers .line-numbers-rows {
+    position: absolute;
+    pointer-events: none;
+    top: 0;
+    font-size: 100%;
+    left: -3.8em;
+    width: 3em; /* works for line-numbers below 1000 lines */
+    letter-spacing: -1px;
+    border-right: 1px solid #999;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+}
+
+    .line-numbers-rows > span {
+        pointer-events: none;
+        display: block;
+        counter-increment: linenumber;
+    }
+
+        .line-numbers-rows > span:before {
+            content: counter(linenumber);
+            color: #999;
+            display: block;
+            padding-right: 0.8em;
+            text-align: right;
+        }
+
+</style>
+  
+    
+
+
+</body>
+</html>

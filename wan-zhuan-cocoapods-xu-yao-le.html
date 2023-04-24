@@ -1,0 +1,759 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>
+    
+  玩转 CocoaPods 需要了解的 Ruby 基础知识 - ltryee's blog
+  
+
+  </title>
+  <meta name="author" content="">
+  <meta name="description" content="ltryee's blog">
+
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link href="asset/css/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="atom.xml" rel="alternate" title="ltryee's blog" type="application/atom+xml">
+  <script src="asset/js/modernizr-2.0.js"></script>
+  <script src="asset/js/jquery.min.js"></script>
+  <style type="text/css">
+  .cat-children-p{ padding: 6px 0px;}
+  .hljs{background: none;}
+  </style>
+  <script type="text/javascript">
+  var isAddSildbar = true;
+  </script>
+  <script src="asset/js/octopress.js" type="text/javascript"></script>
+</head>
+<script type="text/javascript">
+//链接新开窗口
+function addBlankTargetForLinks () {
+  $('a[href^="http"]').each(function(){
+      $(this).attr('target', '_blank');
+  });
+}
+$(document).ready(function(event) {
+  addBlankTargetForLinks();
+});
+</script>
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="index.html">ltryee's blog</a></h1>
+  
+    <h2>ltryee's blog</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:ltryee.gitee.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+
+  <li id=""><a target="_self" href="index.html">Home</a></li>
+
+  <li id=""><a target="_self" href="archives.html">Archives</a></li>
+
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content"> 
+<div>
+	<article class="hentry" role="article">
+	<header>
+			  	<h1 class="entry-title">玩转 CocoaPods 需要了解的 Ruby 基础知识</h1>
+				<p class="meta"><time datetime="2021-12-18T18:43:05+08:00" pubdate data-updated="true">2021/12/18</time></p>
+			 </header>
+		  	<div class="entry-content">
+			  	<div class="mweb_toc"><ul>
+<li><a href="#%E8%A1%A8%E8%BE%BE%E5%BC%8F">表达式</a></li>
+<li><a href="#%E5%87%BD%E6%95%B0">函数</a>
+<ul>
+<li><a href="#%E5%87%BD%E6%95%B0%E5%A3%B0%E6%98%8E">函数声明</a></li>
+<li><a href="#%E4%B8%8D%E5%AE%9A%E9%95%BF%E5%8F%82%E6%95%B0%E5%88%97%E8%A1%A8">不定长参数列表</a></li>
+<li><a href="#%E5%87%BD%E6%95%B0%E8%BF%94%E5%9B%9E%E5%80%BC">函数返回值</a></li>
+<li><a href="#%E5%92%8C"><code>?</code>和<code>!</code></a></li>
+</ul>
+</li>
+<li><a href="#block">Block</a>
+<ul>
+<li><a href="#block%E8%AF%AD%E6%B3%95">Block 语法</a></li>
+<li><a href="#%E8%B0%83%E7%94%A8block">调用 Block</a></li>
+</ul>
+</li>
+<li><a href="#%E7%B1%BB">类</a></li>
+<li><a href="#%E5%AD%97%E9%9D%A2%E9%87%8F">字面量</a>
+<ul>
+<li><a href="#string">String</a></li>
+<li><a href="#array">Array</a></li>
+<li><a href="#hash">Hash</a></li>
+</ul>
+</li>
+<li><a href="#eval">eval</a></li>
+<li><a href="#%E5%A5%87%E6%80%AA%E7%9A%84%E7%9F%A5%E8%AF%86%E5%8F%88%E5%A2%9E%E5%8A%A0%E4%BA%86">奇怪的知识又增加了</a></li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
+<li><a href="#%E5%8F%82%E8%80%83">参考</a></li>
+</ul>
+</div>
+<p>我们熟知的 cocoapods 工具是基于 ruby 语言开发的，如果想要更深入地了解 cocoapods 的功能，就需要了解一些 ruby 语言的知识。<br />
+本文介绍了 Podfile 和 Podspec 文件中涉及的 ruby 基本语法。</p>
+<h2><a id="%E8%A1%A8%E8%BE%BE%E5%BC%8F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>表达式</h2>
+<p>先来看一段再熟悉不过的 Podfile，你是否了解它的执行过程呢？</p>
+<pre class="line-numbers"><code class="language-ruby">source 'https://github.com/CocoaPods/Specs.git'
+use_frameworks!
+
+target 'Demo' do
+  pod 'AFNetworking'
+  pod 'Masonry', '~&gt; 0.5.3'
+end
+</code></pre>
+<p>无论是 Podfile 还是 Podspec，本质上都是一段可执行的 ruby 代码。基于这个概念，我们来看一看 Podfile 中都发生了什么。</p>
+<pre class="line-numbers"><code class="language-ruby">pod 'AFNetworking'
+</code></pre>
+<p>先从最常见的说起，相信只要熟悉 iOS 开发的同学都知道，这一行代码的作用是加载一个名为<code>AFNetworking</code>的代码库。这里我们则要更进一步，弄清楚这行代码是如何工作的。<br />
+这是一次 ruby 的函数调用，语句中调用了一个名为 <code>pod</code>的函数，后面是函数的入参，传入的参数是一个字符串<code>AFNetworking</code>。<br />
+ruby 的函数调用有两种形式，一种如上文描述，函数名后面紧跟入参。<br />
+另一种形式是我们熟知的 C 语言风格，函数名后紧跟括号，入参写在括号里面。这两种形式是等价的。</p>
+<pre class="line-numbers"><code class="language-ruby">pod('AFNetworking')
+</code></pre>
+<p>多个入参的语法：</p>
+<pre class="line-numbers"><code class="language-ruby">pod 'AFNetworking', '~&gt; 2.4.1'
+</code></pre>
+<p>等价于</p>
+<pre class="line-numbers"><code class="language-ruby">pod('AFNetworking', '~&gt; 2.4.1')
+</code></pre>
+<p>考虑复杂情况：</p>
+<pre class="line-numbers"><code class="language-ruby">pod 'AFNetworking', :git =&gt; '', :branch =&gt; 'master'
+</code></pre>
+<p>不要被复杂的语法劝退，我们先从整体上分析，这仍然是一次函数调用：函数名是 <code>pod</code>，入参有三个，分别是<code>AFNetworking</code> 、<code>:git =&gt; 'xxx'</code>和<code>:branch =&gt; 'master'</code>。<br />
+那么 <code>:branch =&gt; 'master'</code> 又是什么呢？首先，这个表达式中有三个元素：先从最简单的第三个说起，<code>master</code>是我们熟知的字符串；然后是第一个，<code>:branch</code>是 ruby 的 Symbol 类型对象，可以作为全局唯一标识符使用，我们暂时不需要关心其他细节；第二个运算符<code>=&gt;</code>名叫 “Hash Rocket”，连接前后两个元素，共同组成了 ruby 的 Hash 对象的一个键值对：键为 Symbol 类型的 <code>:branch</code>，值为字符串类型的 <code>master</code>。而 Hash 对象就是一个存储键值对的字典。<br />
+同理，<code>:git =&gt; 'xxx'</code>表示一个键为<code>:git</code>,值为<code>xxxx</code>的Hash对象。<br />
+因此这个表达式可以解释为：调用 pod 函数，传入三个参数，其中第一个是字符串对象，其余两个是 Hash 对象。</p>
+<h2><a id="%E5%87%BD%E6%95%B0" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>函数</h2>
+<p>上一节解释了 ruby 的函数调用，这一节我们介绍函数的声明。</p>
+<h3><a id="%E5%87%BD%E6%95%B0%E5%A3%B0%E6%98%8E" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>函数声明</h3>
+<pre class="line-numbers"><code class="language-ruby">def say_hello(name = 'world')
+  puts &quot;hello #{name}&quot;
+end
+
+say_hello 		 # =&gt; hello world
+say_hello 'ruby' # =&gt; hello ruby
+</code></pre>
+<p>上面代码是一个函数的声明过程，从<code>def</code>开始到<code>end</code>结束，<code>def</code>后接函数名。括号内是参数列表，参数可以设置默认值。</p>
+<h3><a id="%E4%B8%8D%E5%AE%9A%E9%95%BF%E5%8F%82%E6%95%B0%E5%88%97%E8%A1%A8" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>不定长参数列表</h3>
+<p>再考虑上一节提到的 <code>pod</code> 函数，我们调用该函数时传入参数的个数是不确定的，一个两个三个都可以，这是如何实现的呢？<br />
+下面我们就来分析一下 <code>pod</code> 函数的具体实现：</p>
+<pre class="line-numbers"><code class="language-ruby"># File: podfile/dsl.rb
+
+def pod(name = nil, *requirements)
+  unless name
+    raise StandardError, 'A dependency requires a name.'
+  end
+
+  current_target_definition.store_pod(name, *requirements)
+end
+</code></pre>
+<p>重点是参数列表，第一个参数<code>name = nil</code>，传入 pod 名称且带默认值 <code>nil</code>。<br />
+第二个参数<code>*requirements</code>是不定长参数列表的关键。其中<code>*</code>号语法叫做 <strong>Splat Operator</strong>，作用是收集参数匹配后剩余额外的参数，可以算是一个语法糖。考虑<code>pod</code>函数的入参，<code>name</code>会获取传入的第一个参数，<code>*requirements</code>用来捕获除第一个参数之外的所有参数。<br />
+当我们声明函数的参数列表中带有<code>*requirements</code>，在函数调用时则可以传入任意数量的参数，且在函数体内部的<code>requirements</code>是一个数组类型对象。<br />
+当我们调用函数时传入<code>*requirements</code>，表示传递给函数的参数个数不确定，且参数是<code>requirements</code>数组对象中的全部元素。</p>
+<h3><a id="%E5%87%BD%E6%95%B0%E8%BF%94%E5%9B%9E%E5%80%BC" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>函数返回值</h3>
+<p>ruby 中可以使用 <code>return</code> 关键字显式地指定返回值。<br />
+也可以使用隐式返回值：函数返回之前执行的最后一行表达式的值，即为函数的返回值。</p>
+<h3><a id="%E5%92%8C" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>?</code>和<code>!</code></h3>
+<p>通常情况下 Podfile 中会有如下代码：</p>
+<pre class="line-numbers"><code class="language-ruby">use_frameworks!
+</code></pre>
+<p>这一行代码的作用是，把 pod 引入的源代码打包成动态库引入工程。<br />
+在 ruby 运行时环境中，这一行代码实际上是一次函数调用，其中的叹号<code>!</code>也是函数名的一部分。给一个函数命名时加入感叹号并不会引入特定的功能，而是一种约定俗成：表示这个函数中有非常重要的操作，调用时需要多加小心，仅此而已。<br />
+Podfile 中的<code>use_frameworks!</code>的感叹号即是在着重提示开发者，调用这一行会生成动态库。<br />
+以 ruby 的数组 <code>Array</code>举例， <code>Array</code>提供了两个实例方法<code>sort</code>和<code>sort!</code>：不加感叹号的<code>sort</code>方法，执行完成后会返回一个新的排好序的数组；而加了感叹号的<code>sort!</code>方法，则会返回数组对象自身，而此时数组本身已经是排序完的状态，这里的感叹号是在提示调用者，这个方法有非常重要的操作，调用此方法之后，数组原有的顺序将会发生改变。<br />
+相似地，函数名中的问号<code>?</code>也是一种约定俗成，表示该函数的返回值类型是布尔值。例如<code>Array</code>提供的判断数组是否为空的<code>empty?</code>实例方法。</p>
+<pre class="line-numbers"><code class="language-plain_text">irb(main):001:0&gt; a = [1,3,5,2,4,6]
+=&gt; [1, 3, 5, 2, 4, 6]
+irb(main):002:0&gt; b = [1,3,5,2,4,6]
+=&gt; [1, 3, 5, 2, 4, 6]
+irb(main):003:0&gt; sorted_a = a.sort
+=&gt; [1, 2, 3, 4, 5, 6]
+irb(main):004:0&gt; sorted_b = b.sort!
+=&gt; [1, 2, 3, 4, 5, 6]
+irb(main):005:0&gt; a.object_id
+=&gt; 70256668629980
+irb(main):006:0&gt; b.object_id
+=&gt; 70256668750760
+irb(main):007:0&gt; sorted_a.object_id
+=&gt; 70256668822260
+irb(main):008:0&gt; sorted_b.object_id
+=&gt; 70256668750760 #=&gt; 注意，对象b和对象sorted_b的object_id相等，说明是同一个对象
+irb(main):009:0&gt;
+irb(main):010:0&gt; a.empty?
+=&gt; false
+irb(main):011:0&gt; [].empty?
+=&gt; true
+</code></pre>
+<h2><a id="block" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Block</h2>
+<p>本节介绍 ruby 的 block 操作。</p>
+<h3><a id="block%E8%AF%AD%E6%B3%95" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Block 语法</h3>
+<p>下面代码中，<code>do</code>和<code>end</code>关键字，以及它们之间包含的代码，共同组成了 ruby 的一个 block。</p>
+<pre class="line-numbers"><code class="language-ruby">target 'ACKNotificationServiceExtensition' do
+  platform :ios, '11.0'
+  pod 'GTExtensionSDK', '2.2.4'
+end
+</code></pre>
+<p>整段代码的意思是：这是一次函数调用，调用的函数名为<code>target</code>，传入参数是一个字符串<code>ACKNotificationServiceExtensition</code>，且带有一个block <code>do ... end</code>。</p>
+<p>下面代码是一个带参数的 block：</p>
+<pre class="line-numbers"><code class="language-ruby">pre_install do |installer|
+  #  清理 Podfile 中更新的ENV
+  process_source_components installer
+end
+</code></pre>
+<p>其中<code>installer</code>是调用 block 时传入的参数。</p>
+<p>通常意义上，block 是用 <code>do</code> / <code>end</code> 或 <code>{}</code> 包裹的代码块。传入参数名定义在两个竖线 <code>|</code>之间，多个参数之间使用逗号<code>,</code>分隔。<br />
+下面是一段使用 block 实现的遍历并打印数组元素的代码：</p>
+<pre class="line-numbers"><code class="language-ruby">[1,2,3].each { |item| puts item } #=&gt; 这是一个单行闭包
+
+[1,2,3].each do |item| 
+  puts item
+end #=&gt; 以上是一个多行闭包
+</code></pre>
+<p>执行效果：</p>
+<pre class="line-numbers"><code class="language-ruby">irb(main):012:0&gt; [1,2,3].each { |item| puts item } #=&gt; 这是一个单行闭包
+1
+2
+3
+=&gt; [1, 2, 3]
+irb(main):019:0&gt; [1,2,3].each do |item| 
+irb(main):020:1*   puts item
+irb(main):021:1&gt; end #=&gt; 以上是一个多行闭包
+1
+2
+3
+=&gt; [1, 2, 3]
+</code></pre>
+<h3><a id="%E8%B0%83%E7%94%A8block" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>调用 Block</h3>
+<p>在上面代码中，block 中的代码块会在<code>target</code>函数的最后执行。<br />
+参考下面代码中关于<code>target</code>函数的实现：</p>
+<pre class="line-numbers"><code class="language-ruby">def target(name, options = nil)
+  if options
+    raise Informative, &quot;Unsupported options `#{options}` for &quot; \
+      &quot;target `#{name}`.&quot;
+  end
+
+  parent = current_target_definition
+  definition = TargetDefinition.new(name, parent)
+  self.current_target_definition = definition
+  yield if block_given? #=&gt; 这里通过关键字 yield 调用传入的闭包
+ensure
+  self.current_target_definition = parent
+end
+</code></pre>
+<p><code>yield</code> 是 ruby 的关键字，用于调用一个 block。当你使用 <code>yield</code> 关键字时，block 内的代码将会被执行。<code>yield</code> 可以多次调用。<br />
+<code>block_given</code>也是 ruby 的关键字，用于判断外界调用函数时是否传入了 block。</p>
+<h2><a id="%E7%B1%BB" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>类</h2>
+<p><code>Podfile</code> 中没有用到 Ruby 类相关的语法，但是 <code>Podspec</code> 中有。我们再来看一个典型的 <code>Podspec</code> 文件：</p>
+<pre class="line-numbers"><code class="language-ruby"># File: AFNetworking.podspec
+
+Pod::Spec.new do |s|
+  s.name     = 'AFNetworking'
+  s.version  = '4.0.1'
+  s.license  = 'MIT'
+  s.summary  = 'A delightful networking framework for Apple platforms.'
+  s.homepage = 'https://github.com/AFNetworking/AFNetworking'
+  s.social_media_url = 'https://twitter.com/AFNetworking'
+  s.authors  = { 'Mattt Thompson' =&gt; 'm@mattt.me' }
+  s.source   = { :git =&gt; 'https://github.com/AFNetworking/AFNetworking.git', :tag =&gt; s.version }
+
+  s.ios.deployment_target = '9.0'
+  s.osx.deployment_target = '10.10'
+  s.watchos.deployment_target = '2.0'
+  s.tvos.deployment_target = '9.0'
+
+  ....
+
+end
+</code></pre>
+<p>通过上文的介绍我们已经知道，这段代码中从<code>do</code>到<code>end</code>之间的代码块是一个 block。暂时忽略这个 block，<code>Pod::Spec.new</code>表达到意思是创建(new)一个<code>Pod::Spec</code>类型的对象出来。加入block后即为：创建(new)一个<code>Pod::Spec</code>类型的对象，然后把新创建的<code>Pod::Spec</code>类型的对象<code>s</code>传入 block，执行此 block，配置<code>s</code>的各种属性。</p>
+<p><code>Pod::Spec</code>中的<code>Pod</code>表示一个 module，可以理解为命名空间，<code>Spec</code>是定义在命名空间<code>Pod</code>中的一个类的类名。<br />
+源代码如下：</p>
+<pre class="line-numbers"><code class="language-ruby"># File: cocoapods-core/specification.rb
+
+module Pod
+  class Specification
+
+    ....
+
+    attr_reader :parent
+    attr_reader :hash_value
+ 
+    # 初始化方法
+    def initialize(parent = nil, name = nil, test_specification = false, app_specification: false)
+      raise StandardError, &quot;#{self} can not be both an app and test specification.&quot; if test_specification &amp;&amp; app_specification
+      @attributes_hash = {}
+      @subspecs = []
+      @consumers = {}
+      @parent = parent
+      @hash_value = nil
+      @test_specification = test_specification
+      @app_specification = app_specification
+      attributes_hash['name'] = name
+      attributes_hash['test_type'] = :unit if test_specification
+
+      yield self if block_given?
+    end
+
+  end
+end
+</code></pre>
+<h2><a id="%E5%AD%97%E9%9D%A2%E9%87%8F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>字面量</h2>
+<p>本节介绍 ruby 的字面量(Literal)。</p>
+<h3><a id="string" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>String</h3>
+<p>在 ruby 中可以使用单引号<code>'</code>和双引号<code>&quot;</code>表示字符串。<br />
+其中<code>&quot;</code>表示这是一个插值字符串，字符串内使用<code>#{}</code>指定插值表达式。**字符串插值(String interpolation)**是一种将变量、表达式插入字符串的技术，可以显著提高涉及字符串拼接的代码编写效率。</p>
+<pre class="line-numbers"><code class="language-ruby">irb(main):009:0&gt; puts 'I have 4 apples'
+I have 4 apples
+=&gt; nil
+irb(main):010:0&gt; apples = 4
+=&gt; 4
+irb(main):011:0&gt; puts &quot;I have #{apples} apples&quot;
+I have 4 apples
+=&gt; nil
+</code></pre>
+<h3><a id="array" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Array</h3>
+<p>在 ruby 中使用中括号<code>[]</code>声明数组对象。<br />
+例如 Podfile 中指定 configurations 的代码：</p>
+<pre class="line-numbers"><code class="language-ruby">pod 'AFNetworking', '2.4.1', :configurations =&gt; ['Debug', 'Release']
+</code></pre>
+<h3><a id="hash" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Hash</h3>
+<p>Hash 是 ruby 的键值对集合类型，功能类似于字典，使用大括号<code>{}</code>声明。<br />
+例如 Podspec 中指定 source 的代码：</p>
+<pre class="line-numbers"><code class="language-ruby">s.source = {
+  :git =&gt; 'https://github.com/AFNetworking/AFNetworking.git', 
+  :tag =&gt; s.version
+}
+</code></pre>
+<h2><a id="eval" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>eval</h2>
+<p>本文开始的时候提到，Podfile 是一段可执行的 ruby 代码。那么这段代码是如何在 <code>pod install</code>的过程中执行的呢？<br />
+先来看一段执行<code>pod install</code>过程中生成<code>Pod::Podfile</code>对象的代码：</p>
+<pre class="line-numbers"><code class="language-ruby"># File: cocoapods-core/podfile.rb
+
+def self.from_ruby(path, contents = nil)
+  contents ||= File.open(path, 'r:utf-8', &amp;:read) #=&gt; 这里读入 Podfile 文件中的内容
+
+  podfile = Podfile.new(path) do
+	begin
+	  eval(contents, nil, path.to_s) #=&gt; 这里执行 Podfile 中的逻辑
+	rescue Exception =&gt; e
+	  message = &quot;Invalid `#{path.basename}` file: #{e.message}&quot;
+	  raise DSLError.new(message, path, e, contents)
+	end
+  end
+  podfile
+end
+</code></pre>
+<p><code>contents ||= File.open(path, 'r:utf-8', &amp;:read)</code>实现了从文件中读取 Podfile 内容，并存储到变量 <code>contents</code>中。<br />
+<code>eval(contents, nil, path.to_s)</code>实现了执行 Podfile 中的逻辑。其中<code>eval</code>函数的功能是将一个字符串当作表达式执行并且返回一个结果。<br />
+<code>from_ruby</code>函数的执行过程，可以总结为：先从 Podfile 文件中读取代码内容，作为字符串保存。然后创建一个<code>Pod::Podfile</code>对象。再把读入的Podfile字符串当作代码执行，从而完成 Podfile 中的配置工作。</p>
+<h2><a id="%E5%A5%87%E6%80%AA%E7%9A%84%E7%9F%A5%E8%AF%86%E5%8F%88%E5%A2%9E%E5%8A%A0%E4%BA%86" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>奇怪的知识又增加了</h2>
+<p>这是使用 ruby 实现的快速排序算法：</p>
+<pre class="line-numbers"><code class="language-ruby">def qsort(list)
+  return [] if list.size == 0
+  x, *xs = *list
+  less, more = xs.partition { |y| y &lt; x }
+  qsort(less) + [x] + qsort(more)
+end
+</code></pre>
+<p>快速排序算法的核心思想是将待排序数组分割为三部分：被比较元素<code>x</code>、小于该元素的部分<code>less</code>和大于该元素的部分<code>more</code>，同时按<code>less, x, more</code>的顺序重排全部元素，然后递归地对<code>less</code>和<code>more</code>继续进行分割重排，直到分割后的数组为空。</p>
+<p>下面分析<code>qsort</code>函数的具体实现：<br />
+第一行是函数声明，第六行是函数结尾。函数声明了函数名为<code>qsort</code>，且有一个入参<code>list</code>。<br />
+第二行想要表达的意思是，如果<code>list</code>的长度为0，则函数返回空数组。因为是递归实现的快速排序，这一行也承担了终止递归调用的功能。<br />
+ruby中<code>if</code>关键字可以跟在表达式后面，意为：若条件成立，则执行该表达式。这一行等价于：</p>
+<pre class="line-numbers"><code class="language-ruby">if list.size == 0
+  return []
+end
+</code></pre>
+<p>函数第三行实现了被比较元素<code>x</code>的选取，一般取数组的第0个元素，同时将剩余的元素存入数组对象<code>xs</code>。要解释这一行代码是如何工作的，我们首先从一个简单表达式说起： ruby 语言在一个表达式中为<code>a</code>、<code>b</code>两个变量赋值，可以使用一种名为 <strong>Parallel Assignment</strong> 的技术：</p>
+<pre class="line-numbers"><code class="language-ruby">a, b = 0, 1  # =&gt; [0, 1]
+</code></pre>
+<p>如果等号<code>=</code>右边的元素是简单对象，那么写成两个赋值表达式也未尝不可。如果等号<code>=</code>右边的元素也是变量，稍加变化则可以交换<code>a</code>、<code>b</code>两个变量的值：</p>
+<pre class="line-numbers"><code class="language-ruby">a, b = b, a
+</code></pre>
+<p>甚至元素个数都可以是不确定的，那么 Parallel Assignment 配合上文提到的 Splat Operator 将会实现很多强大的功能。例如：将数组<code>list</code>的第0个元素存入变量<code>x</code>，剩余的元素存入数组<code>xs</code>。</p>
+<pre class="line-numbers"><code class="language-ruby">x, *xs = *list
+</code></pre>
+<p>函数第四行实现了<code>less</code>和<code>more</code>数组的构造，小于<code>x</code>的元素存入<code>less</code>，大于或等于<code>x</code>的元素存入<code>more</code>。<br />
+这一行代码是如何工作的呢？<code>=</code>表明这是一次赋值操作，右边的部分<code>xs.partition { |y| y &lt; x }</code>是运算过程，左边的部分<code>less, more</code>是被赋值的变量。<code>less, more</code>很好理解，就是使用 Parallel Assignment 为<code>less</code>和<code>more</code>两个变量赋值。而<code>xs.partition { |y| y &lt; x }</code>表示调用<code>xs</code>对象的<code>partition</code>方法，传入block<code>{ |y| y &lt; x }</code>。<br />
+<code>partition</code>方法的功能是返回两个数组，第一个数组存放使block返回值为<code>true</code>的元素，第二个数组存放剩下的元素。</p>
+<p>第五行有两个作用：<br />
+第一个层面是由两个 <code>+</code> 号连接的三个更小的表达式：第一个和第三个表达式调用 <code>qsort</code> 函数，这里显然是递归调用，是快速排序算法的分治思想的一种实现，对上一行确定的 <code>less</code> 和 <code>more</code> 继续进行排序；第二个表达式使用中括号<code>[]</code>包裹变量 <code>x</code>，其返回值是一个数组，数组中包含一个对象<code>x</code>。而这一行表达式整体表示三个数组相加，即将三个数组接在一起，生成一个新数组。<br />
+第二个层面是作为函数的最后一行表达式，代表了整个函数的返回值：已完成排序的数组。</p>
+<h2><a id="%E6%80%BB%E7%BB%93" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>总结</h2>
+<p>本文围绕 Podfile 和 Podspec 介绍了 ruby 的基本语法。</p>
+<h2><a id="%E5%8F%82%E8%80%83" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>参考</h2>
+<ul>
+<li><a href="https://draveness.me/cocoapods/">CocoaPods 都做了什么？</a></li>
+<li><a href="https://www.rubyguides.com/2016/02/ruby-procs-and-lambdas/">The Ultimate Guide to Blocks, Procs &amp; Lambdas</a></li>
+<li><a href="https://www.desgard.com/2020/10/12/cocoapods-story-5.html">Podspec 文件分析</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Convention_over_configuration">Convention over configuration</a></li>
+<li><a href="https://www.desgard.com/2020/10/08/cocoapods-story-ex-2.html">Ruby 黑魔法 - eval 和 alias</a></li>
+</ul>
+
+			</div>
+
+		
+	  
+		<footer>
+		 <p class="meta">
+
+			
+			<span class="categories">
+			 
+			</span>
+		    </p>
+		    <p class="meta">
+		      
+		 </p>
+	    
+		<div class="sharing">
+		  
+          
+
+          
+
+		</div>
+
+	    <p class="meta">
+	    
+	        <a class="basic-alignment left" href="16558196375003.html" 
+	        title="Previous Post: 记一次私有 pod 发布报错">&laquo; 记一次私有 pod 发布报错</a>
+	    
+	    
+	        <a class="basic-alignment right" href="16553980014674.html" 
+	        title="Next Post: 使用 LLDB Python API 自动存储后台请求数据用于单元测试">使用 LLDB Python API 自动存储后台请求数据用于单元测试 &raquo;</a>
+	    
+	    </p>
+	  </footer>
+	</article>
+</div>
+ <aside class="sidebar"> 
+
+	<section>
+	  <h1>Categories</h1>
+	  <ul id="recent_posts">
+	  
+	      <li class="post">
+	        <a href="%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html"><strong>《iOS面试之道》读书笔记&nbsp;(6)</strong></a>
+	        
+	        
+	        
+	      </li>
+	   
+	  </ul>
+	</section>
+	<section>
+	  <h1>Recent Posts</h1>
+	  <ul id="recent_posts">
+	  
+	      
+		      <li class="post">
+		        <a href="16566860725573.html">使用 framework 转换 XCFramework</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16558196375003.html">记一次私有 pod 发布报错</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="wan-zhuan-cocoapods-xu-yao-le.html">玩转 CocoaPods 需要了解的 Ruby 基础知识</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16553980014674.html">使用 LLDB Python API 自动存储后台请求数据用于单元测试</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="15372506301626.html">JavaScript for Automation(JXA) 入门</a>
+		      </li>
+	     
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	   
+	  </ul>
+	</section>
+	
+</aside> </div></div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 -  -
+  <span class="credit">Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a> &nbsp;&nbsp; Theme by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="asset/prism.js"></script>
+
+
+<style type="text/css">
+  
+/* PrismJS 1.14.0
+https://prismjs.com/download.html#themes=prism-solarizedlight&languages=markup+css+clike+javascript */
+/*
+ Solarized Color Schemes originally by Ethan Schoonover
+ http://ethanschoonover.com/solarized
+
+ Ported for PrismJS by Hector Matos
+ Website: https://krakendev.io
+ Twitter Handle: https://twitter.com/allonsykraken)
+*/
+
+/*
+SOLARIZED HEX
+--------- -------
+base03    #002b36
+base02    #073642
+base01    #586e75
+base00    #657b83
+base0     #839496
+base1     #93a1a1
+base2     #eee8d5
+base3     #fdf6e3
+yellow    #b58900
+orange    #cb4b16
+red       #dc322f
+magenta   #d33682
+violet    #6c71c4
+blue      #268bd2
+cyan      #2aa198
+green     #859900
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #657b83; /* base00 */
+  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+
+  line-height: 1.5;
+
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+  background: #073642; /* base02 */
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+  background: #073642; /* base02 */
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+  padding: 1em;
+  margin: .5em 0;
+  overflow: auto;
+  border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  background-color: #fdf6e3; /* base3 */
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+  padding: .1em;
+  border-radius: .3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #93a1a1; /* base1 */
+}
+
+.token.punctuation {
+  color: #586e75; /* base01 */
+}
+
+.namespace {
+  opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #268bd2; /* blue */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.url,
+.token.inserted {
+  color: #2aa198; /* cyan */
+}
+
+.token.entity {
+  color: #657b83; /* base00 */
+  background: #eee8d5; /* base2 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #859900; /* green */
+}
+
+.token.function,
+.token.class-name {
+  color: #b58900; /* yellow */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #cb4b16; /* orange */
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+
+pre[class*="language-"].line-numbers {
+    position: relative;
+    padding-left: 3.8em;
+    counter-reset: linenumber;
+}
+
+pre[class*="language-"].line-numbers > code {
+    position: relative;
+    white-space: inherit;
+}
+
+.line-numbers .line-numbers-rows {
+    position: absolute;
+    pointer-events: none;
+    top: 0;
+    font-size: 100%;
+    left: -3.8em;
+    width: 3em; /* works for line-numbers below 1000 lines */
+    letter-spacing: -1px;
+    border-right: 1px solid #999;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+}
+
+    .line-numbers-rows > span {
+        pointer-events: none;
+        display: block;
+        counter-increment: linenumber;
+    }
+
+        .line-numbers-rows > span:before {
+            content: counter(linenumber);
+            color: #999;
+            display: block;
+            padding-right: 0.8em;
+            text-align: right;
+        }
+
+</style>
+  
+    
+
+
+</body>
+</html>

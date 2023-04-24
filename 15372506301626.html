@@ -1,0 +1,670 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>
+    
+  JavaScript for Automation(JXA) 入门 - ltryee's blog
+  
+
+  </title>
+  <meta name="author" content="">
+  <meta name="description" content="ltryee's blog">
+
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link href="asset/css/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="atom.xml" rel="alternate" title="ltryee's blog" type="application/atom+xml">
+  <script src="asset/js/modernizr-2.0.js"></script>
+  <script src="asset/js/jquery.min.js"></script>
+  <style type="text/css">
+  .cat-children-p{ padding: 6px 0px;}
+  .hljs{background: none;}
+  </style>
+  <script type="text/javascript">
+  var isAddSildbar = true;
+  </script>
+  <script src="asset/js/octopress.js" type="text/javascript"></script>
+</head>
+<script type="text/javascript">
+//链接新开窗口
+function addBlankTargetForLinks () {
+  $('a[href^="http"]').each(function(){
+      $(this).attr('target', '_blank');
+  });
+}
+$(document).ready(function(event) {
+  addBlankTargetForLinks();
+});
+</script>
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="index.html">ltryee's blog</a></h1>
+  
+    <h2>ltryee's blog</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:ltryee.gitee.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+
+  <li id=""><a target="_self" href="index.html">Home</a></li>
+
+  <li id=""><a target="_self" href="archives.html">Archives</a></li>
+
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content"> 
+<div>
+	<article class="hentry" role="article">
+	<header>
+			  	<h1 class="entry-title">JavaScript for Automation(JXA) 入门</h1>
+				<p class="meta"><time datetime="2018-09-18T14:03:50+08:00" pubdate data-updated="true">2018/09/18</time></p>
+			 </header>
+		  	<div class="entry-content">
+			  	<div class="mweb_toc"><ul>
+<li><a href="#0%E5%AD%A6%E4%B9%A0%E4%B8%80%E4%B8%AA%E6%96%B0%E5%B7%A5%E5%85%B7%E7%9A%84%E6%97%B6%E5%80%99%EF%BC%8C%E6%88%91%E4%BB%AC%E5%88%B0%E5%BA%95%E5%9C%A8%E5%AD%A6%E4%BB%80%E4%B9%88%EF%BC%9F">0. 学习一个新工具的时候，我们到底在学什么？</a></li>
+<li><a href="#1-jxa%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5">1. JXA 基本概念</a>
+<ul>
+<li><a href="#%E8%84%9A%E6%9C%AC%E6%98%AF%E5%A6%82%E4%BD%95%E5%B7%A5%E4%BD%9C%E7%9A%84">脚本是如何工作的</a></li>
+<li><a href="#%E8%84%9A%E6%9C%AC%E7%9A%84%E7%B1%BB%E5%9E%8B%E6%9C%89%E5%93%AA%E4%BA%9B">脚本的类型有哪些</a></li>
+</ul>
+</li>
+<li><a href="#2%E5%AE%89%E8%A3%85%E5%B7%A5%E5%85%B7">2. 安装工具</a></li>
+<li><a href="#3%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83">3. 开发环境</a>
+<ul>
+<li><a href="#script-editor">Script Editor</a>
+<ul>
+<li><a href="#hello-world">Hello world</a></li>
+<li><a href="#%E5%AF%BB%E6%B1%82%E5%B8%AE%E5%8A%A9">寻求帮助</a></li>
+</ul>
+</li>
+<li><a href="#repl">REPL</a></li>
+<li><a href="#shell-script">Shell Script</a></li>
+<li><a href="#shebang-script">Shebang Script</a></li>
+</ul>
+</li>
+<li><a href="#4%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80">4. 编程语言</a></li>
+<li><a href="#5%E6%A1%86%E6%9E%B6%EF%BC%8C%E5%85%A8%E5%B1%80%E5%AF%B9%E8%B1%A1%EF%BC%8C%E7%AC%AC%E4%B8%89%E6%96%B9%E5%BA%93%E4%BB%A5%E5%8F%8A%E5%85%B6%E4%BB%96%E2%80%A6%E2%80%A6">5. 框架，全局对象，第三方库以及其他……</a>
+<ul>
+<li><a href="#%E8%84%9A%E6%9C%AC%E4%B8%AD%E7%9A%84%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%90%86%E5%87%BD%E6%95%B0event-handlers">脚本中的事件处理函数(Event Handlers)</a></li>
+<li><a href="#%E5%85%A8%E5%B1%80js%E5%AF%B9%E8%B1%A1">全局 JS 对象</a></li>
+<li><a href="#jxa%E4%B8%8E-objc">JXA 与 ObjC</a>
+<ul>
+<li><a href="#%E5%8A%A0%E8%BD%BDoc%E6%A1%86%E6%9E%B6%E5%88%B0-js%E4%B8%8A%E4%B8%8B%E6%96%87">加载 OC 框架到 JS 上下文</a></li>
+<li><a href="#%E8%B0%83%E7%94%A8oc%E6%96%B9%E6%B3%95%E7%9A%84-js%E8%AF%AD%E6%B3%95">调用 OC 方法的 JS 语法</a></li>
+<li><a href="#%E5%BC%95%E7%94%A8%E8%B0%83%E7%94%A8%E4%BC%A0%E5%8F%82">引用调用传参</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99">参考资料</a></li>
+</ul>
+</div>
+<blockquote>
+<p>从 macOS 10.10 开始(当时还叫 OS X)，苹果提供了一种新的使用 JavaScript 语言编写自动化脚本的方式，和已有的 AppleScript 一样，能够方便我们操作其他应用，自动化地处理一些事务。然而使用 JavaScript 编写代码要比 AppleScript 容易得多。</p>
+</blockquote>
+<h2><a id="0%E5%AD%A6%E4%B9%A0%E4%B8%80%E4%B8%AA%E6%96%B0%E5%B7%A5%E5%85%B7%E7%9A%84%E6%97%B6%E5%80%99%EF%BC%8C%E6%88%91%E4%BB%AC%E5%88%B0%E5%BA%95%E5%9C%A8%E5%AD%A6%E4%BB%80%E4%B9%88%EF%BC%9F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>0. 学习一个新工具的时候，我们到底在学什么？</h2>
+<p>在了解 JXA 之前，先考虑一个问题：当决定要学习使用 JXA 的时候，我们到底需要学习什么？不仅是本文档介绍的 JXA，学习任何一个新工具，都逃不过这个问题：</p>
+<ul>
+<li>了解基本概念</li>
+<li>安装开发工具</li>
+<li>配置开发环境</li>
+<li>学习编程语言</li>
+<li>了解基本框架、工具的使用</li>
+</ul>
+<h2><a id="1-jxa%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>1. JXA 基本概念</h2>
+<p>在日常工作中，我们通常需要处理很多复杂、重复且耗时的任务。通过编写脚本，我们可以自动化地处理一些与应用、进程和操作系统交互的事务，从而提高效率，减少错误，节约时间。</p>
+<h3><a id="%E8%84%9A%E6%9C%AC%E6%98%AF%E5%A6%82%E4%BD%95%E5%B7%A5%E4%BD%9C%E7%9A%84" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>脚本是如何工作的</h3>
+<p><a href="https://developer.apple.com/library/archive/documentation/LanguagesUtilities/Conceptual/MacAutomationScriptingGuide/HowMacScriptingWorks.html#//apple_ref/doc/uid/TP40016239-CH73-SW1"><em>开放脚本架构(Open Scripting Architecture, OSA)</em></a>为 OS X 提供了夸应用通信的标准和扩展机制，这种通信发生于<em>应用(Applecations)<em>之间交换</em>苹果事件(Apple Events)</em>。Apple Events 即一种封装了命令和数据的<em>进程间通信(interprocess message)</em>。</p>
+<p>一个*脚本化应用(scriptable application)<em>通过执行操作或提供数据来响应 Apple events。每个脚本化应用都实现了自己的脚本功能，并通过</em>脚本字典(scripting dictionary)*公开自己独特的术语。</p>
+<p>在 OS X 中，OSA 提供以下能力：</p>
+<ul>
+<li>开发者可以创建脚本化应用并公开脚本术语</li>
+<li>用户可以通过脚本语言编写脚本</li>
+<li>使用 Apple events 可以在同一台计算机的不同应用或不同计算机之间进行通信</li>
+</ul>
+<p>*开放脚本框架(Open Scripting framework)<em>中定义了用于创建</em>脚本组件(scripting components)*的标准数据结构、程序和资源。该框架同时提供API，用于编译、执行、加载和存储脚本。<br />
+*苹果事件管理器(Apple Event Manager)*为创建脚本化应用提供基础支持，由 CoreServices 框架内的 AE 框架实现。开发者可以通过 Foundation 框架中的 Apple Event API 与 Apple Event Manager 进行交互。</p>
+<p>下图展示了上述组件如何在操作系统中协同工作<sup class="footnote-ref"><a href="#fn-1" id="fnref-1_ref" data-footnote-ref>1</a></sup>：</p>
+<p><img src="https://developer.apple.com/library/archive/documentation/LanguagesUtilities/Conceptual/MacAutomationScriptingGuide/Art/execute_script_2x.png" alt="The Open Scripting Architecture workflow" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<h3><a id="%E8%84%9A%E6%9C%AC%E7%9A%84%E7%B1%BB%E5%9E%8B%E6%9C%89%E5%93%AA%E4%BA%9B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>脚本的类型有哪些</h3>
+<ul>
+<li><em><strong>Applets</strong></em>: 已保存为app的脚本，行为与其他app类似，双击可以启动并运行。运行一个 Applet 时，脚本<code>run</code>函数中的代码会执行。如果脚本没有<code>run</code>函数，则视脚本的顶级域为隐式的<code>run</code>函数。</li>
+<li><em><strong>Droplets</strong></em>: 可向图标拖放文件和文件夹的脚本。双击可以启动并运行脚本的<code>run</code>函数，或将文件、文件夹拖放到图标上进行处理。在一个 Droplet 脚本中，拖放进来的文件或文件夹将会传入<code>openDocuments</code>函数处理。</li>
+<li><em><strong>Scripts</strong></em>: 脚本文档。双击可以打开并编辑。一些应用和进程可以加载并运行 Script。例如，邮件规则可以执行脚本来处理符合特定条件的邮件。脚本有时被称为<em>编译脚本(compiled scripts)</em>。</li>
+<li><em><strong>Script bundles</strong></em>: 以 <em>bundle</em> 形式保存的脚本文档。Bundle 是一个具有标准化分层结构的目录，它包含可执行代码和该代码使用的资源。</li>
+<li><em><strong>Stay-open scripts</strong></em>: 默认情况下，applets 和 droplets 在启动后运行并退出。但是，当配置为保持打开状态时，它们将保持打开状态，直到明确命令退出为止。通常，保持打开的脚本包含<code>idle</code>函数，它启动定期操作。</li>
+</ul>
+<p>在 Mac 上，编写自动化脚本主要使用 AppleScript 和 JavaScript。本文档将从零开始介绍如何使用 JavaScript 编写自动化脚本。</p>
+<h2><a id="2%E5%AE%89%E8%A3%85%E5%B7%A5%E5%85%B7" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>2. 安装工具</h2>
+<p>从 macOS 10.10 开始，苹果为 OSA 加入了 JavaScript 的支持，在已有能够运行 AppleScript 脚本的地方，都可以运行 JavaScript 编写的脚本。因此我们不需要安装额外的任何软件，使用<em>Script Editor</em>应用或命令行使用<code>osascript</code>命令即可运行 JavaScript 脚本。</p>
+<h2><a id="3%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>3. 开发环境</h2>
+<h3><a id="script-editor" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Script Editor</h3>
+<p>打开脚本编辑器应用<code>/Applications/Utilities/Script Editor.app</code>。</p>
+<h4><a id="hello-world" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Hello world</h4>
+<p>新建一个脚本，输入</p>
+<pre class="line-numbers"><code class="language-js">console.log('hello world')
+</code></pre>
+<p>点击运行:<br />
+<img src="media/15372506301626/15372628440741.jpg" alt="-w700" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<h4><a id="%E5%AF%BB%E6%B1%82%E5%B8%AE%E5%8A%A9" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>寻求帮助</h4>
+<p>如果我们需要查找某个应用的脚本字典，在状态栏点击<code>文件</code>-&gt;<code>打开词典...</code>，在弹出的对话框中选择应用。</p>
+<p><img src="https://developer.apple.com/library/archive/documentation/LanguagesUtilities/Conceptual/MacAutomationScriptingGuide/Art/script-editor_dictionary-callouts_2x.png" alt="脚本字典" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<h3><a id="repl" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>REPL</h3>
+<p>执行命令<code>osascript -il JavaScript</code>。其中<code>-i</code>表示交互模式，<code>-l JavaScript</code>表示使用 JavaScript ，不加该标签则默认使用 AppleScript。</p>
+<pre class="line-numbers"><code class="language-sh">➜  ~ osascript -il JavaScript
+&gt;&gt; console.log('hello world.')
+hello world.
+=&gt; undefined
+&gt;&gt; 
+</code></pre>
+<h3><a id="shell-script" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Shell Script</h3>
+<p>执行命令<code>osascript -l JavaScript -e '$.NSLog(&quot;hello ObjC&quot;)'</code>:</p>
+<pre class="line-numbers"><code class="language-sh">➜  ~ osascript -l JavaScript -e '$.NSLog(&quot;hello ObjC&quot;)'
+2018-09-18 16:43:31.327 osascript[35632:34312370] hello ObjC
+</code></pre>
+<h3><a id="shebang-script" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Shebang Script</h3>
+<p>创建文件并保存到<code>./test.js</code>：</p>
+<pre class="line-numbers"><code class="language-sh">#!/usr/bin/env osascript -l JavaScript
+
+function run(argv) {
+  console.log(JSON.stringify(argv))
+}
+</code></pre>
+<p>执行命令<code>./test.js -a -b -c -d lll</code>：</p>
+<pre class="line-numbers"><code class="language-sh">➜  ~ ./test.js -a -b -c -d lll
+[&quot;-a&quot;,&quot;-b&quot;,&quot;-c&quot;,&quot;-d&quot;,&quot;lll&quot;]
+</code></pre>
+<p>或<code>osascript -l JavaScript ./test.js -a aaa -b bbb</code>：</p>
+<pre class="line-numbers"><code class="language-sh">➜  ~ osascript -l JavaScript ./test.js -a aaa -b bbb
+[&quot;-a&quot;,&quot;aaa&quot;,&quot;-b&quot;,&quot;bbb&quot;]
+</code></pre>
+<h2><a id="4%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>4. 编程语言</h2>
+<p>JavaScript 本身无需多言。值得关注的是，OSA 对 JavaScript 功能的支持取决于 macOS 的版本。JXA 使用的 JavaScriptCore 引擎版本似乎与 macOS 捆绑的 Safari 版本相对应<sup class="footnote-ref"><a href="#fn-2" id="fnref-2_ref" data-footnote-ref>2</a></sup>。参阅 <a href="https://kangax.github.io/compat-table/es6/">kangax's compatibility table</a> 并找到 SF 列查看不同 Safari 版本的支持情况。</p>
+<h2><a id="5%E6%A1%86%E6%9E%B6%EF%BC%8C%E5%85%A8%E5%B1%80%E5%AF%B9%E8%B1%A1%EF%BC%8C%E7%AC%AC%E4%B8%89%E6%96%B9%E5%BA%93%E4%BB%A5%E5%8F%8A%E5%85%B6%E4%BB%96%E2%80%A6%E2%80%A6" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>5. 框架，全局对象，第三方库以及其他……</h2>
+<h3><a id="%E8%84%9A%E6%9C%AC%E4%B8%AD%E7%9A%84%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%90%86%E5%87%BD%E6%95%B0event-handlers" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>脚本中的事件处理函数(Event Handlers)</h3>
+<p>脚本中实现特定的名字的函数，可以接收特定的事件：</p>
+<ul>
+<li>
+<p><code>run</code>：脚本运行时调用该函数。默认情况下，脚本顶级域中的所有代码都被视为包含在隐式的<code>run</code>函数中。</p>
+<pre class="line-numbers"><code class="language-js">function run() {
+    var app = Application.currentApplication()
+    app.includeStandardAdditions = true
+    app.displayDialog(&quot;The script is running.&quot;)
+}
+</code></pre>
+</li>
+<li>
+<p><code>quit</code>：当脚本退出时调用。这个函数是可选的，如有必要，可以在该函数中执行数据清理操作。</p>
+<pre class="line-numbers"><code class="language-js">var app = Application.currentApplication()
+app.includeStandardAdditions = true
+ 
+function quit() {
+    app.displayDialog(&quot;The script is quitting.&quot;)
+}
+</code></pre>
+</li>
+<li>
+<p><code>openDocuments</code>：实现该函数的脚本将自动处理拖放操作。当以这种方式启动时，<code>openDocuments</code>函数会传入一个参数，存有被拖放文件或文件夹的列表。</p>
+<pre class="line-numbers"><code class="language-js">function openDocuments(droppedItems) {
+    // Process the dropped items here
+}
+</code></pre>
+</li>
+<li>
+<p><code>idle</code>：保存脚本时，<code>文件格式</code>选择<code>应用程序</code>，同时勾选<code>运行处理程序后保持打开</code>。在保持打开的脚本 app 中，脚本在<code>run</code>函数完成后保持打开状态，并且每30秒调用一次<code>idle</code>函数。可以使用该函数执行周期任务，例如监视文件夹以查找要处理的新文件。要更改<code>idle</code>函数的调用间隔，需要函数返回一个新的间隔，单位为秒。</p>
+<p><img src="media/15372506301626/15372739307536.jpg" alt="保存保持打开的脚本" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<pre class="line-numbers"><code class="language-js">var app = Application.currentApplication()
+app.includeStandardAdditions = true
+ 
+function idle() {
+    app.displayDialog(&quot;The script is idling.&quot;)
+    return 5
+}
+</code></pre>
+</li>
+</ul>
+<h3><a id="%E5%85%A8%E5%B1%80js%E5%AF%B9%E8%B1%A1" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>全局 JS 对象</h3>
+<p>作为 JavaScript 的执行环境，JXA 包含了以下全局变量<sup class="footnote-ref"><a href="#fn-3" id="fnref-3_ref" data-footnote-ref>3</a></sup>：</p>
+<ul>
+<li><code>Automation</code></li>
+<li><code>Application</code></li>
+<li><code>Library</code></li>
+<li><code>Path</code></li>
+<li><code>Progress</code></li>
+<li><code>ObjectSpecifier</code></li>
+<li><code>delay</code></li>
+<li><code>console.log</code></li>
+<li><code>ObjC</code></li>
+<li><code>Ref</code></li>
+<li><code>$</code></li>
+</ul>
+<h3><a id="jxa%E4%B8%8E-objc" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>JXA 与 ObjC</h3>
+<blockquote>
+<p>这是最激动人心的部分。</p>
+</blockquote>
+<h4><a id="%E5%8A%A0%E8%BD%BDoc%E6%A1%86%E6%9E%B6%E5%88%B0-js%E4%B8%8A%E4%B8%8B%E6%96%87" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>加载 OC 框架到 JS 上下文</h4>
+<p>JXA通过内置的 <a href="https://developer.apple.com/library/archive/releasenotes/InterapplicationCommunication/RN-JavaScriptForAutomation/Articles/OSX10-10.html#//apple_ref/doc/uid/TP40014508-CH109-SW17"><em>Objective-C Bridge</em></a> 调用 ObjC 接口。上一节提到的<code>ObjC</code>和<code>$</code>是用来调用 Objective-C Bridge 全局对象。<br />
+其中<code>ObjC</code>对象提供接口用于 JS 引擎访问/操作 OC 对象，而<code>$</code>则是 OC 对象在 JS 上下文中的映射。看不懂这句话也没关系，举个例子，使用<code>ObjC.import()</code>函数加载外部框架：</p>
+<pre class="line-numbers"><code class="language-js">ObjC.import('Cocoa')
+$.NSBeep()
+</code></pre>
+<p>如果直接执行<code>$.NSBeep()</code>，会收到错误：</p>
+<pre class="line-numbers"><code class="language-plain_text">&gt;&gt; $.NSBeep()
+!! Error on line 1: TypeError: $.NSBeep is not a function. (In '$.NSBeep()', '$.NSBeep' is undefined)
+</code></pre>
+<p>这是因为<code>NSBeep()</code>是 Cocoa 框架的一部分，我们在使用该函数前需要调用<code>ObjC.import('Cocoa')</code>将函数加载到 JS 上下文中。</p>
+<h4><a id="%E8%B0%83%E7%94%A8oc%E6%96%B9%E6%B3%95%E7%9A%84-js%E8%AF%AD%E6%B3%95" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>调用 OC 方法的 JS 语法</h4>
+<p>举个例子，下面的 OC 代码：</p>
+<pre class="line-numbers"><code class="language-objc">NSRect frame = NSMakeRect(0, 0, 200, 200);
+NSWindow* window  = [[NSWindow alloc] initWithContentRect:frame
+                    styleMask:NSBorderlessWindowMask
+                    backing:NSBackingStoreBuffered
+                    defer:NO]
+</code></pre>
+<p>在 JXA 中这样实现：</p>
+<pre class="line-numbers"><code class="language-js">var styleMask = $.NSTitledWindowMask | $.NSClosableWindowMask | $.NSMiniaturizableWindowMask;
+var frame = $.NSMakeRect(0, 0, windowWidth, windowHeight);
+var window = $.NSWindow.alloc.initWithContentRectStyleMaskBackingDefer(
+  frame,
+  styleMask,
+  $.NSBackingStoreBuffered,
+  false
+);
+</code></pre>
+<h4><a id="%E5%BC%95%E7%94%A8%E8%B0%83%E7%94%A8%E4%BC%A0%E5%8F%82" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>引用调用传参</h4>
+<p><code>NSFileManager</code>类的方法<code>- (BOOL)fileExistsAtPath:(NSString *)path isDirectory:(BOOL *)isDirectory;</code>，第二个参数的类型为<code>BOOL *</code>，在 OC 中我们通常使用引用调用来传递这个参数：</p>
+<pre class="line-numbers"><code class="language-objc">BOOL isDir;
+NSFileManager *fileManager = [[NSFileManager alloc] init];
+[fileManager fileExistsAtPath:fontPath isDirectory:&amp;isDir];
+</code></pre>
+<p>在 JXA 中可以使用<code>Ref()</code>函数获取一个变量，该变量可以传给需要引用调用的参数。调用完成后，变量数据通过<code>isDirRef[0]</code>返回：</p>
+<pre class="line-numbers"><code class="language-js">var isDirRef = Ref()  //set up a variable which can be passed by reference to ObjC functions.
+$.NSFileManager.alloc.init.fileExistsAtPathIsDirectory(&quot;/Users/Sancarn/Desktop/D.png&quot;, isDir)
+var isDir = isDirRef[0]     //get the data from the variable
+</code></pre>
+<h2><a id="%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>参考资料</h2>
+<ul>
+<li><a href="https://developer.apple.com/library/archive/documentation/LanguagesUtilities/Conceptual/MacAutomationScriptingGuide/index.html#//apple_ref/doc/uid/TP40016239-CH56-SW1">Mac Automation Scripting Guide</a></li>
+<li><a href="https://github.com/JXA-Cookbook/JXA-Cookbook/wiki">JavaScript for Automation Cookbook</a></li>
+<li><a href="https://developer.apple.com/library/archive/releasenotes/InterapplicationCommunication/RN-JavaScriptForAutomation/Articles/OSX10-10.html">JavaScript for Automation Release Notes</a></li>
+<li><a href="https://developer.apple.com/library/archive/documentation/AppleScript/Conceptual/AppleScriptLangGuide/introduction/ASLR_intro.html#//apple_ref/doc/uid/TP4000098">AppleScript Language Guide</a></li>
+</ul>
+<section class="footnotes" data-footnotes>
+<ol>
+<li id="fn-1">
+<p><a href="https://developer.apple.com/library/archive/documentation/LanguagesUtilities/Conceptual/MacAutomationScriptingGuide/index.html#//apple_ref/doc/uid/TP40016239-CH56-SW1">Mac Automation Scripting Guide</a> <a href="#fnref-1_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-2">
+<p><a href="https://github.com/JXA-Cookbook/JXA-Cookbook/wiki">JavaScript for Automation Cookbook</a> <a href="#fnref-2_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-3">
+<p><a href="https://developer.apple.com/library/archive/releasenotes/InterapplicationCommunication/RN-JavaScriptForAutomation/Articles/OSX10-10.html">JavaScript for Automation Release Notes</a> <a href="#fnref-3_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+</ol>
+</section>
+
+			</div>
+
+		
+	  
+		<footer>
+		 <p class="meta">
+
+			
+			<span class="categories">
+			 
+			</span>
+		    </p>
+		    <p class="meta">
+		      
+		 </p>
+	    
+		<div class="sharing">
+		  
+          
+
+          
+
+		</div>
+
+	    <p class="meta">
+	    
+	        <a class="basic-alignment left" href="16553980014674.html" 
+	        title="Previous Post: 使用 LLDB Python API 自动存储后台请求数据用于单元测试">&laquo; 使用 LLDB Python API 自动存储后台请求数据用于单元测试</a>
+	    
+	    
+	        <a class="basic-alignment right" href="15366534889994.html" 
+	        title="Next Post: 《iOS面试之道》读书笔记 - 网络请求相关">《iOS面试之道》读书笔记 - 网络请求相关 &raquo;</a>
+	    
+	    </p>
+	  </footer>
+	</article>
+</div>
+ <aside class="sidebar"> 
+
+	<section>
+	  <h1>Categories</h1>
+	  <ul id="recent_posts">
+	  
+	      <li class="post">
+	        <a href="%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html"><strong>《iOS面试之道》读书笔记&nbsp;(6)</strong></a>
+	        
+	        
+	        
+	      </li>
+	   
+	  </ul>
+	</section>
+	<section>
+	  <h1>Recent Posts</h1>
+	  <ul id="recent_posts">
+	  
+	      
+		      <li class="post">
+		        <a href="16566860725573.html">使用 framework 转换 XCFramework</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16558196375003.html">记一次私有 pod 发布报错</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="wan-zhuan-cocoapods-xu-yao-le.html">玩转 CocoaPods 需要了解的 Ruby 基础知识</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16553980014674.html">使用 LLDB Python API 自动存储后台请求数据用于单元测试</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="15372506301626.html">JavaScript for Automation(JXA) 入门</a>
+		      </li>
+	     
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	   
+	  </ul>
+	</section>
+	
+</aside> </div></div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 -  -
+  <span class="credit">Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a> &nbsp;&nbsp; Theme by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="asset/prism.js"></script>
+
+
+<style type="text/css">
+  
+/* PrismJS 1.14.0
+https://prismjs.com/download.html#themes=prism-solarizedlight&languages=markup+css+clike+javascript */
+/*
+ Solarized Color Schemes originally by Ethan Schoonover
+ http://ethanschoonover.com/solarized
+
+ Ported for PrismJS by Hector Matos
+ Website: https://krakendev.io
+ Twitter Handle: https://twitter.com/allonsykraken)
+*/
+
+/*
+SOLARIZED HEX
+--------- -------
+base03    #002b36
+base02    #073642
+base01    #586e75
+base00    #657b83
+base0     #839496
+base1     #93a1a1
+base2     #eee8d5
+base3     #fdf6e3
+yellow    #b58900
+orange    #cb4b16
+red       #dc322f
+magenta   #d33682
+violet    #6c71c4
+blue      #268bd2
+cyan      #2aa198
+green     #859900
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #657b83; /* base00 */
+  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+
+  line-height: 1.5;
+
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+  background: #073642; /* base02 */
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+  background: #073642; /* base02 */
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+  padding: 1em;
+  margin: .5em 0;
+  overflow: auto;
+  border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  background-color: #fdf6e3; /* base3 */
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+  padding: .1em;
+  border-radius: .3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #93a1a1; /* base1 */
+}
+
+.token.punctuation {
+  color: #586e75; /* base01 */
+}
+
+.namespace {
+  opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #268bd2; /* blue */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.url,
+.token.inserted {
+  color: #2aa198; /* cyan */
+}
+
+.token.entity {
+  color: #657b83; /* base00 */
+  background: #eee8d5; /* base2 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #859900; /* green */
+}
+
+.token.function,
+.token.class-name {
+  color: #b58900; /* yellow */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #cb4b16; /* orange */
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+
+pre[class*="language-"].line-numbers {
+    position: relative;
+    padding-left: 3.8em;
+    counter-reset: linenumber;
+}
+
+pre[class*="language-"].line-numbers > code {
+    position: relative;
+    white-space: inherit;
+}
+
+.line-numbers .line-numbers-rows {
+    position: absolute;
+    pointer-events: none;
+    top: 0;
+    font-size: 100%;
+    left: -3.8em;
+    width: 3em; /* works for line-numbers below 1000 lines */
+    letter-spacing: -1px;
+    border-right: 1px solid #999;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+}
+
+    .line-numbers-rows > span {
+        pointer-events: none;
+        display: block;
+        counter-increment: linenumber;
+    }
+
+        .line-numbers-rows > span:before {
+            content: counter(linenumber);
+            color: #999;
+            display: block;
+            padding-right: 0.8em;
+            text-align: right;
+        }
+
+</style>
+  
+    
+
+
+</body>
+</html>

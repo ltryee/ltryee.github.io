@@ -1,0 +1,2821 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[ltryee's blog]]></title>
+  <link href="https://ltryee.gitee.io/atom.xml" rel="self"/>
+  <link href="https://ltryee.gitee.io/"/>
+  <updated>2022-10-08T10:53:43+08:00</updated>
+  <id>https://ltryee.gitee.io/</id>
+  <author>
+    <name><![CDATA[]]></name>
+    
+  </author>
+  <generator uri="http://www.coderforart.com/">CoderForArt</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[使用 framework 转换 XCFramework]]></title>
+    <link href="https://ltryee.gitee.io/16566860725573.html"/>
+    <updated>2022-07-01T22:34:32+08:00</updated>
+    <id>https://ltryee.gitee.io/16566860725573.html</id>
+    <content type="html"><![CDATA[
+<div class="mweb_toc"><ul>
+<li><a href="#xcframework%E7%AE%80%E4%BB%8B">XCFramework 简介</a>
+<ul>
+<li><a href="#xcframework%E9%87%8C%E6%9C%89%E4%BB%80%E4%B9%88">XCFramework 里有什么</a></li>
+<li><a href="#%E5%A6%82%E4%BD%95%E5%88%B6%E4%BD%9Cxcframework">如何制作 XCFramework</a></li>
+</ul>
+</li>
+<li><a href="#%E8%BD%AC%E6%8D%A2arm64%E4%BA%8C%E8%BF%9B%E5%88%B6">转换 arm64 二进制</a></li>
+<li><a href="#demo">Demo</a></li>
+<li><a href="#references">References</a></li>
+</ul>
+</div>
+<p>我们在<a href="16558196375003.html">前一篇文章</a>中提到，由于真机使用的 arm64 架构的二进制与 M1 模拟器使用的 arm64 架构二进制不兼容，在 xcode 工程中引入一些较早时间构建的 framework，会导致 arm64 架构模拟器链接失败。<br />
+构建年代久远的 framework，是没有模拟器可用的 arm64 二进制的，若是三方提供的闭源 framework，甚至连使用源码重新构建的机会都没有。</p>
+<p>基于上述原因，我们只能通过现有的 framework 想办法。 此时要解决的问题有两个，一是如何使用现有的真机 arm64 二进制，生成模拟器可用的 arm64 二进制；二是两个 arm64 二进制如何共存。<br />
+对于前一个问题，我们使用 <a href="https://github.com/bogo/arm64-to-sim">arm64-to-sim</a> 工具能够把为真机构建的 arm64 架构的二进制转换成模拟器可用的 arm64 二进制。对于后一个问题，苹果为我们提供的解决方案是<a href="https://help.apple.com/xcode/mac/11.4/#/dev544efab96">创建 XCFramework</a>。</p>
+<h2><a id="xcframework%E7%AE%80%E4%BB%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>XCFramework 简介</h2>
+<blockquote>
+<p>An XCFramework is a distributable binary package created by Xcode that contains variants of a framework or library so that it can be used on multiple platforms (iOS, macOS, tvOS, and watchOS), including Simulator builds. An XCFramework can be either static or dynamic and can include headers.<sup class="footnote-ref"><a href="#fn-1" id="fnref-1_ref" data-footnote-ref>1</a></sup></p>
+</blockquote>
+<p>XCFramework 是一种可用于分发的二进制包，它由 Xcode 创建，内部包含多个 framework 或 library，基于上述原因，XCFramework 可用于多平台场景，包括模拟器。XCFramework 可以是静态或动态库，且能够包含头文件。</p>
+<h3><a id="xcframework%E9%87%8C%E6%9C%89%E4%BB%80%E4%B9%88" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>XCFramework 里有什么</h3>
+<p>Framework 有其特定的结构，通常情况下包含一个 <code>Info.plist</code> 文件，定义了该 framework 的基本属性。XCFramework 也不例外，XCFramework 的 <code>Info.plist</code> 继承了 framework 的大部分属性，其中 <code>CFBundlePackageType</code> 的值由原来的 <code>FMWK</code> 变成了 <code>XFWK</code>。</p>
+<p><img src="media/16566860725573/16568234501810.jpg" alt="" /></p>
+<p>剩下的部分是一个或多个 framework，分别存放于不同的路径下。同时路径名中描述了该 framework 对应的平台、处理器架构信息。<sup class="footnote-ref"><a href="#fn-2" id="fnref-2_ref" data-footnote-ref>2</a></sup><br />
+<img src="media/16566860725573/16568236669806.jpg" alt="" /></p>
+<h3><a id="%E5%A6%82%E4%BD%95%E5%88%B6%E4%BD%9Cxcframework" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>如何制作 XCFramework</h3>
+<p>使用<code>xcodebuild -create-xcframework</code> 命令，把生成好的库（可以是 .a / framework / Swift Package，）制作成 XCFramework。命令参数如下<sup class="footnote-ref"><a href="#fn-3" id="fnref-3_ref" data-footnote-ref>3</a></sup>：</p>
+<pre class="line-numbers"><code class="language-shell"># 通过 farmework 创建
+xcodebuild -create-xcframework -framework &lt;path&gt; [-framework &lt;path&gt;...] -output &lt;path&gt;
+# 或 通过 .a 创建
+xcodebuild -create-xcframework -library &lt;path&gt; [-headers &lt;path&gt;] [-library &lt;path&gt; [-headers &lt;path&gt;]...] -output &lt;path&gt;
+</code></pre>
+<h2><a id="%E8%BD%AC%E6%8D%A2arm64%E4%BA%8C%E8%BF%9B%E5%88%B6" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>转换 arm64 二进制</h2>
+<p>根据<a href="https://bogo.wtf/arm64-to-sim.html">这篇文章</a>的操作，我们可以修改已有的 arm64 二进制，使之能够运行在 arm64 架构的<strong>模拟器</strong>上面。</p>
+<p>这里需要注意的是，重新生成的适配模拟器的 arm64 模拟器，与原有的适配真机的 arm64，无法在同一个胖二进制中共存。若使用 <code>lipo -create</code> 命令强行捏成一个会报错。</p>
+<p>XCFramework 能够解决这个问题，因为它为不同的架构创建了多个对应的 framework。例如上图中的 <code>ios-arm64</code> 和 <code>ios-x86_64-simulator</code>，分别用于真机 arm64 和模拟器。其中模拟器使用的 framework 中包含了两种架构，分别是 <code>x86_64</code> 和 <code>arm64</code>。</p>
+<h2><a id="demo" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Demo</h2>
+<p>以下脚本实现了这个功能：通过已有的包含 fat binary 的 framework，生成 xcframework。</p>
+<pre class="line-numbers"><code class="language-shell">#!/bin/bash
+
+INPUT_FRAMEWORK_PATH=${1:-&quot;/tmp/Protobuf/Protobuf.framework&quot;}
+NAKED_NAME=$(basename &quot;$INPUT_FRAMEWORK_PATH&quot; .framework)
+FRAMEWORK_NAME=$(basename &quot;$INPUT_FRAMEWORK_PATH&quot;)
+
+IOS_FRAMEWORK_PATH=&quot;iOS/$FRAMEWORK_NAME&quot;
+SIM_FRAMEWORK_PATH=&quot;sim/$FRAMEWORK_NAME&quot;
+
+# Step-0: 准备胖二进制
+ORIGIN_BINARY_PATH=&quot;$NAKED_NAME&quot;
+cp &quot;$INPUT_FRAMEWORK_PATH/Versions/A/$NAKED_NAME&quot; &quot;$ORIGIN_BINARY_PATH&quot;
+
+# Step-1: 处理真机二进制
+mkdir -p iOS
+cp -a &quot;$INPUT_FRAMEWORK_PATH&quot; &quot;$IOS_FRAMEWORK_PATH&quot;
+lipo &quot;$ORIGIN_BINARY_PATH&quot; \
+     -extract arm64 \
+     -output &quot;$IOS_FRAMEWORK_PATH/Versions/A/$NAKED_NAME&quot;
+
+# Step-2: 处理模拟器 arm64 二进制
+mkdir -p sim
+cp -a &quot;$INPUT_FRAMEWORK_PATH&quot; &quot;$SIM_FRAMEWORK_PATH&quot;
+
+# Step-2.1: 提取瘦二进制
+lipo &quot;$ORIGIN_BINARY_PATH&quot; -thin arm64 -output &quot;$NAKED_NAME.arm64&quot;
+lipo &quot;$ORIGIN_BINARY_PATH&quot; -thin x86_64 -output &quot;$NAKED_NAME.x86_64&quot;
+
+mkdir -p &quot;$NAKED_NAME-reworked&quot;
+cd &quot;$NAKED_NAME-reworked&quot;
+    # Step-2.2: 从瘦二进制提取 .o 文件
+    ar x &quot;../$NAKED_NAME.arm64&quot;
+
+    # Step-2.3: 修改 .o 文件
+    # see https://bogo.wtf/arm64-to-sim.html
+    for file in *.o; do arm64-to-sim $file; done;
+
+    # Step-2.4: 聚合 .o 生成新的瘦二进制
+    ar crv &quot;../$NAKED_NAME.arm64-reworked&quot; *.o
+cd -
+
+# Step-2.5: 生成新的胖二进制
+lipo -create &quot;$NAKED_NAME.arm64-reworked&quot; &quot;$NAKED_NAME.x86_64&quot; \
+     -output &quot;$SIM_FRAMEWORK_PATH/Versions/A/$NAKED_NAME&quot;
+
+# Step-3: 制作 XCFramework
+XCFRAMEWORK_PATH=&quot;$NAKED_NAME.xcframework&quot;
+xcodebuild -create-xcframework \
+           -framework &quot;$SIM_FRAMEWORK_PATH&quot; \
+           -framework &quot;$IOS_FRAMEWORK_PATH&quot; \
+           -output &quot;$XCFRAMEWORK_PATH&quot;
+
+# Step-4: 清理
+rm &quot;$ORIGIN_BINARY_PATH&quot; &quot;$NAKED_NAME.arm64-reworked&quot; &quot;$NAKED_NAME.arm64&quot; &quot;$NAKED_NAME.x86_64&quot;
+rm -rf sim
+rm -rf iOS
+rm -rf &quot;$NAKED_NAME-reworked&quot;
+</code></pre>
+<h2><a id="references" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>References</h2>
+<ul>
+<li><a href="https://github.com/bielikb/xcframeworks">GitHub / xcframeworks</a></li>
+</ul>
+<section class="footnotes" data-footnotes>
+<ol>
+<li id="fn-1">
+<p><a href="https://help.apple.com/xcode/mac/11.4/#/dev6f6ac218b">What is an XCFramework?</a> <a href="#fnref-1_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-2">
+<p><a href="https://appspector.com/blog/xcframeworks">XCFrameworks Internals</a> <a href="#fnref-2_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-3">
+<p><a href="https://help.apple.com/xcode/mac/11.4/#/dev544efab96">Create an XCFramework</a> <a href="#fnref-3_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+</ol>
+</section>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[记一次私有 pod 发布报错]]></title>
+    <link href="https://ltryee.gitee.io/16558196375003.html"/>
+    <updated>2022-06-21T21:53:57+08:00</updated>
+    <id>https://ltryee.gitee.io/16558196375003.html</id>
+    <content type="html"><![CDATA[
+<div class="mweb_toc"><ul>
+<li><a href="#%E4%B8%B4%E6%97%B6%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88">临时解决方案</a></li>
+<li><a href="#%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90">深入分析</a>
+<ul>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%A6%82%E6%AD%A4%E5%A4%9A%E7%9A%84%E6%9E%B6%E6%9E%84%E4%BC%9A%E5%8F%82%E4%B8%8E%E9%93%BE%E6%8E%A5%EF%BC%9F">为什么如此多的架构会参与链接？</a></li>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%93%BE%E6%8E%A5arm64%E6%9E%B6%E6%9E%84%E4%BA%8C%E8%BF%9B%E5%88%B6%E4%BC%9A%E5%A4%B1%E8%B4%A5%EF%BC%9F">为什么链接 arm64 架构二进制会失败？</a></li>
+</ul>
+</li>
+<li><a href="#%E5%BD%BB%E5%BA%95%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88">彻底的解决方案</a></li>
+</ul>
+</div>
+<p>我们在发布组件新版本到私有 pod 的过程中，遇到一个报错。通过分析 log，定位到报错信息：</p>
+<pre class="line-numbers"><code class="language-log">ld: in /Users/kuaikan/jenkins/workspace/iOS-component-pipeline/component_source_Protobuf/Protobuf/Protobuf.framework/Protobuf(Api.pbobjc.o), building for iOS Simulator, but linking in object file built for iOS, file '/Users/kuaikan/jenkins/workspace/iOS-component-pipeline/component_source_Protobuf/Protobuf/Protobuf.framework/Protobuf' for architecture arm64
+
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+</code></pre>
+<h2><a id="%E4%B8%B4%E6%97%B6%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>临时解决方案</h2>
+<p>google 了关键字 <code>building for iOS Simulator, but linking in object file built for iOS</code>，发现网上给出的大部分解决方案是在工程 project 中指定排除的架构，即模拟器排除 arm64 架构。如果涉及到使用 pod 管理组件，则需要修改 podspec。<br />
+我们的私有 pod 方案是将使用的组件打成二进制，再发布到私有 spec repo 中，之前确实是在组件的 podspec 中加入了这两行：</p>
+<pre class="line-numbers"><code class="language-ruby"># File: protobuf.podspec
+
+s.pod_target_xcconfig = { 
+  'EXCLUDED_ARCHS[sdk=iphonesimulator*]' =&gt; 'arm64' 
+}
+s.user_target_xcconfig = { 
+  'EXCLUDED_ARCHS[sdk=iphonesimulator*]' =&gt; 'arm64' 
+}
+</code></pre>
+<p>但是 cocoapods 的维护者并不推荐这么做：</p>
+<blockquote>
+<p>So my feeling is that pre-built pods that do not include <code>arm64</code> architecture will not work for apps that consume them <em>unless</em> the apps themselves add <code>EXCLUDED_ARCHS</code> to exclude arm64 for simulator.<br />
+I generally strongly discourage using <code>s.user_target_xcconfig</code> and has been there for avoiding a breaking change as it changes the users project. It kinda make sense to add it though because a pod author is signaling that &quot;my pre-built pod does not support this architecture&quot;<sup class="footnote-ref"><a href="#fn-1" id="fnref-1_ref" data-footnote-ref>1</a></sup>.</p>
+</blockquote>
+<p>这么做确实能规避这个报错。但长远来看，排除编译模拟器的 arm64 架构，会阻碍我们后续迁移到 M1 处理的 Mac。原因是此 Mac 使用了 arm64 架构的模拟器。当然也不是没有解决方案，那就是在 M1 处理器的 Mac 上，使用 Rosetta 打开 Xcode，在 Rosetta 模式下运行的 Xcode，模拟器将会像在 Intel 处理器上一样，使用 x86_64 架构。<br />
+如果这么做了，我们将永远看不到架构大一统的一天。</p>
+<h2><a id="%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>深入分析</h2>
+<p>继续分析 pod lint 输出日志，我们发现在 lint 过程中，pod 自己生成了一个 project，并用此 project 进行编译验证。<br />
+基于此我们在 执行 lint 命令时加入 <code>--no-clean</code> 参数，告知 pod 在 lint 过程中保存中间执行结果：</p>
+<pre class="line-numbers"><code class="language-sh">pod lib lint protobuf.podspec \
+    --allow-warnings \
+    --verbose \
+    --use-libraries \
+    --no-clean
+</code></pre>
+<p>然后手动打开这个 pod 自动创建的 project 一探究竟。<br />
+经过测试，手动触发 project 的 build，同样会构建失败。并且从 xcode 日志中可以看到，链接过程中会尝试链接多种架构：</p>
+<p><img src="media/16558196375003/CleanShot%202022-06-23%20at%2018.35.26@2x.png" alt="CleanShot 2022-06-23 at 18.35.26@2x" /></p>
+<p>链接 x86_64 和 i386 都是成功的，唯独 arm64 失败。所以问提来了：</p>
+<h3><a id="%E4%B8%BA%E4%BB%80%E4%B9%88%E5%A6%82%E6%AD%A4%E5%A4%9A%E7%9A%84%E6%9E%B6%E6%9E%84%E4%BC%9A%E5%8F%82%E4%B8%8E%E9%93%BE%E6%8E%A5%EF%BC%9F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>为什么如此多的架构会参与链接？</h3>
+<p>仔细分析报错信息，我们发现log中提到的 framework 路径 <code>/Users/kuaikan/jenkins/workspace/iOS-component-pipeline/component_source_Protobuf/Protobuf/Protobuf.framework/Protobuf</code>，是我们自己为组件打包生成的二进制的文件路径。<br />
+我们也确实在 podspec 里指定了组件引用了此 framework。这里的 podspec 是制作私有组件时修改过的，写死使用二进制的方式引用这个组件。</p>
+<pre class="line-numbers"><code class="language-ruby"># File: protobuf.podspec
+s.vendored_frameworks = 'Protobuf/Protobuf.framework'
+</code></pre>
+<p>也就是说，pod lint 的过程是把 pod 的产出物引入 project，然后通过构建 project 来判断此产出物是否可用。因为我们的 podspec 里指定了使用 framework，而 framework 里塞进了多个架构的二进制，所以构建过程中把每一种模拟器可能用到的架构都验证了一遍。<br />
+这就解释了为什么模拟器下会链接 arm64 架构的二进制。这并不是 xcode 作妖，而是我们自己的锅。</p>
+<h3><a id="%E4%B8%BA%E4%BB%80%E4%B9%88%E9%93%BE%E6%8E%A5arm64%E6%9E%B6%E6%9E%84%E4%BA%8C%E8%BF%9B%E5%88%B6%E4%BC%9A%E5%A4%B1%E8%B4%A5%EF%BC%9F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>为什么链接 arm64 架构二进制会失败？</h3>
+<p>还得继续从日志中找答案，日志中提到，正在为模拟器构建，但是链接进来的二进制（即我们自己打包出来的 framework），是为真机构建的。<br />
+同时，我们发现真机的 arm64 二进制与模拟器 arm64 二进制是<strong>不一样</strong>的：</p>
+<blockquote>
+<p>Alright, we got a match! Seems that the Simulator binary contains an <code>LC_BUILD_VERSION</code> load command, while the native binary contains an <code>LC_VERSION_MIN_IPHONEOS</code> load command in the same place. A pass with <code>otool</code> on our unsupported, native-only <code>.framework</code> confirms this theory. A bit of Googling reveals that <a href="https://reviews.llvm.org/D85358">this specific difference</a><sup class="footnote-ref"><a href="#fn-3" id="fnref-3_ref" data-footnote-ref>2</a></sup> is used by LLDB to distinguish Simulator and native binaries. We are on the right track then - looks like substituting <code>LC_VERSION_MIN_IPHONEOS</code> with <code>LC_BUILD_VERSION</code> might be just enough to fool <code>ld</code>.<sup class="footnote-ref"><a href="#fn-2" id="fnref-2_ref" data-footnote-ref>3</a></sup></p>
+</blockquote>
+<p>因此可以得出结论：使用真机 arm64 二进制构建 arm64 架构的模拟器，会导致链接失败。真机的 arm64 二进制与模拟器 arm64 二进制存在差异，因此已经打出的 arm64 二进制是不能用在模拟器上的，这会妨碍我们向 arm64 模拟器迁移。<br />
+在迁移到 arm64 模拟之前，已有的二进制全部需要处理。</p>
+<h2><a id="%E5%BD%BB%E5%BA%95%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>彻底的解决方案</h2>
+<p>鉴于以往打过的 framework 都已失效，<strong>稳妥的</strong>解决方案是：在三方库中，找回所有组件的源码，再更新 podsepc，把二进制引入修改为源码引入。</p>
+<p>当然也有<strong>骚操作</strong>：使用 <a href="https://github.com/bogo/arm64-to-sim">arm64-to-sim</a> 工具，把以前为真机构建的 arm64 架构的二进制转换成模拟器可用的 arm64 二进制，然后用 lipo 合成新的胖二进制<sup class="footnote-ref"><a href="#fn-2" id="fnref-2-2_ref" data-footnote-ref>3</a></sup>。</p>
+<section class="footnotes" data-footnotes>
+<ol>
+<li id="fn-1">
+<p>GitHub / <a href="https://github.com/CocoaPods/CocoaPods/issues/10065">Pod trunk push command Failed with Xcode12 #10065</a> <a href="#fnref-1_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-3">
+<p><a href="https://reviews.llvm.org/D85358">Correctly detect legacy iOS simulator Mach-O objectfiles</a> <a href="#fnref-3_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-2">
+<p><a href="https://bogo.wtf/arm64-to-sim.html">Hacking native ARM64 binaries to run on the iOS Simulator</a> <a href="#fnref-2_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a> <a href="#fnref-2-2_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<sup class="footnote-ref">2</sup></a></p>
+</li>
+</ol>
+</section>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[玩转 CocoaPods 需要了解的 Ruby 基础知识]]></title>
+    <link href="https://ltryee.gitee.io/wan-zhuan-cocoapods-xu-yao-le.html"/>
+    <updated>2022-01-13T18:43:05+08:00</updated>
+    <id>https://ltryee.gitee.io/wan-zhuan-cocoapods-xu-yao-le.html</id>
+    <content type="html"><![CDATA[
+<div class="mweb_toc"><ul>
+<li><a href="#%E8%A1%A8%E8%BE%BE%E5%BC%8F">表达式</a></li>
+<li><a href="#%E5%87%BD%E6%95%B0">函数</a>
+<ul>
+<li><a href="#%E5%87%BD%E6%95%B0%E5%A3%B0%E6%98%8E">函数声明</a></li>
+<li><a href="#%E4%B8%8D%E5%AE%9A%E9%95%BF%E5%8F%82%E6%95%B0%E5%88%97%E8%A1%A8">不定长参数列表</a></li>
+<li><a href="#%E5%87%BD%E6%95%B0%E8%BF%94%E5%9B%9E%E5%80%BC">函数返回值</a></li>
+<li><a href="#%E5%92%8C"><code>?</code>和<code>!</code></a></li>
+</ul>
+</li>
+<li><a href="#block">Block</a>
+<ul>
+<li><a href="#block%E8%AF%AD%E6%B3%95">Block 语法</a></li>
+<li><a href="#%E8%B0%83%E7%94%A8block">调用 Block</a></li>
+</ul>
+</li>
+<li><a href="#%E7%B1%BB">类</a></li>
+<li><a href="#%E5%AD%97%E9%9D%A2%E9%87%8F">字面量</a>
+<ul>
+<li><a href="#string">String</a></li>
+<li><a href="#array">Array</a></li>
+<li><a href="#hash">Hash</a></li>
+</ul>
+</li>
+<li><a href="#eval">eval</a></li>
+<li><a href="#%E5%A5%87%E6%80%AA%E7%9A%84%E7%9F%A5%E8%AF%86%E5%8F%88%E5%A2%9E%E5%8A%A0%E4%BA%86">奇怪的知识又增加了</a></li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
+<li><a href="#%E5%8F%82%E8%80%83">参考</a></li>
+</ul>
+</div>
+<p>我们熟知的 cocoapods 工具是基于 ruby 语言开发的，如果想要更深入地了解 cocoapods 的功能，就需要了解一些 ruby 语言的知识。<br />
+本文介绍了 Podfile 和 Podspec 文件中涉及的 ruby 基本语法。</p>
+<h2><a id="%E8%A1%A8%E8%BE%BE%E5%BC%8F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>表达式</h2>
+<p>先来看一段再熟悉不过的 Podfile，你是否了解它的执行过程呢？</p>
+<pre class="line-numbers"><code class="language-ruby">source 'https://github.com/CocoaPods/Specs.git'
+use_frameworks!
+
+target 'Demo' do
+  pod 'AFNetworking'
+  pod 'Masonry', '~&gt; 0.5.3'
+end
+</code></pre>
+<p>无论是 Podfile 还是 Podspec，本质上都是一段可执行的 ruby 代码。基于这个概念，我们来看一看 Podfile 中都发生了什么。</p>
+<pre class="line-numbers"><code class="language-ruby">pod 'AFNetworking'
+</code></pre>
+<p>先从最常见的说起，相信只要熟悉 iOS 开发的同学都知道，这一行代码的作用是加载一个名为<code>AFNetworking</code>的代码库。这里我们则要更进一步，弄清楚这行代码是如何工作的。<br />
+这是一次 ruby 的函数调用，语句中调用了一个名为 <code>pod</code>的函数，后面是函数的入参，传入的参数是一个字符串<code>AFNetworking</code>。<br />
+ruby 的函数调用有两种形式，一种如上文描述，函数名后面紧跟入参。<br />
+另一种形式是我们熟知的 C 语言风格，函数名后紧跟括号，入参写在括号里面。这两种形式是等价的。</p>
+<pre class="line-numbers"><code class="language-ruby">pod('AFNetworking')
+</code></pre>
+<p>多个入参的语法：</p>
+<pre class="line-numbers"><code class="language-ruby">pod 'AFNetworking', '~&gt; 2.4.1'
+</code></pre>
+<p>等价于</p>
+<pre class="line-numbers"><code class="language-ruby">pod('AFNetworking', '~&gt; 2.4.1')
+</code></pre>
+<p>考虑复杂情况：</p>
+<pre class="line-numbers"><code class="language-ruby">pod 'AFNetworking', :git =&gt; '', :branch =&gt; 'master'
+</code></pre>
+<p>不要被复杂的语法劝退，我们先从整体上分析，这仍然是一次函数调用：函数名是 <code>pod</code>，入参有三个，分别是<code>AFNetworking</code> 、<code>:git =&gt; 'xxx'</code>和<code>:branch =&gt; 'master'</code>。<br />
+那么 <code>:branch =&gt; 'master'</code> 又是什么呢？首先，这个表达式中有三个元素：先从最简单的第三个说起，<code>master</code>是我们熟知的字符串；然后是第一个，<code>:branch</code>是 ruby 的 Symbol 类型对象，可以作为全局唯一标识符使用，我们暂时不需要关心其他细节；第二个运算符<code>=&gt;</code>名叫 “Hash Rocket”，连接前后两个元素，共同组成了 ruby 的 Hash 对象的一个键值对：键为 Symbol 类型的 <code>:branch</code>，值为字符串类型的 <code>master</code>。而 Hash 对象就是一个存储键值对的字典。<br />
+同理，<code>:git =&gt; 'xxx'</code>表示一个键为<code>:git</code>,值为<code>xxxx</code>的Hash对象。<br />
+因此这个表达式可以解释为：调用 pod 函数，传入三个参数，其中第一个是字符串对象，其余两个是 Hash 对象。</p>
+<h2><a id="%E5%87%BD%E6%95%B0" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>函数</h2>
+<p>上一节解释了 ruby 的函数调用，这一节我们介绍函数的声明。</p>
+<h3><a id="%E5%87%BD%E6%95%B0%E5%A3%B0%E6%98%8E" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>函数声明</h3>
+<pre class="line-numbers"><code class="language-ruby">def say_hello(name = 'world')
+  puts &quot;hello #{name}&quot;
+end
+
+say_hello 		 # =&gt; hello world
+say_hello 'ruby' # =&gt; hello ruby
+</code></pre>
+<p>上面代码是一个函数的声明过程，从<code>def</code>开始到<code>end</code>结束，<code>def</code>后接函数名。括号内是参数列表，参数可以设置默认值。</p>
+<h3><a id="%E4%B8%8D%E5%AE%9A%E9%95%BF%E5%8F%82%E6%95%B0%E5%88%97%E8%A1%A8" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>不定长参数列表</h3>
+<p>再考虑上一节提到的 <code>pod</code> 函数，我们调用该函数时传入参数的个数是不确定的，一个两个三个都可以，这是如何实现的呢？<br />
+下面我们就来分析一下 <code>pod</code> 函数的具体实现：</p>
+<pre class="line-numbers"><code class="language-ruby"># File: podfile/dsl.rb
+
+def pod(name = nil, *requirements)
+  unless name
+    raise StandardError, 'A dependency requires a name.'
+  end
+
+  current_target_definition.store_pod(name, *requirements)
+end
+</code></pre>
+<p>重点是参数列表，第一个参数<code>name = nil</code>，传入 pod 名称且带默认值 <code>nil</code>。<br />
+第二个参数<code>*requirements</code>是不定长参数列表的关键。其中<code>*</code>号语法叫做 <strong>Splat Operator</strong>，作用是收集参数匹配后剩余额外的参数，可以算是一个语法糖。考虑<code>pod</code>函数的入参，<code>name</code>会获取传入的第一个参数，<code>*requirements</code>用来捕获除第一个参数之外的所有参数。<br />
+当我们声明函数的参数列表中带有<code>*requirements</code>，在函数调用时则可以传入任意数量的参数，且在函数体内部的<code>requirements</code>是一个数组类型对象。<br />
+当我们调用函数时传入<code>*requirements</code>，表示传递给函数的参数个数不确定，且参数是<code>requirements</code>数组对象中的全部元素。</p>
+<h3><a id="%E5%87%BD%E6%95%B0%E8%BF%94%E5%9B%9E%E5%80%BC" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>函数返回值</h3>
+<p>ruby 中可以使用 <code>return</code> 关键字显式地指定返回值。<br />
+也可以使用隐式返回值：函数返回之前执行的最后一行表达式的值，即为函数的返回值。</p>
+<h3><a id="%E5%92%8C" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a><code>?</code>和<code>!</code></h3>
+<p>通常情况下 Podfile 中会有如下代码：</p>
+<pre class="line-numbers"><code class="language-ruby">use_frameworks!
+</code></pre>
+<p>这一行代码的作用是，把 pod 引入的源代码打包成动态库引入工程。<br />
+在 ruby 运行时环境中，这一行代码实际上是一次函数调用，其中的叹号<code>!</code>也是函数名的一部分。给一个函数命名时加入感叹号并不会引入特定的功能，而是一种约定俗成：表示这个函数中有非常重要的操作，调用时需要多加小心，仅此而已。<br />
+Podfile 中的<code>use_frameworks!</code>的感叹号即是在着重提示开发者，调用这一行会生成动态库。<br />
+以 ruby 的数组 <code>Array</code>举例， <code>Array</code>提供了两个实例方法<code>sort</code>和<code>sort!</code>：不加感叹号的<code>sort</code>方法，执行完成后会返回一个新的排好序的数组；而加了感叹号的<code>sort!</code>方法，则会返回数组对象自身，而此时数组本身已经是排序完的状态，这里的感叹号是在提示调用者，这个方法有非常重要的操作，调用此方法之后，数组原有的顺序将会发生改变。<br />
+相似地，函数名中的问号<code>?</code>也是一种约定俗成，表示该函数的返回值类型是布尔值。例如<code>Array</code>提供的判断数组是否为空的<code>empty?</code>实例方法。</p>
+<pre class="line-numbers"><code class="language-plain_text">irb(main):001:0&gt; a = [1,3,5,2,4,6]
+=&gt; [1, 3, 5, 2, 4, 6]
+irb(main):002:0&gt; b = [1,3,5,2,4,6]
+=&gt; [1, 3, 5, 2, 4, 6]
+irb(main):003:0&gt; sorted_a = a.sort
+=&gt; [1, 2, 3, 4, 5, 6]
+irb(main):004:0&gt; sorted_b = b.sort!
+=&gt; [1, 2, 3, 4, 5, 6]
+irb(main):005:0&gt; a.object_id
+=&gt; 70256668629980
+irb(main):006:0&gt; b.object_id
+=&gt; 70256668750760
+irb(main):007:0&gt; sorted_a.object_id
+=&gt; 70256668822260
+irb(main):008:0&gt; sorted_b.object_id
+=&gt; 70256668750760 #=&gt; 注意，对象b和对象sorted_b的object_id相等，说明是同一个对象
+irb(main):009:0&gt;
+irb(main):010:0&gt; a.empty?
+=&gt; false
+irb(main):011:0&gt; [].empty?
+=&gt; true
+</code></pre>
+<h2><a id="block" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Block</h2>
+<p>本节介绍 ruby 的 block 操作。</p>
+<h3><a id="block%E8%AF%AD%E6%B3%95" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Block 语法</h3>
+<p>下面代码中，<code>do</code>和<code>end</code>关键字，以及它们之间包含的代码，共同组成了 ruby 的一个 block。</p>
+<pre class="line-numbers"><code class="language-ruby">target 'ACKNotificationServiceExtensition' do
+  platform :ios, '11.0'
+  pod 'GTExtensionSDK', '2.2.4'
+end
+</code></pre>
+<p>整段代码的意思是：这是一次函数调用，调用的函数名为<code>target</code>，传入参数是一个字符串<code>ACKNotificationServiceExtensition</code>，且带有一个block <code>do ... end</code>。</p>
+<p>下面代码是一个带参数的 block：</p>
+<pre class="line-numbers"><code class="language-ruby">pre_install do |installer|
+  #  清理 Podfile 中更新的ENV
+  process_source_components installer
+end
+</code></pre>
+<p>其中<code>installer</code>是调用 block 时传入的参数。</p>
+<p>通常意义上，block 是用 <code>do</code> / <code>end</code> 或 <code>{}</code> 包裹的代码块。传入参数名定义在两个竖线 <code>|</code>之间，多个参数之间使用逗号<code>,</code>分隔。<br />
+下面是一段使用 block 实现的遍历并打印数组元素的代码：</p>
+<pre class="line-numbers"><code class="language-ruby">[1,2,3].each { |item| puts item } #=&gt; 这是一个单行闭包
+
+[1,2,3].each do |item| 
+  puts item
+end #=&gt; 以上是一个多行闭包
+</code></pre>
+<p>执行效果：</p>
+<pre class="line-numbers"><code class="language-ruby">irb(main):012:0&gt; [1,2,3].each { |item| puts item } #=&gt; 这是一个单行闭包
+1
+2
+3
+=&gt; [1, 2, 3]
+irb(main):019:0&gt; [1,2,3].each do |item| 
+irb(main):020:1*   puts item
+irb(main):021:1&gt; end #=&gt; 以上是一个多行闭包
+1
+2
+3
+=&gt; [1, 2, 3]
+</code></pre>
+<h3><a id="%E8%B0%83%E7%94%A8block" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>调用 Block</h3>
+<p>在上面代码中，block 中的代码块会在<code>target</code>函数的最后执行。<br />
+参考下面代码中关于<code>target</code>函数的实现：</p>
+<pre class="line-numbers"><code class="language-ruby">def target(name, options = nil)
+  if options
+    raise Informative, &quot;Unsupported options `#{options}` for &quot; \
+      &quot;target `#{name}`.&quot;
+  end
+
+  parent = current_target_definition
+  definition = TargetDefinition.new(name, parent)
+  self.current_target_definition = definition
+  yield if block_given? #=&gt; 这里通过关键字 yield 调用传入的闭包
+ensure
+  self.current_target_definition = parent
+end
+</code></pre>
+<p><code>yield</code> 是 ruby 的关键字，用于调用一个 block。当你使用 <code>yield</code> 关键字时，block 内的代码将会被执行。<code>yield</code> 可以多次调用。<br />
+<code>block_given</code>也是 ruby 的关键字，用于判断外界调用函数时是否传入了 block。</p>
+<h2><a id="%E7%B1%BB" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>类</h2>
+<p><code>Podfile</code> 中没有用到 Ruby 类相关的语法，但是 <code>Podspec</code> 中有。我们再来看一个典型的 <code>Podspec</code> 文件：</p>
+<pre class="line-numbers"><code class="language-ruby"># File: AFNetworking.podspec
+
+Pod::Spec.new do |s|
+  s.name     = 'AFNetworking'
+  s.version  = '4.0.1'
+  s.license  = 'MIT'
+  s.summary  = 'A delightful networking framework for Apple platforms.'
+  s.homepage = 'https://github.com/AFNetworking/AFNetworking'
+  s.social_media_url = 'https://twitter.com/AFNetworking'
+  s.authors  = { 'Mattt Thompson' =&gt; 'm@mattt.me' }
+  s.source   = { :git =&gt; 'https://github.com/AFNetworking/AFNetworking.git', :tag =&gt; s.version }
+
+  s.ios.deployment_target = '9.0'
+  s.osx.deployment_target = '10.10'
+  s.watchos.deployment_target = '2.0'
+  s.tvos.deployment_target = '9.0'
+
+  ....
+
+end
+</code></pre>
+<p>通过上文的介绍我们已经知道，这段代码中从<code>do</code>到<code>end</code>之间的代码块是一个 block。暂时忽略这个 block，<code>Pod::Spec.new</code>表达到意思是创建(new)一个<code>Pod::Spec</code>类型的对象出来。加入block后即为：创建(new)一个<code>Pod::Spec</code>类型的对象，然后把新创建的<code>Pod::Spec</code>类型的对象<code>s</code>传入 block，执行此 block，配置<code>s</code>的各种属性。</p>
+<p><code>Pod::Spec</code>中的<code>Pod</code>表示一个 module，可以理解为命名空间，<code>Spec</code>是定义在命名空间<code>Pod</code>中的一个类的类名。<br />
+源代码如下：</p>
+<pre class="line-numbers"><code class="language-ruby"># File: cocoapods-core/specification.rb
+
+module Pod
+  class Specification
+
+    ....
+
+    attr_reader :parent
+    attr_reader :hash_value
+ 
+    # 初始化方法
+    def initialize(parent = nil, name = nil, test_specification = false, app_specification: false)
+      raise StandardError, &quot;#{self} can not be both an app and test specification.&quot; if test_specification &amp;&amp; app_specification
+      @attributes_hash = {}
+      @subspecs = []
+      @consumers = {}
+      @parent = parent
+      @hash_value = nil
+      @test_specification = test_specification
+      @app_specification = app_specification
+      attributes_hash['name'] = name
+      attributes_hash['test_type'] = :unit if test_specification
+
+      yield self if block_given?
+    end
+
+  end
+end
+</code></pre>
+<h2><a id="%E5%AD%97%E9%9D%A2%E9%87%8F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>字面量</h2>
+<p>本节介绍 ruby 的字面量(Literal)。</p>
+<h3><a id="string" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>String</h3>
+<p>在 ruby 中可以使用单引号<code>'</code>和双引号<code>&quot;</code>表示字符串。<br />
+其中<code>&quot;</code>表示这是一个插值字符串，字符串内使用<code>#{}</code>指定插值表达式。**字符串插值(String interpolation)**是一种将变量、表达式插入字符串的技术，可以显著提高涉及字符串拼接的代码编写效率。</p>
+<pre class="line-numbers"><code class="language-ruby">irb(main):009:0&gt; puts 'I have 4 apples'
+I have 4 apples
+=&gt; nil
+irb(main):010:0&gt; apples = 4
+=&gt; 4
+irb(main):011:0&gt; puts &quot;I have #{apples} apples&quot;
+I have 4 apples
+=&gt; nil
+</code></pre>
+<h3><a id="array" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Array</h3>
+<p>在 ruby 中使用中括号<code>[]</code>声明数组对象。<br />
+例如 Podfile 中指定 configurations 的代码：</p>
+<pre class="line-numbers"><code class="language-ruby">pod 'AFNetworking', '2.4.1', :configurations =&gt; ['Debug', 'Release']
+</code></pre>
+<h3><a id="hash" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Hash</h3>
+<p>Hash 是 ruby 的键值对集合类型，功能类似于字典，使用大括号<code>{}</code>声明。<br />
+例如 Podspec 中指定 source 的代码：</p>
+<pre class="line-numbers"><code class="language-ruby">s.source = {
+  :git =&gt; 'https://github.com/AFNetworking/AFNetworking.git', 
+  :tag =&gt; s.version
+}
+</code></pre>
+<h2><a id="eval" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>eval</h2>
+<p>本文开始的时候提到，Podfile 是一段可执行的 ruby 代码。那么这段代码是如何在 <code>pod install</code>的过程中执行的呢？<br />
+先来看一段执行<code>pod install</code>过程中生成<code>Pod::Podfile</code>对象的代码：</p>
+<pre class="line-numbers"><code class="language-ruby"># File: cocoapods-core/podfile.rb
+
+def self.from_ruby(path, contents = nil)
+  contents ||= File.open(path, 'r:utf-8', &amp;:read) #=&gt; 这里读入 Podfile 文件中的内容
+
+  podfile = Podfile.new(path) do
+	begin
+	  eval(contents, nil, path.to_s) #=&gt; 这里执行 Podfile 中的逻辑
+	rescue Exception =&gt; e
+	  message = &quot;Invalid `#{path.basename}` file: #{e.message}&quot;
+	  raise DSLError.new(message, path, e, contents)
+	end
+  end
+  podfile
+end
+</code></pre>
+<p><code>contents ||= File.open(path, 'r:utf-8', &amp;:read)</code>实现了从文件中读取 Podfile 内容，并存储到变量 <code>contents</code>中。<br />
+<code>eval(contents, nil, path.to_s)</code>实现了执行 Podfile 中的逻辑。其中<code>eval</code>函数的功能是将一个字符串当作表达式执行并且返回一个结果。<br />
+<code>from_ruby</code>函数的执行过程，可以总结为：先从 Podfile 文件中读取代码内容，作为字符串保存。然后创建一个<code>Pod::Podfile</code>对象。再把读入的Podfile字符串当作代码执行，从而完成 Podfile 中的配置工作。</p>
+<h2><a id="%E5%A5%87%E6%80%AA%E7%9A%84%E7%9F%A5%E8%AF%86%E5%8F%88%E5%A2%9E%E5%8A%A0%E4%BA%86" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>奇怪的知识又增加了</h2>
+<p>这是使用 ruby 实现的快速排序算法：</p>
+<pre class="line-numbers"><code class="language-ruby">def qsort(list)
+  return [] if list.size == 0
+  x, *xs = *list
+  less, more = xs.partition { |y| y &lt; x }
+  qsort(less) + [x] + qsort(more)
+end
+</code></pre>
+<p>快速排序算法的核心思想是将待排序数组分割为三部分：被比较元素<code>x</code>、小于该元素的部分<code>less</code>和大于该元素的部分<code>more</code>，同时按<code>less, x, more</code>的顺序重排全部元素，然后递归地对<code>less</code>和<code>more</code>继续进行分割重排，直到分割后的数组为空。</p>
+<p>下面分析<code>qsort</code>函数的具体实现：<br />
+第一行是函数声明，第六行是函数结尾。函数声明了函数名为<code>qsort</code>，且有一个入参<code>list</code>。<br />
+第二行想要表达的意思是，如果<code>list</code>的长度为0，则函数返回空数组。因为是递归实现的快速排序，这一行也承担了终止递归调用的功能。<br />
+ruby中<code>if</code>关键字可以跟在表达式后面，意为：若条件成立，则执行该表达式。这一行等价于：</p>
+<pre class="line-numbers"><code class="language-ruby">if list.size == 0
+  return []
+end
+</code></pre>
+<p>函数第三行实现了被比较元素<code>x</code>的选取，一般取数组的第0个元素，同时将剩余的元素存入数组对象<code>xs</code>。要解释这一行代码是如何工作的，我们首先从一个简单表达式说起： ruby 语言在一个表达式中为<code>a</code>、<code>b</code>两个变量赋值，可以使用一种名为 <strong>Parallel Assignment</strong> 的技术：</p>
+<pre class="line-numbers"><code class="language-ruby">a, b = 0, 1  # =&gt; [0, 1]
+</code></pre>
+<p>如果等号<code>=</code>右边的元素是简单对象，那么写成两个赋值表达式也未尝不可。如果等号<code>=</code>右边的元素也是变量，稍加变化则可以交换<code>a</code>、<code>b</code>两个变量的值：</p>
+<pre class="line-numbers"><code class="language-ruby">a, b = b, a
+</code></pre>
+<p>甚至元素个数都可以是不确定的，那么 Parallel Assignment 配合上文提到的 Splat Operator 将会实现很多强大的功能。例如：将数组<code>list</code>的第0个元素存入变量<code>x</code>，剩余的元素存入数组<code>xs</code>。</p>
+<pre class="line-numbers"><code class="language-ruby">x, *xs = *list
+</code></pre>
+<p>函数第四行实现了<code>less</code>和<code>more</code>数组的构造，小于<code>x</code>的元素存入<code>less</code>，大于或等于<code>x</code>的元素存入<code>more</code>。<br />
+这一行代码是如何工作的呢？<code>=</code>表明这是一次赋值操作，右边的部分<code>xs.partition { |y| y &lt; x }</code>是运算过程，左边的部分<code>less, more</code>是被赋值的变量。<code>less, more</code>很好理解，就是使用 Parallel Assignment 为<code>less</code>和<code>more</code>两个变量赋值。而<code>xs.partition { |y| y &lt; x }</code>表示调用<code>xs</code>对象的<code>partition</code>方法，传入block<code>{ |y| y &lt; x }</code>。<br />
+<code>partition</code>方法的功能是返回两个数组，第一个数组存放使block返回值为<code>true</code>的元素，第二个数组存放剩下的元素。</p>
+<p>第五行有两个作用：<br />
+第一个层面是由两个 <code>+</code> 号连接的三个更小的表达式：第一个和第三个表达式调用 <code>qsort</code> 函数，这里显然是递归调用，是快速排序算法的分治思想的一种实现，对上一行确定的 <code>less</code> 和 <code>more</code> 继续进行排序；第二个表达式使用中括号<code>[]</code>包裹变量 <code>x</code>，其返回值是一个数组，数组中包含一个对象<code>x</code>。而这一行表达式整体表示三个数组相加，即将三个数组接在一起，生成一个新数组。<br />
+第二个层面是作为函数的最后一行表达式，代表了整个函数的返回值：已完成排序的数组。</p>
+<h2><a id="%E6%80%BB%E7%BB%93" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>总结</h2>
+<p>本文围绕 Podfile 和 Podspec 介绍了 ruby 的基本语法。</p>
+<h2><a id="%E5%8F%82%E8%80%83" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>参考</h2>
+<ul>
+<li><a href="https://draveness.me/cocoapods/">CocoaPods 都做了什么？</a></li>
+<li><a href="https://www.rubyguides.com/2016/02/ruby-procs-and-lambdas/">The Ultimate Guide to Blocks, Procs &amp; Lambdas</a></li>
+<li><a href="https://www.desgard.com/2020/10/12/cocoapods-story-5.html">Podspec 文件分析</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Convention_over_configuration">Convention over configuration</a></li>
+<li><a href="https://www.desgard.com/2020/10/08/cocoapods-story-ex-2.html">Ruby 黑魔法 - eval 和 alias</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[使用 LLDB Python API 自动存储后台请求数据用于单元测试]]></title>
+    <link href="https://ltryee.gitee.io/16553980014674.html"/>
+    <updated>2022-06-17T00:46:41+08:00</updated>
+    <id>https://ltryee.gitee.io/16553980014674.html</id>
+    <content type="html"><![CDATA[
+<div class="mweb_toc"><ul>
+<li><a href="#%E5%B7%B2%E6%9C%89%E6%96%B9%E6%B3%95">已有方法</a></li>
+<li><a href="#%E5%9F%BA%E4%BA%8Elldb-python-api%E7%9A%84%E6%96%B9%E6%A1%88">基于 LLDB Python API 的方案</a>
+<ul>
+<li><a href="#%E6%96%B9%E6%B3%95%E7%AE%80%E4%BB%8B">方法简介</a></li>
+<li><a href="#%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87">环境准备</a></li>
+<li><a href="#%E5%AD%98%E5%82%A8%E6%B5%81%E7%A8%8B">存储流程</a></li>
+</ul>
+</li>
+<li><a href="#%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5">最佳实践</a>
+<ul>
+<li><a href="#lldb%E7%9A%84-python%E7%8E%AF%E5%A2%83">LLDB 的 Python 环境</a></li>
+<li><a href="#python-repl">Python REPL</a></li>
+<li><a href="#%E5%AF%BC%E5%85%A5%E8%87%AA%E5%AE%9A%E4%B9%89%E5%91%BD%E4%BB%A4">导入自定义命令</a></li>
+<li><a href="#%E6%9F%A5%E7%9C%8B%E5%B7%B2%E5%AF%BC%E5%85%A5lldb%E7%9A%84%E8%87%AA%E5%AE%9A%E4%B9%89%E5%91%BD%E4%BB%A4">查看已导入 lldb 的自定义命令</a></li>
+<li><a href="#python-api%E4%B8%AD%E7%9A%84-lldb%E6%A8%A1%E5%9D%97">Python API 中的 lldb 模块</a></li>
+</ul>
+</li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
+<li><a href="#%E5%8F%82%E8%80%83">参考</a></li>
+</ul>
+</div>
+<p>在编写单元测试的过程中，我们经常需要编写一类用例，用于验证后台返回的数据的正确性。<br />
+其中，用于验证的数据如何取得，受限于发送请求的安全性要求，一般 app 发送网络请求时会在数据中加入一些校验、防刷的额外信息，导致请求数据内容严重依赖于 app 上下文环境。目前获取后台响应数据主要有两种方法，一种是在 app 中发起真实的请求，接收到响应后存储到文件；第二种是在单元测试用例中模拟 app 发送请求，接收到响应后存储到文件。但以上两种方法都存在一些问题，会对单测的编写和执行效率造成严重影响。<br />
+本文提出一种使用 LLDB 调试器自动存储网络请求的响应数据到指定文件的方法，解决了已有方法中存在的问题，并且显著提高了单元测试的编写、执行效率。</p>
+<h2><a id="%E5%B7%B2%E6%9C%89%E6%96%B9%E6%B3%95" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>已有方法</h2>
+<p>方法一，在 app 中发起真实的请求，接收到响应后存储到文件。因为是发送真实的网络请求，同时要把我们需要的响应数据存储到文件，所以不可避免地要在 app 工程里修改代码，在接受响应处增加额外的写文件的代码逻辑，对已有功能做一些侵入性修改。<br />
+方法二，在单元测试用例中模拟 app 发送请求，接收到响应后存储到文件。由于网络请求的延迟，这种方法会导致单测执行时间过长，且用例失败时不易区分到底是后台返回的响应数据出错，还是本地解析响应数据的代码逻辑出错。</p>
+<h2><a id="%E5%9F%BA%E4%BA%8Elldb-python-api%E7%9A%84%E6%96%B9%E6%A1%88" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>基于 LLDB Python API 的方案</h2>
+<p>为了解决侵入性修改代码逻辑的问题，我们可以考虑在调试器中捕获数据，并写入文件。因为是在 LLDB 调试器界面中执行自定义操作，所以不需要对代码本身进行修改。为了解决编写、执行效率的问题，我们决定不在单元测试中进行网络请求的验证，只验证客户端代码解析响应数据的逻辑，同时利用 Xcode 提供的自动执行断点的能力，在 app 运行过程中不间断地存储数据。</p>
+<h3><a id="%E6%96%B9%E6%B3%95%E7%AE%80%E4%BB%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>方法简介</h3>
+<ol>
+<li>利用 LLDB 调试器提供的 Python API，自定义一个将 NSData 类型数据写入文件系统指定路径的 Python 函数，再让 LLDB 运行期间加载这个 Python 函数，同时映射为一个 LLDB 命令。</li>
+<li>在 Xcode 调试过程中，在接收相应数据的代码处加上断点，断点处执行上一步加载的 LLDB 命令，从而将 NSData 类型数据写入文件系统指定路径。</li>
+</ol>
+<h3><a id="%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>环境准备</h3>
+<p>克隆代码库到开发机的指定路径：</p>
+<pre class="line-numbers"><code class="language-sh">git clone https://github.com/liyanage/lldb_utilities ~/git/lldb_utilities
+</code></pre>
+<p>链接代码库里的lldb配置文件到开发机的用户目录：</p>
+<pre class="line-numbers"><code class="language-sh">ln -s ~/git/lldb_utilities/lldbinit ~/.lldbinit
+</code></pre>
+<p>重启 Xcode。至此，每当 Xcode 调试运行 app 时，LLDB 都会加载已写好的自定义命令。</p>
+<h3><a id="%E5%AD%98%E5%82%A8%E6%B5%81%E7%A8%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>存储流程</h3>
+<p><img src="media/16553980014674/15826478132496.jpg" alt="" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<ol>
+<li>在接收响应数据的代码打断点，并编辑断点</li>
+<li>点击 Action 最右侧的➕️，新增一项</li>
+<li>Action 类型选择 <code>Debugger Command</code></li>
+<li>文本框中输入命令 <code>script import lldb</code>，表示向 Python 环境中加载<code>lldb</code>模块</li>
+<li>点击 Action 最右侧的➕️，继续新增一项</li>
+<li>Action 类型仍然选择 <code>Debugger Command</code></li>
+<li>文本框中输入命令 <code>dump_test_data respData</code>。这里<code>dump_test_data</code>命令就是在 Python 中已写好，已加载到 LLDB 中的命令，后面的<code>respData</code>是代码中 NSData 数据的表达式</li>
+<li>勾选最下方的 <code>Automatically continue after evaluating actions</code>，即表示此断点处在执行完上述命令后会继续运行代码，不会暂停</li>
+</ol>
+<p>添加断点后，在调试过程中每次执行过该断点后均会保存一个数据文件到指定位置。默认路径以及文件命名规则为：<code>/tmp/[类名].[方法名].[随机字符串].dat</code>，随机字符串可以保证每次写文件不会覆盖上一次存储的数据。<br />
+例如：<code>+[POISearchProtocolV2 parseOnTheWaySearchData:]</code>方法中保存的文件路径为<code>/tmp/POISearchProtocolV2.parseOnTheWaySearchData.01kcl06c.dat</code>。</p>
+<p><img src="media/16553980014674/15826484649743.jpg" alt="" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<h2><a id="%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>最佳实践</h2>
+<h3><a id="lldb%E7%9A%84-python%E7%8E%AF%E5%A2%83" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>LLDB 的 Python 环境</h3>
+<p>在 lldb 调试界面执行命令 <code>script print(sys.version)</code>，</p>
+<pre class="line-numbers"><code class="language-sh">(lldb) script print(sys.version)
+3.7.3 (default, Dec 13 2019, 19:58:14) 
+[Clang 11.0.0 (clang-1100.0.33.17)]
+(lldb) 
+</code></pre>
+<h3><a id="python-repl" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Python REPL</h3>
+<p>在 lldb 调试界面执行命令 <code>script</code>，进入 REPL。</p>
+<pre class="line-numbers"><code class="language-sh">(lldb) script
+Python Interactive Interpreter. To exit, type 'quit()', 'exit()'.
+&gt;&gt;&gt; print('Hello, world')
+Hello, world
+&gt;&gt;&gt; 
+</code></pre>
+<h3><a id="%E5%AF%BC%E5%85%A5%E8%87%AA%E5%AE%9A%E4%B9%89%E5%91%BD%E4%BB%A4" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>导入自定义命令</h3>
+<p>TODO:</p>
+<h3><a id="%E6%9F%A5%E7%9C%8B%E5%B7%B2%E5%AF%BC%E5%85%A5lldb%E7%9A%84%E8%87%AA%E5%AE%9A%E4%B9%89%E5%91%BD%E4%BB%A4" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>查看已导入 lldb 的自定义命令</h3>
+<p>执行命令<code>command script list</code>：</p>
+<pre class="line-numbers"><code class="language-sh">(lldb) command script list
+Current user-defined commands:
+  cstr_refs      -- For more information run 'help cstr_refs'
+  dump_nsdata    -- For more information run 'help dump_nsdata'
+  dump_test_data -- For more information run 'help dump_test_data'
+  find_variable  -- For more information run 'help find_variable'
+  malloc_info    -- For more information run 'help malloc_info'
+  objc_refs      -- For more information run 'help objc_refs'
+  pflags         -- For more information run 'help pflags'
+  poc            -- For more information run 'help poc'
+  pp             -- For more information run 'help pp'
+  ptr_refs       -- For more information run 'help ptr_refs'
+  tempdir        -- For more information run 'help tempdir'
+For more information on any command, type 'help &lt;command-name&gt;'.
+(lldb) 
+</code></pre>
+<h3><a id="python-api%E4%B8%AD%E7%9A%84-lldb%E6%A8%A1%E5%9D%97" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Python API 中的 lldb 模块</h3>
+<p>lldb 模块可以看作是调试器在 Python 环境中的上下文。文档见<a href="https://lldb.llvm.org/python_reference/index.html">LLDB Python API</a></p>
+<h2><a id="%E6%80%BB%E7%BB%93" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>总结</h2>
+<ul>
+<li>在调试器中执行文件存储操作，可以避免对代码的侵入式修改，同时省去了“加代码”-“删代码”这种无意义的操作。</li>
+<li>使用自动执行断点可以显著提高执行效率。</li>
+<li><code>script import lldb</code>是必需的，不加会导致调试器执行<code>dump_test_data</code>命令时找不到当前frame。但不能理解为什么调试器加载自定义命令的过程中，lldb 模块不能自动导入到 Python 环境中。</li>
+<li>这种方法只能在<strong>模拟器</strong>调试时使用，真机调试会有文件权限报错。(感谢 paulineli 同学)</li>
+</ul>
+<h2><a id="%E5%8F%82%E8%80%83" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>参考</h2>
+<ul>
+<li><a href="https://developer.apple.com/videos/play/wwdc2019/429/">LLDB: Beyond &quot;po&quot; - WWDC 2019</a></li>
+<li><a href="https://github.com/liyanage/lldb_utilities">GitHub / lldb_utilities</a></li>
+<li><a href="https://www.jianshu.com/p/39c3c7de6dd7">用 Python 玩转 LLDB</a></li>
+<li><a href="https://lldb.llvm.org/python_reference/index.html">LLDB Python API</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[JavaScript for Automation(JXA) 入门]]></title>
+    <link href="https://ltryee.gitee.io/15372506301626.html"/>
+    <updated>2018-09-18T14:03:50+08:00</updated>
+    <id>https://ltryee.gitee.io/15372506301626.html</id>
+    <content type="html"><![CDATA[
+<div class="mweb_toc"><ul>
+<li><a href="#0%E5%AD%A6%E4%B9%A0%E4%B8%80%E4%B8%AA%E6%96%B0%E5%B7%A5%E5%85%B7%E7%9A%84%E6%97%B6%E5%80%99%EF%BC%8C%E6%88%91%E4%BB%AC%E5%88%B0%E5%BA%95%E5%9C%A8%E5%AD%A6%E4%BB%80%E4%B9%88%EF%BC%9F">0. 学习一个新工具的时候，我们到底在学什么？</a></li>
+<li><a href="#1-jxa%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5">1. JXA 基本概念</a>
+<ul>
+<li><a href="#%E8%84%9A%E6%9C%AC%E6%98%AF%E5%A6%82%E4%BD%95%E5%B7%A5%E4%BD%9C%E7%9A%84">脚本是如何工作的</a></li>
+<li><a href="#%E8%84%9A%E6%9C%AC%E7%9A%84%E7%B1%BB%E5%9E%8B%E6%9C%89%E5%93%AA%E4%BA%9B">脚本的类型有哪些</a></li>
+</ul>
+</li>
+<li><a href="#2%E5%AE%89%E8%A3%85%E5%B7%A5%E5%85%B7">2. 安装工具</a></li>
+<li><a href="#3%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83">3. 开发环境</a>
+<ul>
+<li><a href="#script-editor">Script Editor</a>
+<ul>
+<li><a href="#hello-world">Hello world</a></li>
+<li><a href="#%E5%AF%BB%E6%B1%82%E5%B8%AE%E5%8A%A9">寻求帮助</a></li>
+</ul>
+</li>
+<li><a href="#repl">REPL</a></li>
+<li><a href="#shell-script">Shell Script</a></li>
+<li><a href="#shebang-script">Shebang Script</a></li>
+</ul>
+</li>
+<li><a href="#4%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80">4. 编程语言</a></li>
+<li><a href="#5%E6%A1%86%E6%9E%B6%EF%BC%8C%E5%85%A8%E5%B1%80%E5%AF%B9%E8%B1%A1%EF%BC%8C%E7%AC%AC%E4%B8%89%E6%96%B9%E5%BA%93%E4%BB%A5%E5%8F%8A%E5%85%B6%E4%BB%96%E2%80%A6%E2%80%A6">5. 框架，全局对象，第三方库以及其他……</a>
+<ul>
+<li><a href="#%E8%84%9A%E6%9C%AC%E4%B8%AD%E7%9A%84%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%90%86%E5%87%BD%E6%95%B0event-handlers">脚本中的事件处理函数(Event Handlers)</a></li>
+<li><a href="#%E5%85%A8%E5%B1%80js%E5%AF%B9%E8%B1%A1">全局 JS 对象</a></li>
+<li><a href="#jxa%E4%B8%8E-objc">JXA 与 ObjC</a>
+<ul>
+<li><a href="#%E5%8A%A0%E8%BD%BDoc%E6%A1%86%E6%9E%B6%E5%88%B0-js%E4%B8%8A%E4%B8%8B%E6%96%87">加载 OC 框架到 JS 上下文</a></li>
+<li><a href="#%E8%B0%83%E7%94%A8oc%E6%96%B9%E6%B3%95%E7%9A%84-js%E8%AF%AD%E6%B3%95">调用 OC 方法的 JS 语法</a></li>
+<li><a href="#%E5%BC%95%E7%94%A8%E8%B0%83%E7%94%A8%E4%BC%A0%E5%8F%82">引用调用传参</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99">参考资料</a></li>
+</ul>
+</div>
+<blockquote>
+<p>从 macOS 10.10 开始(当时还叫 OS X)，苹果提供了一种新的使用 JavaScript 语言编写自动化脚本的方式，和已有的 AppleScript 一样，能够方便我们操作其他应用，自动化地处理一些事务。然而使用 JavaScript 编写代码要比 AppleScript 容易得多。</p>
+</blockquote>
+<h2><a id="0%E5%AD%A6%E4%B9%A0%E4%B8%80%E4%B8%AA%E6%96%B0%E5%B7%A5%E5%85%B7%E7%9A%84%E6%97%B6%E5%80%99%EF%BC%8C%E6%88%91%E4%BB%AC%E5%88%B0%E5%BA%95%E5%9C%A8%E5%AD%A6%E4%BB%80%E4%B9%88%EF%BC%9F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>0. 学习一个新工具的时候，我们到底在学什么？</h2>
+<p>在了解 JXA 之前，先考虑一个问题：当决定要学习使用 JXA 的时候，我们到底需要学习什么？不仅是本文档介绍的 JXA，学习任何一个新工具，都逃不过这个问题：</p>
+<ul>
+<li>了解基本概念</li>
+<li>安装开发工具</li>
+<li>配置开发环境</li>
+<li>学习编程语言</li>
+<li>了解基本框架、工具的使用</li>
+</ul>
+<h2><a id="1-jxa%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>1. JXA 基本概念</h2>
+<p>在日常工作中，我们通常需要处理很多复杂、重复且耗时的任务。通过编写脚本，我们可以自动化地处理一些与应用、进程和操作系统交互的事务，从而提高效率，减少错误，节约时间。</p>
+<h3><a id="%E8%84%9A%E6%9C%AC%E6%98%AF%E5%A6%82%E4%BD%95%E5%B7%A5%E4%BD%9C%E7%9A%84" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>脚本是如何工作的</h3>
+<p><a href="https://developer.apple.com/library/archive/documentation/LanguagesUtilities/Conceptual/MacAutomationScriptingGuide/HowMacScriptingWorks.html#//apple_ref/doc/uid/TP40016239-CH73-SW1"><em>开放脚本架构(Open Scripting Architecture, OSA)</em></a>为 OS X 提供了夸应用通信的标准和扩展机制，这种通信发生于<em>应用(Applecations)<em>之间交换</em>苹果事件(Apple Events)</em>。Apple Events 即一种封装了命令和数据的<em>进程间通信(interprocess message)</em>。</p>
+<p>一个*脚本化应用(scriptable application)<em>通过执行操作或提供数据来响应 Apple events。每个脚本化应用都实现了自己的脚本功能，并通过</em>脚本字典(scripting dictionary)*公开自己独特的术语。</p>
+<p>在 OS X 中，OSA 提供以下能力：</p>
+<ul>
+<li>开发者可以创建脚本化应用并公开脚本术语</li>
+<li>用户可以通过脚本语言编写脚本</li>
+<li>使用 Apple events 可以在同一台计算机的不同应用或不同计算机之间进行通信</li>
+</ul>
+<p>*开放脚本框架(Open Scripting framework)<em>中定义了用于创建</em>脚本组件(scripting components)*的标准数据结构、程序和资源。该框架同时提供API，用于编译、执行、加载和存储脚本。<br />
+*苹果事件管理器(Apple Event Manager)*为创建脚本化应用提供基础支持，由 CoreServices 框架内的 AE 框架实现。开发者可以通过 Foundation 框架中的 Apple Event API 与 Apple Event Manager 进行交互。</p>
+<p>下图展示了上述组件如何在操作系统中协同工作<sup class="footnote-ref"><a href="#fn-1" id="fnref-1_ref" data-footnote-ref>1</a></sup>：</p>
+<p><img src="https://developer.apple.com/library/archive/documentation/LanguagesUtilities/Conceptual/MacAutomationScriptingGuide/Art/execute_script_2x.png" alt="The Open Scripting Architecture workflow" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<h3><a id="%E8%84%9A%E6%9C%AC%E7%9A%84%E7%B1%BB%E5%9E%8B%E6%9C%89%E5%93%AA%E4%BA%9B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>脚本的类型有哪些</h3>
+<ul>
+<li><em><strong>Applets</strong></em>: 已保存为app的脚本，行为与其他app类似，双击可以启动并运行。运行一个 Applet 时，脚本<code>run</code>函数中的代码会执行。如果脚本没有<code>run</code>函数，则视脚本的顶级域为隐式的<code>run</code>函数。</li>
+<li><em><strong>Droplets</strong></em>: 可向图标拖放文件和文件夹的脚本。双击可以启动并运行脚本的<code>run</code>函数，或将文件、文件夹拖放到图标上进行处理。在一个 Droplet 脚本中，拖放进来的文件或文件夹将会传入<code>openDocuments</code>函数处理。</li>
+<li><em><strong>Scripts</strong></em>: 脚本文档。双击可以打开并编辑。一些应用和进程可以加载并运行 Script。例如，邮件规则可以执行脚本来处理符合特定条件的邮件。脚本有时被称为<em>编译脚本(compiled scripts)</em>。</li>
+<li><em><strong>Script bundles</strong></em>: 以 <em>bundle</em> 形式保存的脚本文档。Bundle 是一个具有标准化分层结构的目录，它包含可执行代码和该代码使用的资源。</li>
+<li><em><strong>Stay-open scripts</strong></em>: 默认情况下，applets 和 droplets 在启动后运行并退出。但是，当配置为保持打开状态时，它们将保持打开状态，直到明确命令退出为止。通常，保持打开的脚本包含<code>idle</code>函数，它启动定期操作。</li>
+</ul>
+<p>在 Mac 上，编写自动化脚本主要使用 AppleScript 和 JavaScript。本文档将从零开始介绍如何使用 JavaScript 编写自动化脚本。</p>
+<h2><a id="2%E5%AE%89%E8%A3%85%E5%B7%A5%E5%85%B7" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>2. 安装工具</h2>
+<p>从 macOS 10.10 开始，苹果为 OSA 加入了 JavaScript 的支持，在已有能够运行 AppleScript 脚本的地方，都可以运行 JavaScript 编写的脚本。因此我们不需要安装额外的任何软件，使用<em>Script Editor</em>应用或命令行使用<code>osascript</code>命令即可运行 JavaScript 脚本。</p>
+<h2><a id="3%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>3. 开发环境</h2>
+<h3><a id="script-editor" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Script Editor</h3>
+<p>打开脚本编辑器应用<code>/Applications/Utilities/Script Editor.app</code>。</p>
+<h4><a id="hello-world" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Hello world</h4>
+<p>新建一个脚本，输入</p>
+<pre class="line-numbers"><code class="language-js">console.log('hello world')
+</code></pre>
+<p>点击运行:<br />
+<img src="media/15372506301626/15372628440741.jpg" alt="-w700" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<h4><a id="%E5%AF%BB%E6%B1%82%E5%B8%AE%E5%8A%A9" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>寻求帮助</h4>
+<p>如果我们需要查找某个应用的脚本字典，在状态栏点击<code>文件</code>-&gt;<code>打开词典...</code>，在弹出的对话框中选择应用。</p>
+<p><img src="https://developer.apple.com/library/archive/documentation/LanguagesUtilities/Conceptual/MacAutomationScriptingGuide/Art/script-editor_dictionary-callouts_2x.png" alt="脚本字典" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<h3><a id="repl" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>REPL</h3>
+<p>执行命令<code>osascript -il JavaScript</code>。其中<code>-i</code>表示交互模式，<code>-l JavaScript</code>表示使用 JavaScript ，不加该标签则默认使用 AppleScript。</p>
+<pre class="line-numbers"><code class="language-sh">➜  ~ osascript -il JavaScript
+&gt;&gt; console.log('hello world.')
+hello world.
+=&gt; undefined
+&gt;&gt; 
+</code></pre>
+<h3><a id="shell-script" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Shell Script</h3>
+<p>执行命令<code>osascript -l JavaScript -e '$.NSLog(&quot;hello ObjC&quot;)'</code>:</p>
+<pre class="line-numbers"><code class="language-sh">➜  ~ osascript -l JavaScript -e '$.NSLog(&quot;hello ObjC&quot;)'
+2018-09-18 16:43:31.327 osascript[35632:34312370] hello ObjC
+</code></pre>
+<h3><a id="shebang-script" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Shebang Script</h3>
+<p>创建文件并保存到<code>./test.js</code>：</p>
+<pre class="line-numbers"><code class="language-sh">#!/usr/bin/env osascript -l JavaScript
+
+function run(argv) {
+  console.log(JSON.stringify(argv))
+}
+</code></pre>
+<p>执行命令<code>./test.js -a -b -c -d lll</code>：</p>
+<pre class="line-numbers"><code class="language-sh">➜  ~ ./test.js -a -b -c -d lll
+[&quot;-a&quot;,&quot;-b&quot;,&quot;-c&quot;,&quot;-d&quot;,&quot;lll&quot;]
+</code></pre>
+<p>或<code>osascript -l JavaScript ./test.js -a aaa -b bbb</code>：</p>
+<pre class="line-numbers"><code class="language-sh">➜  ~ osascript -l JavaScript ./test.js -a aaa -b bbb
+[&quot;-a&quot;,&quot;aaa&quot;,&quot;-b&quot;,&quot;bbb&quot;]
+</code></pre>
+<h2><a id="4%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>4. 编程语言</h2>
+<p>JavaScript 本身无需多言。值得关注的是，OSA 对 JavaScript 功能的支持取决于 macOS 的版本。JXA 使用的 JavaScriptCore 引擎版本似乎与 macOS 捆绑的 Safari 版本相对应<sup class="footnote-ref"><a href="#fn-2" id="fnref-2_ref" data-footnote-ref>2</a></sup>。参阅 <a href="https://kangax.github.io/compat-table/es6/">kangax's compatibility table</a> 并找到 SF 列查看不同 Safari 版本的支持情况。</p>
+<h2><a id="5%E6%A1%86%E6%9E%B6%EF%BC%8C%E5%85%A8%E5%B1%80%E5%AF%B9%E8%B1%A1%EF%BC%8C%E7%AC%AC%E4%B8%89%E6%96%B9%E5%BA%93%E4%BB%A5%E5%8F%8A%E5%85%B6%E4%BB%96%E2%80%A6%E2%80%A6" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>5. 框架，全局对象，第三方库以及其他……</h2>
+<h3><a id="%E8%84%9A%E6%9C%AC%E4%B8%AD%E7%9A%84%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%90%86%E5%87%BD%E6%95%B0event-handlers" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>脚本中的事件处理函数(Event Handlers)</h3>
+<p>脚本中实现特定的名字的函数，可以接收特定的事件：</p>
+<ul>
+<li>
+<p><code>run</code>：脚本运行时调用该函数。默认情况下，脚本顶级域中的所有代码都被视为包含在隐式的<code>run</code>函数中。</p>
+<pre class="line-numbers"><code class="language-js">function run() {
+    var app = Application.currentApplication()
+    app.includeStandardAdditions = true
+    app.displayDialog(&quot;The script is running.&quot;)
+}
+</code></pre>
+</li>
+<li>
+<p><code>quit</code>：当脚本退出时调用。这个函数是可选的，如有必要，可以在该函数中执行数据清理操作。</p>
+<pre class="line-numbers"><code class="language-js">var app = Application.currentApplication()
+app.includeStandardAdditions = true
+ 
+function quit() {
+    app.displayDialog(&quot;The script is quitting.&quot;)
+}
+</code></pre>
+</li>
+<li>
+<p><code>openDocuments</code>：实现该函数的脚本将自动处理拖放操作。当以这种方式启动时，<code>openDocuments</code>函数会传入一个参数，存有被拖放文件或文件夹的列表。</p>
+<pre class="line-numbers"><code class="language-js">function openDocuments(droppedItems) {
+    // Process the dropped items here
+}
+</code></pre>
+</li>
+<li>
+<p><code>idle</code>：保存脚本时，<code>文件格式</code>选择<code>应用程序</code>，同时勾选<code>运行处理程序后保持打开</code>。在保持打开的脚本 app 中，脚本在<code>run</code>函数完成后保持打开状态，并且每30秒调用一次<code>idle</code>函数。可以使用该函数执行周期任务，例如监视文件夹以查找要处理的新文件。要更改<code>idle</code>函数的调用间隔，需要函数返回一个新的间隔，单位为秒。</p>
+<p><img src="media/15372506301626/15372739307536.jpg" alt="保存保持打开的脚本" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<pre class="line-numbers"><code class="language-js">var app = Application.currentApplication()
+app.includeStandardAdditions = true
+ 
+function idle() {
+    app.displayDialog(&quot;The script is idling.&quot;)
+    return 5
+}
+</code></pre>
+</li>
+</ul>
+<h3><a id="%E5%85%A8%E5%B1%80js%E5%AF%B9%E8%B1%A1" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>全局 JS 对象</h3>
+<p>作为 JavaScript 的执行环境，JXA 包含了以下全局变量<sup class="footnote-ref"><a href="#fn-3" id="fnref-3_ref" data-footnote-ref>3</a></sup>：</p>
+<ul>
+<li><code>Automation</code></li>
+<li><code>Application</code></li>
+<li><code>Library</code></li>
+<li><code>Path</code></li>
+<li><code>Progress</code></li>
+<li><code>ObjectSpecifier</code></li>
+<li><code>delay</code></li>
+<li><code>console.log</code></li>
+<li><code>ObjC</code></li>
+<li><code>Ref</code></li>
+<li><code>$</code></li>
+</ul>
+<h3><a id="jxa%E4%B8%8E-objc" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>JXA 与 ObjC</h3>
+<blockquote>
+<p>这是最激动人心的部分。</p>
+</blockquote>
+<h4><a id="%E5%8A%A0%E8%BD%BDoc%E6%A1%86%E6%9E%B6%E5%88%B0-js%E4%B8%8A%E4%B8%8B%E6%96%87" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>加载 OC 框架到 JS 上下文</h4>
+<p>JXA通过内置的 <a href="https://developer.apple.com/library/archive/releasenotes/InterapplicationCommunication/RN-JavaScriptForAutomation/Articles/OSX10-10.html#//apple_ref/doc/uid/TP40014508-CH109-SW17"><em>Objective-C Bridge</em></a> 调用 ObjC 接口。上一节提到的<code>ObjC</code>和<code>$</code>是用来调用 Objective-C Bridge 全局对象。<br />
+其中<code>ObjC</code>对象提供接口用于 JS 引擎访问/操作 OC 对象，而<code>$</code>则是 OC 对象在 JS 上下文中的映射。看不懂这句话也没关系，举个例子，使用<code>ObjC.import()</code>函数加载外部框架：</p>
+<pre class="line-numbers"><code class="language-js">ObjC.import('Cocoa')
+$.NSBeep()
+</code></pre>
+<p>如果直接执行<code>$.NSBeep()</code>，会收到错误：</p>
+<pre class="line-numbers"><code class="language-plain_text">&gt;&gt; $.NSBeep()
+!! Error on line 1: TypeError: $.NSBeep is not a function. (In '$.NSBeep()', '$.NSBeep' is undefined)
+</code></pre>
+<p>这是因为<code>NSBeep()</code>是 Cocoa 框架的一部分，我们在使用该函数前需要调用<code>ObjC.import('Cocoa')</code>将函数加载到 JS 上下文中。</p>
+<h4><a id="%E8%B0%83%E7%94%A8oc%E6%96%B9%E6%B3%95%E7%9A%84-js%E8%AF%AD%E6%B3%95" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>调用 OC 方法的 JS 语法</h4>
+<p>举个例子，下面的 OC 代码：</p>
+<pre class="line-numbers"><code class="language-objc">NSRect frame = NSMakeRect(0, 0, 200, 200);
+NSWindow* window  = [[NSWindow alloc] initWithContentRect:frame
+                    styleMask:NSBorderlessWindowMask
+                    backing:NSBackingStoreBuffered
+                    defer:NO]
+</code></pre>
+<p>在 JXA 中这样实现：</p>
+<pre class="line-numbers"><code class="language-js">var styleMask = $.NSTitledWindowMask | $.NSClosableWindowMask | $.NSMiniaturizableWindowMask;
+var frame = $.NSMakeRect(0, 0, windowWidth, windowHeight);
+var window = $.NSWindow.alloc.initWithContentRectStyleMaskBackingDefer(
+  frame,
+  styleMask,
+  $.NSBackingStoreBuffered,
+  false
+);
+</code></pre>
+<h4><a id="%E5%BC%95%E7%94%A8%E8%B0%83%E7%94%A8%E4%BC%A0%E5%8F%82" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>引用调用传参</h4>
+<p><code>NSFileManager</code>类的方法<code>- (BOOL)fileExistsAtPath:(NSString *)path isDirectory:(BOOL *)isDirectory;</code>，第二个参数的类型为<code>BOOL *</code>，在 OC 中我们通常使用引用调用来传递这个参数：</p>
+<pre class="line-numbers"><code class="language-objc">BOOL isDir;
+NSFileManager *fileManager = [[NSFileManager alloc] init];
+[fileManager fileExistsAtPath:fontPath isDirectory:&amp;isDir];
+</code></pre>
+<p>在 JXA 中可以使用<code>Ref()</code>函数获取一个变量，该变量可以传给需要引用调用的参数。调用完成后，变量数据通过<code>isDirRef[0]</code>返回：</p>
+<pre class="line-numbers"><code class="language-js">var isDirRef = Ref()  //set up a variable which can be passed by reference to ObjC functions.
+$.NSFileManager.alloc.init.fileExistsAtPathIsDirectory(&quot;/Users/Sancarn/Desktop/D.png&quot;, isDir)
+var isDir = isDirRef[0]     //get the data from the variable
+</code></pre>
+<h2><a id="%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>参考资料</h2>
+<ul>
+<li><a href="https://developer.apple.com/library/archive/documentation/LanguagesUtilities/Conceptual/MacAutomationScriptingGuide/index.html#//apple_ref/doc/uid/TP40016239-CH56-SW1">Mac Automation Scripting Guide</a></li>
+<li><a href="https://github.com/JXA-Cookbook/JXA-Cookbook/wiki">JavaScript for Automation Cookbook</a></li>
+<li><a href="https://developer.apple.com/library/archive/releasenotes/InterapplicationCommunication/RN-JavaScriptForAutomation/Articles/OSX10-10.html">JavaScript for Automation Release Notes</a></li>
+<li><a href="https://developer.apple.com/library/archive/documentation/AppleScript/Conceptual/AppleScriptLangGuide/introduction/ASLR_intro.html#//apple_ref/doc/uid/TP4000098">AppleScript Language Guide</a></li>
+</ul>
+<section class="footnotes" data-footnotes>
+<ol>
+<li id="fn-1">
+<p><a href="https://developer.apple.com/library/archive/documentation/LanguagesUtilities/Conceptual/MacAutomationScriptingGuide/index.html#//apple_ref/doc/uid/TP40016239-CH56-SW1">Mac Automation Scripting Guide</a> <a href="#fnref-1_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-2">
+<p><a href="https://github.com/JXA-Cookbook/JXA-Cookbook/wiki">JavaScript for Automation Cookbook</a> <a href="#fnref-2_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-3">
+<p><a href="https://developer.apple.com/library/archive/releasenotes/InterapplicationCommunication/RN-JavaScriptForAutomation/Articles/OSX10-10.html">JavaScript for Automation Release Notes</a> <a href="#fnref-3_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+</ol>
+</section>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[《iOS面试之道》读书笔记 - 网络请求相关]]></title>
+    <link href="https://ltryee.gitee.io/15366534889994.html"/>
+    <updated>2018-09-11T16:11:28+08:00</updated>
+    <id>https://ltryee.gitee.io/15366534889994.html</id>
+    <content type="html"><![CDATA[
+<div class="mweb_toc"><ul>
+<li><a href="#url-loading-system">URL Loading System</a>
+<ul>
+<li><a href="#nsurlsession">NSURLSession</a>
+<ul>
+<li><a href="#session%E7%B1%BB%E5%9E%8B">Session类型</a></li>
+<li><a href="#task%E7%B1%BB%E5%9E%8B">Task类型</a></li>
+<li><a href="#%E4%BD%BF%E7%94%A8delegate">使用delegate</a></li>
+<li><a href="#%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E6%80%A7">线程安全性</a></li>
+</ul>
+</li>
+<li><a href="#nsurlsessiontask">NSURLSessionTask</a></li>
+<li><a href="#nsurlsessionconfiguration">NSURLSessionConfiguration</a>
+<ul>
+<li><a href="#%E5%88%9B%E5%BB%BA">创建</a></li>
+<li><a href="#%E5%8F%AF%E9%85%8D%E7%BD%AE%E9%A1%B9">可配置项</a></li>
+</ul>
+</li>
+<li><a href="#%E5%A4%84%E7%90%86%E9%89%B4%E6%9D%83%E6%9F%A5%E8%AF%A2authentication-challenge">处理鉴权查询(Authentication Challenge)</a></li>
+</ul>
+</li>
+<li><a href="#nsurlconnection-vs-nsurlsession">NSURLConnection vs. NSURLSession</a></li>
+<li><a href="#ats">ATS</a>
+<ul>
+<li><a href="#ats%E5%9F%BA%E6%9C%AC%E9%85%8D%E7%BD%AE">ATS 基本配置</a></li>
+<li><a href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E9%85%8D%E7%BD%AE">自定义配置</a>
+<ul>
+<li><a href="#%E5%85%A8%E9%83%A8%E5%90%AF%E7%94%A8ats">全部启用 ATS</a></li>
+<li><a href="#%E5%85%A8%E9%83%A8%E5%90%AF%E7%94%A8ats%EF%BC%8C%E4%BD%86%E6%9C%89%E4%B8%80%E4%BA%9B%E4%BE%8B%E5%A4%96">全部启用 ATS，但有一些例外</a></li>
+<li><a href="#%E5%85%A8%E9%83%A8%E7%A6%81%E7%94%A8ats%EF%BC%8C%E4%BD%86%E6%9C%89%E4%B8%80%E4%BA%9B%E4%BE%8B%E5%A4%96">全部禁用 ATS，但有一些例外</a></li>
+<li><a href="#%E9%99%8D%E7%BA%A7%E7%9A%84ats">降级的 ATS</a></li>
+<li><a href="#%E5%85%A8%E9%83%A8%E7%A6%81%E7%94%A8ats">全部禁用 ATS</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<h2><a id="url-loading-system" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>URL Loading System</h2>
+<p>URL加载系统使用诸如标准的<em>https</em>或自定义协议，提供访问基于URL标识的资源的能力。加载是异步执行的，因此您的应用程序可以响应其他事件并在加载数据或错误到达时转回处理。<br />
+您可以使用<a href="https://developer.apple.com/documentation/foundation/nsurlsession?language=objc"><code>NSURLSession</code></a>实例创建一个或多个<a href="https://developer.apple.com/documentation/foundation/nsurlsessiontask?language=objc"><code>NSURLSessionTask</code></a>实例，这些实例可以获取数据并将数据返回到应用程序，下载文件或将数据和文件上载到远程位置。要配置会话，请使用一个<a href="https://developer.apple.com/documentation/foundation/nsurlsessionconfiguration?language=objc"><code>NSURLSessionConfiguration</code></a>对象，该对象控制如何使用cache和cookie，或者是否允许在蜂窝网络上进行连接。<br />
+您可以重复使用一个会话(session)来创建任务(task)。例如，Web浏览器可能使用多个会话，分别负责常规和隐私浏览，其中私有会话不提供缓存数据的能力。下图显示了具有这些配置的两个会话如何创建多个任务。</p>
+<p><img src="https://docs-assets.developer.apple.com/published/4bf9c6d271/6789dd96-afdc-4c18-b8eb-01f9012dc04d.png" alt="Creating tasks from URL sessions" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<p>每个会话都与一个*委托(delegate)*相关联，以接收定期更新（或error）。默认委托调用您提供的completion handler block; 如果您选择提供自己的自定义delegate，则不会调用此block。<br />
+您可以将会话配置为在后台运行，以便在应用程序暂停时，系统可以代为下载数据并唤醒app以提供结果<sup class="footnote-ref"><a href="#fn-1" id="fnref-1_ref" data-footnote-ref>1</a></sup>。</p>
+<h3><a id="nsurlsession" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>NSURLSession</h3>
+<blockquote>
+<p><code>NSURLSession</code>: 协调一组相关网络数据传输任务的对象。</p>
+</blockquote>
+<p>NSURLSession类和相关类提供下载内容的API。你可以使用NSURLSession API创建一个或多个会话，每个会话都会协调一组相关的数据传输任务<sup class="footnote-ref"><a href="#fn-2" id="fnref-2_ref" data-footnote-ref>2</a></sup>。</p>
+<h4><a id="session%E7%B1%BB%E5%9E%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Session类型</h4>
+<p>NSURLSession拥有一个没有配置对象的单例<a href="https://developer.apple.com/documentation/foundation/nsurlsession/1409000-sharedsession?language=objc"><code>sharedSession</code></a>，可用于处理基本请求。对于其他类型的session，你可以使用以下配置：</p>
+<ul>
+<li>*默认会话(Default session)*类似共享session，允许更多的配置，并允许使用delegate获取增量数据。</li>
+<li>*临时会话(Ephemeral session)*类似共享session，但不缓存cache，cookie或凭据到磁盘。</li>
+<li>*后台会话(Background session)*可以在app未运行时在后台执行上传或下载内容的操作。</li>
+</ul>
+<h4><a id="task%E7%B1%BB%E5%9E%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Task类型</h4>
+<p>在使用session的过程中，你可以通过创建task的方式完成上传、下载数据等操作。NSURLSession API提供了三种类型的任务：</p>
+<ul>
+<li>*数据任务(Data task)*用于发送和接收<code>NSData</code>。</li>
+<li>*上传任务(Upload task)*类似于数据任务，但也能用于发送文件数据，并支持在app未运行时后台上传。</li>
+<li>*下载任务(Download task)*以文件的形式获取数据，同时支持后台下载。</li>
+</ul>
+<h4><a id="%E4%BD%BF%E7%94%A8delegate" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>使用delegate</h4>
+<p>Session中的task共享一个公共delegate，用于处理各种事件。如果不需要通过delegate处理事件，可以在创建session时传入<code>nil</code>。<br />
+<strong>注意</strong>，<code>NSURLSession</code>会强引用<code>delegate</code>属性直到app退出或显式使session失效。如果你没有使session失效，会造成app内存泄漏。</p>
+<pre class="line-numbers"><code class="language-objc">@interface NSURLSession : NSObject
+
+...
+
+@property (nullable, readonly, retain) id &lt;NSURLSessionDelegate&gt; delegate;
+
+... 
+
+@end
+</code></pre>
+<h4><a id="%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E6%80%A7" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>线程安全性</h4>
+<p>URL Session API本身是完全<strong>线程安全</strong>的。您可以在任何线程上下文中自由创建session和task，并且当您的delegate方法调用completion handler时，工作将自动安排在正确的*委托队列(delegate queue)*中。</p>
+<h3><a id="nsurlsessiontask" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>NSURLSessionTask</h3>
+<blockquote>
+<p>在URL会话中执行的任务，如下载特定资源。</p>
+</blockquote>
+<p><code>NSURLSessionTask</code>类是session中task的基类，有三个子类可以使用：<code>NSURLSessionDataTask</code>、<code>NSURLSessionUploadTask</code>、<code>NSURLSessionDownloadTask</code>。</p>
+<p><img src="https://objccn.io/images/issues/issue-5/NSURLSession.png" alt="" /></p>
+<p>不同于直接使用 alloc-init 初始化方法，task 是由一个<code>NSURLSession</code>创建的。每个 task 的构造方法都有两个版本，一个带<code>completionHandler</code>，一个不带，例如下面<code>NSURLSessionDataTask</code>的构造方法。通过指定<code>completionHandler</code>这个 block 将创建一个隐式的 delegate，来替代该 task 原来的 delegate——session。对于需要override 原有 session task 的 delegate 的默认行为的情况，我们需要使用这种不带<code>completionHandler</code>的版本<sup class="footnote-ref"><a href="#fn-3" id="fnref-3_ref" data-footnote-ref>3</a></sup>。</p>
+<pre class="line-numbers"><code class="language-objc">/* Creates a data task with the given request.  The request may have a body stream. */
+- (NSURLSessionDataTask *)dataTaskWithRequest:(NSURLRequest *)request;
+
+/*
+ * data task convenience methods.  These methods create tasks that
+ * bypass the normal delegate calls for response and data delivery,
+ * and provide a simple cancelable asynchronous interface to receiving
+ * data.  Errors will be returned in the NSURLErrorDomain, 
+ * see &lt;Foundation/NSURLError.h&gt;.  The delegate, if any, will still be
+ * called for authentication challenges.
+ */
+- (NSURLSessionDataTask *)dataTaskWithRequest:(NSURLRequest *)request 
+                            completionHandler:(void (^)(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error))completionHandler;
+</code></pre>
+<p>所有的task都是可以取消，暂停或者恢复的。当一个 download task 取消时，可以通过选项来创建一个<em>恢复数据(resume data)</em>，然后可以传递给下一次新创建的 download task，以便继续之前的下载。</p>
+<p><strong>注意</strong>，task的所有属性均支持KVO。</p>
+<h3><a id="nsurlsessionconfiguration" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>NSURLSessionConfiguration</h3>
+<blockquote>
+<p>用于定义URL会话的行为和策略的配置对象。</p>
+</blockquote>
+<p><code>NSURLSessionConfiguration</code> 对象用于对 <code>NSURLSession</code> 对象进行初始化。在初始化<code>NSURLSession</code>对象之前，必须正确配置<code>NSURLSessionConfiguration</code>对象，session 对象会 copy 一份配置数据，保存在自己的<code>configuration</code>属性中。一旦初始化完成，再次修改<code>NSURLSessionConfiguration</code>对象是不会影响到 session 对象的。</p>
+<h4><a id="%E5%88%9B%E5%BB%BA" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>创建</h4>
+<p><code>NSURLSessionConfiguration</code>类提供了三个方法创建配置对象：</p>
+<ul>
+<li><code>defaultSessionConfiguration</code>返回一个默认配置，具有相同的共享 <code>NSHTTPCookieStorage</code>，共享 <code>NSURLCache</code> 和共享 <code>NSURLCredentialStorage</code>。</li>
+<li><code>ephemeralSessionConfiguration</code>返回一个临时配置，不会对cache，cookie或证书进行缓存。</li>
+<li><code>+backgroundSessionConfigurationWithIdentifier:</code>返回一个后台配置，可用于创建后台session，可以子啊app未运行时在后台执行上传和下载。初始化时指定的标识符用于向任何可能在进程外恢复后台传输的*守护进程(daemon)*提供上下文。</li>
+</ul>
+<h4><a id="%E5%8F%AF%E9%85%8D%E7%BD%AE%E9%A1%B9" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>可配置项</h4>
+<p>参考苹果<a href="https://developer.apple.com/documentation/foundation/nsurlsessionconfiguration?language=objc">官方文档</a>。</p>
+<h3><a id="%E5%A4%84%E7%90%86%E9%89%B4%E6%9D%83%E6%9F%A5%E8%AF%A2authentication-challenge" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>处理鉴权查询(Authentication Challenge)</h3>
+<blockquote>
+<p>当服务器要求对URL请求进行身份验证时，适当地做出响应。</p>
+</blockquote>
+<p>当客户端第一次发送请求的时候，服务器会返回一个包含公钥的受保护空间（也成为证书），当我们发送请求的时候，公钥会将请求加密再发送给服务器，服务器接到请求之后，用自带的私钥进行解密，如果正确再返回数据。这就是 HTTPS 的安全性所在<sup class="footnote-ref"><a href="#fn-4" id="fnref-4_ref" data-footnote-ref>4</a></sup>。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/266345-9caefa5798c3660e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/554" alt="HTTPS请求" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<p>在把请求发送给服务器的过程中，服务器可能会发出<em>鉴权查询(authentication challenge)</em>，这可以由共享的 cookie 或*机密存储(credential storage)*来自动响应，或者由被委托对象来响应。<br />
+你需要根据收到的鉴权查询的性质，决定实现下面哪个代理方法：</p>
+<ul>
+<li>实现<code>NSURLSessionDelegate</code>协议的<code> URLSession:didReceiveChallenge:completionHandler:</code>方法，用来处理session范围的鉴权查询，这些查询可能来自*传输层安全协议(Transport Layer Security, TLS)*验证。成功处理这种查询将对 session 内的所有 task 有效。</li>
+<li>实现<code>NSURLSessionTaskDelegate</code>协议的<code> URLSession:task:didReceiveChallenge:completionHandler</code>方法，用来处理特定 task 的鉴权查询，通常用于验证用户名/密码。Session 中的每个 task 都可以发起自己的鉴权查询。</li>
+</ul>
+<pre class="line-numbers"><code class="language-objc">/* If implemented, when a connection level authentication challenge
+ * has occurred, this delegate will be given the opportunity to
+ * provide authentication credentials to the underlying
+ * connection. Some types of authentication will apply to more than
+ * one request on a given connection to a server (SSL Server Trust
+ * challenges).  If this delegate message is not implemented, the 
+ * behavior will be to use the default handling, which may involve user
+ * interaction. 
+ */
+- (void)URLSession:(NSURLSession *)session didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
+                                             completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential * _Nullable credential))completionHandler;
+                                             
+/* The task has received a request specific authentication challenge.
+ * If this delegate is not implemented, the session specific authentication challenge
+ * will *NOT* be called and the behavior will be the same as using the default handling
+ * disposition. 
+ */
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
+                            didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge 
+                              completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential * _Nullable credential))completionHandler;
+</code></pre>
+<p><strong>注意</strong>，从苹果的<a href="https://developer.apple.com/documentation/foundation/nsurlprotectionspace/nsurlprotectionspace_authentication_method_constants?language=objc">官方文档</a>可以获取所有鉴权查询的类型。</p>
+<p>当 app 使用 https 协议发送请求时，<code>NSURLSessionDelegate</code>会收到<code>NSURLAuthenticationMethodServerTrust</code>类型的鉴权查询。不同于服务器要求验证你的app的身份，这个类型的鉴权查询提供了使你验证服务器证书的机会。大多数情况下，你应该让系统自动处理。除非你想要接受原本会被系统拒绝的服务器证书，或希望拒绝某个被系统接受的证书。<br />
+下面的代码展示了如何访问服务器证书，以及如何验证证书并接受或拒绝它：</p>
+<ul>
+<li>如果证书有效，使用<code>serverTrust</code>创建一个<code>NSURLCredential</code>实例，然后调用<code>completionHandler()</code>，传入<code>NSURLSessionAuthChallengeUseCredential</code>和 credential 对象。这样系统将接受服务器证书。</li>
+<li>如果证书无效，调用<code>completionHandler()</code>，传入<code>NSURLSessionAuthChallengeCancelAuthenticationChallenge</code>和<code>nil</code>。这样系统将拒绝服务器证书。</li>
+</ul>
+<pre class="line-numbers"><code class="language-objc">- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
+                            didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge 
+                              completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential * _Nullable credential))completionHandler {
+
+    NSURLSessionAuthChallengeDisposition disposition = NSURLSessionAuthChallengePerformDefaultHandling;
+    NSURLCredential *credential = nil;
+    
+    if (![challenge.protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust]) {
+        completionHandler(disposition, credential);
+        return;
+    }
+    
+    SecTrustRef trust = challenge.protectionSpace.serverTrust;
+    SecTrustResultType checkResult;
+    OSStatus trustEvalStatus = SecTrustEvaluate(trust, &amp;checkResult);
+    if (trustEvalStatus == errSecSuccess 
+        &amp;&amp; (checkResult == kSecTrustResultProceed 
+            || checkResult == kSecTrustResultUnspecified)) {
+            
+        credential = [NSURLCredential credentialForTrust:trust];
+        disposition = NSURLSessionAuthChallengeUseCredential;     
+    }
+    else {
+        // Show a UI here warning the user the server credentials are invalid, and cancel the load.
+        disposition = NSURLSessionAuthChallengeCancelAuthenticationChallenge;
+    }
+    
+    completionHandler(disposition, credential);
+}
+
+</code></pre>
+<p><strong>注意</strong>，参考苹果<a href="https://developer.apple.com/documentation/security/certificate_key_and_trust_services?language=objc">官方文档</a>，了解如何验证<code>SecTrustRef</code>实例或从中访问证书或实例的详细信息。</p>
+<h2><a id="nsurlconnection-vs-nsurlsession" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>NSURLConnection vs. NSURLSession</h2>
+<p><code>NSURLSession</code> 的 delegate 方法是 <code>NSURLConnection</code> 的演化的十年中对于 ad-hoc 模式的一个显著改善。您可以查看这个<a href="https://gist.github.com/floriankugler/6870499">映射表</a>来进行一个完整的概览。</p>
+<h2><a id="ats" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>ATS</h2>
+<p>在 Apple 平台上，应用程序和应用程序扩展可以使用名为*App Transport Security(ATS)*的网络安全功能，默认情况下已启用。它通过确保您的应用程序的网络连接仅使用行业标准协议和没有已知缺陷的密码，从而提高了隐私和数据完整性。这有助于让用户相信您的应用程序不会意外地将传输的数据泄露给恶意方。</p>
+<h3><a id="ats%E5%9F%BA%E6%9C%AC%E9%85%8D%E7%BD%AE" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>ATS 基本配置</h3>
+<p>通过在应用程序<code>Info.plist</code>文件中配置<code>NSAppTransportSecurity</code>键的方式自定义网络连接的安全性。<br />
+默认情况下 ATS 在 iOS 9 和 macOS 10.11 及以后的系统上默认为开启状态。启用 ATS 后，所有的http请求必须使用HTTPS协议，尝试连接不安全的HTTP协议将会失败。ATS使用<em>Transport Layer Security(TLS)</em>，协议版本<code>1.2</code>。<br />
+以下列表展示了<code>NSAppTransportSecurity</code>字典的整体结构，显示了所有可能的键，所有的键都是<em>可选(optional</em>)的<sup class="footnote-ref"><a href="#fn-6" id="fnref-6_ref" data-footnote-ref>5</a></sup>:</p>
+<pre class="line-numbers"><code class="language-plain_text">NSAppTransportSecurity : Dictionary {
+    NSAllowsArbitraryLoads : Boolean
+    NSAllowsArbitraryLoadsForMedia : Boolean
+    NSAllowsArbitraryLoadsInWebContent : Boolean
+    NSAllowsLocalNetworking : Boolean
+    NSExceptionDomains : Dictionary {
+        &lt;domain-name-string&gt; : Dictionary {
+            NSIncludesSubdomains : Boolean
+            NSExceptionAllowsInsecureHTTPLoads : Boolean
+            NSExceptionMinimumTLSVersion : String
+            NSExceptionRequiresForwardSecrecy : Boolean   // Default value is YES
+            NSRequiresCertificateTransparency : Boolean
+        }
+    }
+}
+</code></pre>
+<h3><a id="%E8%87%AA%E5%AE%9A%E4%B9%89%E9%85%8D%E7%BD%AE" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>自定义配置</h3>
+<p>有以下几种常见的自定义配置方式可供使用<sup class="footnote-ref"><a href="#fn-5" id="fnref-5_ref" data-footnote-ref>6</a></sup>：</p>
+<h4><a id="%E5%85%A8%E9%83%A8%E5%90%AF%E7%94%A8ats" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>全部启用 ATS</h4>
+<p>这是默认状态，直接使用 NSURLSession，NSURLConnection，CFURL 而不需要做任何配置。当然只能在 iOS 9 和 macOS 10.11 及以后的系统上有效。</p>
+<h4><a id="%E5%85%A8%E9%83%A8%E5%90%AF%E7%94%A8ats%EF%BC%8C%E4%BD%86%E6%9C%89%E4%B8%80%E4%BA%9B%E4%BE%8B%E5%A4%96" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>全部启用 ATS，但有一些例外</h4>
+<p>如果需要向不使用 ATS 的域发送请求，需要将这些域加入到<code>NSExceptionDomains</code>字典中。如果希望该域的所有子域全部禁用 ATS，需要设置<code>NSExceptionAllowsInsecureHTTPLoads</code>为<code>YES</code>，同时将<code>NSIncludesSubdomains</code>设置为<code>YES</code>。</p>
+<p><img src="http://www.neglectedpotential.com/wp-content/uploads/ExampleB.png" alt="所有请求均启用 ATS，但有一些例外" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<h4><a id="%E5%85%A8%E9%83%A8%E7%A6%81%E7%94%A8ats%EF%BC%8C%E4%BD%86%E6%9C%89%E4%B8%80%E4%BA%9B%E4%BE%8B%E5%A4%96" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>全部禁用 ATS，但有一些例外</h4>
+<p>如果需要全部禁用 ATS，需要设置<code>NSAllowsArbitraryLoads</code>为<code>YES</code>，则所有的请求将不会使用 ATS。如果希望在一些例外的域使用 ATS，需要将这些域加入<code>NSExceptionDomains</code>字典。每个希望启用 ATS 的域都要在字典中将<code>NSExceptionAllowsInsecureHTTPLoads</code>设置为<code>NO</code>。</p>
+<p><img src="http://www.neglectedpotential.com/wp-content/uploads/ExampleC.png" alt="全部禁用 ATS，但有一些例外" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<h4><a id="%E9%99%8D%E7%BA%A7%E7%9A%84ats" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>降级的 ATS</h4>
+<p>某些情况下你可能需要全部启用 ATS，但实际上并没有完全支持 ATS 的最佳实践。例如服务器支持 TLS1.2，但不支持<em>前向保密(forward secrecy)</em>。为了解决这个问题，可以使指定于支持 ATS，同时禁用前向保密，需要在<code>NSExceptionDomains</code>字典中加入该域，同时设置域的<code>NSExceptionRequiresForwardSecrecy</code>为<code>NO</code>。<br />
+同样，如果需要支持前向保密，而TLS版本只有<code>1.1</code>，则需要设置<code>NSExceptionMinimumTLSVersion</code>为<code>TLSv1.1</code>。</p>
+<p><img src="http://www.neglectedpotential.com/wp-content/uploads/ExampleD.png" alt="降级的 ATS" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<h4><a id="%E5%85%A8%E9%83%A8%E7%A6%81%E7%94%A8ats" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>全部禁用 ATS</h4>
+<p>如果需要全部禁用 ATS，只需将<code>NSAllowsArbitraryLoads</code>设置为<code>YES</code>。</p>
+<p><img src="http://www.neglectedpotential.com/wp-content/uploads/ExampleE.png" alt="全部禁用 ATS" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<section class="footnotes" data-footnotes>
+<ol>
+<li id="fn-1">
+<p><a href="https://developer.apple.com/documentation/foundation/url_loading_system?language=objc">URL Loading System</a> <a href="#fnref-1_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-2">
+<p><a href="https://developer.apple.com/documentation/foundation/nsurlsession?language=objc">NSURLSession</a> <a href="#fnref-2_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-3">
+<p><a href="https://objccn.io/issue-5-4/">从 NSURLConnection 到 NSURLSession</a> <a href="#fnref-3_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-4">
+<p><a href="https://www.jianshu.com/p/4b5d2d47833d">iOS - HTTPS</a> <a href="#fnref-4_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-6">
+<p><a href="https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CocoaKeys.html#//apple_ref/doc/uid/TP40009251-SW33">NSAppTransportSecurity</a> <a href="#fnref-6_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-5">
+<p><a href="http://www.neglectedpotential.com/2015/06/working-with-apples-application-transport-security/">WORKING WITH APPLE’S APP TRANSPORT SECURITY</a> <a href="#fnref-5_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+</ol>
+</section>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[《iOS面试之道》读书笔记 - 远程通知服务器]]></title>
+    <link href="https://ltryee.gitee.io/15365724007469.html"/>
+    <updated>2018-09-10T17:40:00+08:00</updated>
+    <id>https://ltryee.gitee.io/15365724007469.html</id>
+    <content type="html"><![CDATA[
+<blockquote>
+<p>设置服务器以生成通知并将其推送到用户设备</p>
+</blockquote>
+<h2><a id="%E6%A6%82%E5%86%B5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>概况</h2>
+<h3><a id="%E4%B8%BA%E9%80%9A%E7%9F%A5%E6%9E%84%E5%BB%BA%E8%87%AA%E5%AE%9A%E4%B9%89%E5%9F%BA%E7%A1%80%E7%BB%93%E6%9E%84" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>为通知构建自定义基础结构</h3>
+<h3><a id="%E5%BB%BA%E7%AB%8B%E4%B8%8Eapn%E7%9A%84%E5%8F%AF%E4%BF%A1%E8%BF%9E%E6%8E%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>建立与APN的可信连接</h3>
+<h3><a id="%E4%BA%86%E8%A7%A3apn%E6%8F%90%E4%BE%9B%E7%9A%84%E5%86%85%E5%AE%B9" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>了解APN提供的内容</h3>
+<h2><a id="%E7%94%9F%E6%88%90%E8%BF%9C%E7%A8%8B%E9%80%9A%E7%9F%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>生成远程通知</h2>
+<h2><a id="%E5%90%91apns%E5%8F%91%E9%80%81%E9%80%9A%E7%9F%A5%E8%AF%B7%E6%B1%82" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>向APNs发送通知请求</h2>
+<h2><a id="%E6%97%A0%E5%A3%B0%E5%9C%B0%E6%8E%A8%E9%80%81app%E6%9B%B4%E6%96%B0" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>无声地推送app更新</h2>
+<h2><a id="%E4%B8%8Eapns%E5%BB%BA%E7%AB%8B%E5%9F%BA%E4%BA%8E%E4%BB%A4%E7%89%8C%E7%9A%84%E8%BF%9E%E6%8E%A5-token-based-connection" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>与APNs建立基于令牌的连接(Token-Based Connection)</h2>
+<h2><a id="%E4%B8%8Eapns%E5%BB%BA%E7%AB%8B%E5%9F%BA%E4%BA%8E%E8%AF%81%E4%B9%A6%E7%9A%84%E8%BF%9E%E6%8E%A5-certificate-based-connection" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>与APNs建立基于证书的连接(Certificate-Based Connection)</h2>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[《iOS面试之道》读书笔记 - UserNotifications框架概况]]></title>
+    <link href="https://ltryee.gitee.io/15365446737230.html"/>
+    <updated>2018-09-10T09:57:53+08:00</updated>
+    <id>https://ltryee.gitee.io/15365446737230.html</id>
+    <content type="html"><![CDATA[
+<div class="mweb_toc"><ul>
+<li><a href="#%E8%AF%B7%E6%B1%82%E4%BD%BF%E7%94%A8%E6%9D%83%E9%99%90">请求使用权限</a>
+<ul>
+<li><a href="#%E5%9C%A8app%E5%90%AF%E5%8A%A8%E6%97%B6%E8%AF%B7%E6%B1%82%E6%8E%88%E6%9D%83">在app启动时请求授权</a></li>
+<li><a href="#%E6%A0%B9%E6%8D%AE%E6%8E%88%E6%9D%83%E9%85%8D%E7%BD%AE%E6%94%AF%E6%8C%81%E7%9A%84%E9%80%9A%E7%9F%A5%E7%B1%BB%E5%9E%8B">根据授权配置支持的通知类型</a></li>
+</ul>
+</li>
+<li><a href="#%E4%BB%8Eapp%E5%8F%91%E8%B5%B7%E6%9C%AC%E5%9C%B0%E9%80%9A%E7%9F%A5">从app发起本地通知</a>
+<ul>
+<li><a href="#%E5%88%9B%E5%BB%BA%E9%80%9A%E7%9F%A5%E7%9A%84%E5%86%85%E5%AE%B9notification-content">创建通知的内容(Notification Content)</a></li>
+<li><a href="#%E6%8C%87%E5%AE%9A%E8%A7%A6%E5%8F%91%E6%9D%A1%E4%BB%B6notification-trigger">指定触发条件(Notification Trigger)</a></li>
+<li><a href="#%E5%88%9B%E5%BB%BA%E5%B9%B6%E6%B3%A8%E5%86%8C%E9%80%9A%E7%9F%A5%E8%AF%B7%E6%B1%82notification-request">创建并注册通知请求(Notification Request)</a></li>
+<li><a href="#%E5%8F%96%E6%B6%88%E5%B7%B2%E8%A7%84%E5%88%92%E7%9A%84%E8%AF%B7%E6%B1%82">取消已规划的请求</a></li>
+</ul>
+</li>
+<li><a href="#%E5%90%91apns%E6%B3%A8%E5%86%8C%E4%BD%A0%E7%9A%84app">向APNs注册你的app</a>
+<ul>
+<li><a href="#%E5%90%AF%E7%94%A8%E6%8E%A8%E5%8A%A8%E9%80%9A%E7%9F%A5%E5%8A%9F%E8%83%BD">启用推动通知功能</a></li>
+<li><a href="#%E6%B3%A8%E5%86%8C%E4%BD%A0%E7%9A%84app%E5%B9%B6%E8%8E%B7%E5%8F%96%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E7%9A%84%E8%AE%BE%E5%A4%87%E4%BB%A4%E7%89%8C-device-token">注册你的app并获取应用程序的设备令牌(Device Token)</a></li>
+<li><a href="#%E5%B0%86token%E8%BD%AC%E5%8F%91%E5%88%B0%E4%B8%9A%E5%8A%A1%E6%9C%8D%E5%8A%A1%E5%99%A8">将token转发到业务服务器</a></li>
+</ul>
+</li>
+<li><a href="#%E5%A3%B0%E6%98%8E%E5%8F%AF%E6%93%8D%E4%BD%9C%E7%9A%84%E9%80%9A%E7%9F%A5%E7%B1%BB%E5%9E%8B">声明可操作的通知类型</a>
+<ul>
+<li><a href="#%E5%A3%B0%E6%98%8E%E8%87%AA%E5%AE%9A%E4%B9%89%E6%93%8D%E4%BD%9Ccustom-action%E5%92%8C%E9%80%9A%E7%9F%A5%E7%B1%BB%E5%9E%8B-notification-type">声明自定义操作(Custom Action)和通知类型(Notification Type)</a></li>
+<li><a href="#%E5%9C%A8%E6%9C%89%E6%95%88%E8%BD%BD%E8%8D%B7payload%E4%B8%AD%E5%8C%85%E5%90%AB%E9%80%9A%E7%9F%A5%E7%B1%BB%E5%88%AB-notification-category">在有效载荷(Payload)中包含通知类别(Notification Category)</a></li>
+<li><a href="#%E5%A4%84%E7%90%86%E9%80%89%E5%AE%9A%E7%9A%84%E6%93%8D%E4%BD%9C">处理选定的操作</a></li>
+</ul>
+</li>
+<li><a href="#%E5%A4%84%E7%90%86%E9%80%9A%E7%9F%A5%E5%92%8C%E4%B8%8E%E9%80%9A%E7%9F%A5%E7%9B%B8%E5%85%B3%E7%9A%84%E6%93%8D%E4%BD%9C">处理通知和与通知相关的操作</a>
+<ul>
+<li><a href="#%E5%A4%84%E7%90%86app%E5%9C%A8%E5%89%8D%E5%8F%B0%E8%BF%90%E8%A1%8C%E6%97%B6%E7%9A%84%E9%80%9A%E7%9F%A5">处理 app 在前台运行时的通知</a></li>
+</ul>
+</li>
+<li><a href="#%E4%BF%AE%E6%94%B9%E9%80%9A%E7%9F%A5%E4%B8%AD%E7%9A%84%E5%86%85%E5%AE%B9">修改通知中的内容</a>
+<ul>
+<li><a href="#%E4%B8%BA%E9%A1%B9%E7%9B%AE%E6%B7%BB%E5%8A%A0%E6%9C%8D%E5%8A%A1%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E6%89%A9%E5%B1%95service-app-extension">为项目添加服务应用程序扩展(Service App Extension)</a></li>
+<li><a href="#%E5%AE%9E%E7%8E%B0%E6%89%A9%E5%B1%95%E7%9A%84%E6%96%B9%E6%B3%95">实现扩展的方法</a></li>
+<li><a href="#%E9%85%8D%E7%BD%AE%E8%BF%9C%E7%A8%8B%E9%80%9A%E7%9F%A5%E7%9A%84%E6%9C%89%E6%95%88%E8%B4%9F%E8%BD%BD">配置远程通知的有效负载</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p>UserNotifications 框架可以用来从应用程序本地生成通知，也可以从你的服务器远程生成通知。对于<em>本地通知(local notifications)</em>，应用程序会创建通知内容，并指定触发通知传递的条件，如时间或位置。对于<em>远程通知(remote notifications)</em>（也称为推送通知），使用某个服务器生成通知，Apple推送通知服务（APN）处理将这些通知传递到用户的设备<sup class="footnote-ref"><a href="#fn-1" id="fnref-1_ref" data-footnote-ref>1</a></sup>。</p>
+<h2><a id="%E8%AF%B7%E6%B1%82%E4%BD%BF%E7%94%A8%E6%9D%83%E9%99%90" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>请求使用权限</h2>
+<blockquote>
+<p>请用户允许显示警报(alerts)，播放声音或标记应用程序图标(badge)以响应通知。</p>
+</blockquote>
+<p>本地和远程通知通过alert，声音或badge引起用户的注意。当app未运行或处于后台时，仍然会发生这些互动。通知让用户知道app具有相关信息供他们查看。由于用户可能会认为基于通知​​的交互具有破坏性，因此必须显式地获得使用通知的权限<sup class="footnote-ref"><a href="#fn-2" id="fnref-2_ref" data-footnote-ref>2</a></sup>。</p>
+<h3><a id="%E5%9C%A8app%E5%90%AF%E5%8A%A8%E6%97%B6%E8%AF%B7%E6%B1%82%E6%8E%88%E6%9D%83" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>在app启动时请求授权</h3>
+<p>在app启动时发起授权请求，在代码中获取<code>UNUserNotificationCenter</code>对象，并调用<code>requestAuthorizationWithOptions:completionHandler:</code>方法，指定app使用的所有交互类型。</p>
+<pre class="line-numbers"><code class="language-objc">UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+[center requestAuthorizationWithOptions:(UNAuthorizationOptionAlert | UNAuthorizationOptionBadge | UNAuthorizationOptionSound) 
+                      completionHandler:^(BOOL granted, NSError * _Nullable error) {
+                          // 基于用户的授权状态打开或关闭app的相关功能
+                      }];
+
+</code></pre>
+<p>App首次发出此授权请求时，系统会提示用户授予或拒绝该请求并记录用户的响应。后续授权请求不会提示用户。</p>
+<h3><a id="%E6%A0%B9%E6%8D%AE%E6%8E%88%E6%9D%83%E9%85%8D%E7%BD%AE%E6%94%AF%E6%8C%81%E7%9A%84%E9%80%9A%E7%9F%A5%E7%B1%BB%E5%9E%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>根据授权配置支持的通知类型</h3>
+<p>在试图发起本地通知之前，请确保app已获得授权。即使最初获取了授权，用户也可以随时取消app的授权设置。用户也可以改变允许的交互类型，这可能回导致你改变通知的配置。</p>
+<p>使用授权设置能够为用户提供更好的体验。即使你在<code>UNMutableNotificationContent</code>对象中指定了适当的信息，如果app没有获取相应的授权，系统也不会执行交互。调用<code>UNUserNotificationCenter</code>的<code>getNotificationSettingsWithCompletionHandler:</code>方法以获取当前的授权配置。</p>
+<pre class="line-numbers"><code class="language-objc">UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+[center getNotificationSettingsWithCompletionHandler:^(UNNotificationSettings * _Nonnull settings) {
+    if (settings.authorizationStatus != UNAuthorizationStatusAuthorized) {
+        return;
+    }
+    
+    if (settings.alertSetting == UNNotificationSettingEnabled) {
+        // 发送alert
+        [self myScheduleAlertNotification];
+    }
+    else {
+        // 发送声音和badge
+        [self badgeAppAndPlaySound];
+    }
+}];
+</code></pre>
+<p>即使app未获取特定的授权，你也可能希望使用相关信息配置通知。如果<code>UNNotificationSettings</code>的<code>notificationCenterSetting</code>属性设置为<code>UNNotificationSettingEnabled</code>，则通知中心仍会显示包含alert的通知。同时当app处于前台时，通知也会传递到<code> userNotificationCenter:willPresentNotification:withCompletionHandler:</code>方法。</p>
+<h2><a id="%E4%BB%8Eapp%E5%8F%91%E8%B5%B7%E6%9C%AC%E5%9C%B0%E9%80%9A%E7%9F%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>从app发起本地通知</h2>
+<blockquote>
+<p>当你想引起用户的注意时，请从app创建并安排通知。</p>
+</blockquote>
+<p>系统会根据你指定的时间或地点传递和处理通知。如果在app未运行或在后台运行通知时，系统会与用户进行交互。如果app位于前台，系统会将通知发送到app以进行处理<sup class="footnote-ref"><a href="#fn-3" id="fnref-3_ref" data-footnote-ref>3</a></sup>。</p>
+<h3><a id="%E5%88%9B%E5%BB%BA%E9%80%9A%E7%9F%A5%E7%9A%84%E5%86%85%E5%AE%B9notification-content" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>创建通知的内容(Notification Content)</h3>
+<p>使用<code>UNMutableNotificationContent</code>对象表示通知内容。</p>
+<pre class="line-numbers"><code class="language-objc">UNMutableNotificationContent *content = [[UNMutableNotificationContent alloc] init];
+content.title = @&quot;Weekly Staff Meeting&quot;;
+content.body = @&quot;Every Tuesday at 2pm&quot;;
+</code></pre>
+<h3><a id="%E6%8C%87%E5%AE%9A%E8%A7%A6%E5%8F%91%E6%9D%A1%E4%BB%B6notification-trigger" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>指定触发条件(Notification Trigger)</h3>
+<p>为通知指定触发条件，使用<code>UNCalendarNotificationTrigger</code>，<code> UNTimeIntervalNotificationTrigger</code>或<code>UNLocationNotificationTrigger</code>对象。不同的 trigger 需要使用不同的参数，例如基于日历的 trigger 需要指定触发日期和时间。<br />
+下面的代码展示了如何配置每周二下午2点发送的通知。<code>NSDateComponents</code>对象指定事件的触发时间。配置 trigger 的<code>repeats</code>属性会使系统在传递事件后重新规划该事件，从而实现周期性触发通知的效果。</p>
+<pre class="line-numbers"><code class="language-objc">NSDateComponents *components = [[NSDateComponents alloc] init];
+components.calendar = [NSCalendar currentCalendar];
+components.weekday = 3;
+components.hour = 14;
+
+UNCalendarNotificationTrigger *trigger = [UNCalendarNotificationTrigger triggerWithDateMatchingComponents:components repeats:YES];
+</code></pre>
+<h3><a id="%E5%88%9B%E5%BB%BA%E5%B9%B6%E6%B3%A8%E5%86%8C%E9%80%9A%E7%9F%A5%E8%AF%B7%E6%B1%82notification-request" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>创建并注册通知请求(Notification Request)</h3>
+<p>创建一个包含内容(content)和触发条件(trigger)的<code>UNNotificationRequest</code>对象，并调用<code>addNotificationRequest:withCompletionHandler:</code>方法使系统规划你的请求(request)。</p>
+<pre class="line-numbers"><code class="language-objc">// Create the request
+UNNotificationRequest *request = [UNNotificationRequest requestWithIdentifier:[NSUUID UUID] content:content trigger:trigger];
+
+// Schedule the request with the system
+UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+[center addNotificationRequest:request withCompletionHandler:^(NSError * _Nullable error) {
+    if (error) {
+        // Handle any errors
+    }
+}];
+</code></pre>
+<h3><a id="%E5%8F%96%E6%B6%88%E5%B7%B2%E8%A7%84%E5%88%92%E7%9A%84%E8%AF%B7%E6%B1%82" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>取消已规划的请求</h3>
+<p>一旦被规划，通知请求(Notification Request)将保持活动状态，直到满足其触发条件，或被显式地取消。一般来说，你可以在条件改变时取消通知，而不再需要通知用户。取消一个活动的通知请求，需要调用<code>UNUserNotificationCenter</code>的<code> removePendingNotificationRequestsWithIdentifiers:</code>或<code>removeAllPendingNotificationRequests</code>方法。</p>
+<h2><a id="%E5%90%91apns%E6%B3%A8%E5%86%8C%E4%BD%A0%E7%9A%84app" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>向APNs注册你的app</h2>
+<blockquote>
+<p>与 APNs 通信并接收标识 app 的唯一设备令牌(unique device token)</p>
+</blockquote>
+<p>APNs 必须先知道用户设备的地址，然后才能向该设备发送通知。此地址采用设备令牌(device token)的形式，该设备令牌对于设备和应用程序都是唯一的。在启动时，app 与 APNs 通信并接收其t oken，然后将其转发到你的业务服务器。你的服务器包含该 token 及其发送的任何通知。</p>
+<p><strong>注意</strong>，即使两个 app 都安装在同一设备上，一个 app 的 token 也无法用于其他 app。两个 app 都必须请求自己唯一的 token 并将其转发到业务服务器<sup class="footnote-ref"><a href="#fn-7" id="fnref-7_ref" data-footnote-ref>4</a></sup>。</p>
+<h3><a id="%E5%90%AF%E7%94%A8%E6%8E%A8%E5%8A%A8%E9%80%9A%E7%9F%A5%E5%8A%9F%E8%83%BD" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>启用推动通知功能</h3>
+<p>要推送通知功能，app 必须具有合适的 entitlement。要将这些 entitlements 添加到 app，需要在Xcode项目中启用推送通知功能，如下图所示。在 iOS 中启用此选项会将 aps-environment 代码签名 entitlement 添加到 app 中。</p>
+<p><img src="https://docs-assets.developer.apple.com/published/dd2f56dbe9/f3327ebb-70be-4a12-9a76-b1a8badc0cd0.png" alt="启用推送通知功能" /></p>
+<p><strong>注意</strong>，在你的开发者帐户中，你还必须启用该项目的App ID推送通知服务。有关配置开发者帐户的详细信息，请转到<a href="https://developer.apple.com/account/#/overview/">开发者帐户</a>页面。</p>
+<h3><a id="%E6%B3%A8%E5%86%8C%E4%BD%A0%E7%9A%84app%E5%B9%B6%E8%8E%B7%E5%8F%96%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E7%9A%84%E8%AE%BE%E5%A4%87%E4%BB%A4%E7%89%8C-device-token" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>注册你的app并获取应用程序的设备令牌(Device Token)</h3>
+<p>使用 APNs 注册你的 app 并接收<em>全局唯一设备令牌(Globally Unique Device Token)</em>，该 token 是当前设备上你 app 的有效地址。业务服务器必须先具有此 token 才能向设备发送通知。<br />
+每次使用苹果提供的API(Apple-provided APIs)启动 app 时，都需注册 app 并接收 token。注册过程在各个平台上类似：</p>
+<ul>
+<li>在iOS和tvOS中，调用<code>UIApplication</code>对象的<code>registerForRemoteNotifications</code>方法用来请求 token。注册成功后，你将在<code>application:didRegisterForRemoteNotificationsWithDeviceToken:</code>方法中收到 token。</li>
+<li>在 macOS 中，调用<code>NSApplication</code>对象的<code>registerForRemoteNotificationTypes:</code>方法用来请求 token。注册成功后，你将在<code>application:didRegisterForRemoteNotificationsWithDeviceToken:</code>方法中收到 token。</li>
+<li>在 watchOS 中，不需要显式地注册远程通知。用户的 iPhone 会在适当的时间自动将远程通知转发给watchOS应用程序。</li>
+</ul>
+<p>除了处理成功注册 APNs 之外，还要实现<code>application:didFailToRegisterForRemoteNotificationsWithError:</code>方法，处理失败的注册。如果用户的设备未连接到网络，APNs 服务器因任何原因无法访问，或者应用程序没有正确的代码签名权限，则注册可能会失败。发生故障时，设置一个标志并尝试稍后再次注册。</p>
+<p>下面代码实现了远程通知和接收相应 token 所需的委托方法。<code>sendDeviceTokenToServer</code>方法是 app 用于将数据发送到其提供程序服务器的自定义方法。</p>
+<pre class="line-numbers"><code class="language-objc">- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+	// Override point for customization after application launch
+	
+	[[UIApplication sharedApplication] registerForRemoteNotifications];
+	return YES;
+}
+
+- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+	[self sendDeviceTokenToServer:deviceToken];
+}
+
+- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
+	// Try again later
+}
+</code></pre>
+<p><strong>注意</strong>，切勿在本地存储中缓存 token。当用户从备份还原设备，用户在新设备上安装 app 以及用户重新安装操作系统时，APNs 会发出新 token。如果你要求系统每次都提供令牌，则可以保证获得最新的令牌。</p>
+<h3><a id="%E5%B0%86token%E8%BD%AC%E5%8F%91%E5%88%B0%E4%B8%9A%E5%8A%A1%E6%9C%8D%E5%8A%A1%E5%99%A8" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>将token转发到业务服务器</h3>
+<p>获取 token 后，打开从应用程序到提供商服务器的网络连接。安全地转发 token 以及识别服务器特定用户所需的任何其他信息。例如，可以包含用户的登录名或将其连接到业务服务的内容。加密任何通过网络发送的信息。<br />
+在业务服务器上，将令牌存储在安全的位置，您可以在其中访问它们以发送通知。生成通知时，你的服务器必须能够向特定设备发送通知。因此，如果通知链接到用户的帐户，请使用用户的帐户信息存储设备令牌。由于用户可以拥有多个设备，因此需要处理多个设备令牌。</p>
+<p>如需获取如何将 payload 和 token 发送到 APNs 的信息，参考<a href="https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/sending_notification_requests_to_apns?language=objc">向APNs发送通知请求</a>。</p>
+<h2><a id="%E5%A3%B0%E6%98%8E%E5%8F%AF%E6%93%8D%E4%BD%9C%E7%9A%84%E9%80%9A%E7%9F%A5%E7%B1%BB%E5%9E%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>声明可操作的通知类型</h2>
+<blockquote>
+<p>区分通知并将操作按钮添加到通知界面</p>
+</blockquote>
+<p>*可操作的通知(Actionable notifications)*允许用户响应已发送的通知，而无需启动相应的app。其他通知在通知界面中显示信息，但用户唯一的操作方法是启动app。对于可操作的通知，除通知界面外，系统还显示一个或多个按钮。点击按钮会将所选操作发送到app，然后app在后台处理操作<sup class="footnote-ref"><a href="#fn-4" id="fnref-4_ref" data-footnote-ref>5</a></sup>。</p>
+<h3><a id="%E5%A3%B0%E6%98%8E%E8%87%AA%E5%AE%9A%E4%B9%89%E6%93%8D%E4%BD%9Ccustom-action%E5%92%8C%E9%80%9A%E7%9F%A5%E7%B1%BB%E5%9E%8B-notification-type" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>声明自定义操作(Custom Action)和通知类型(Notification Type)</h3>
+<p>必须在 app 启动时声明支持的所有<em>操作(action)</em>。你可以联合使用<em>类别</em>和<em>动作</em>对象来声明一个操作：使用<code>UNNotificationCategory</code>对象定义 app 支持的通知类型，使用<code>UNNotificationAction</code>对象定义要为每种类型显示的按钮。例如，一个会议邀请的通知可能包括接受或拒绝邀请的按钮。</p>
+<p>每一个<code>UNNotificationCategory</code>对象都有一个唯一标识和用于处理该类型通知的选项。<code>identifier</code>属性中的字符串是类别对象中最重要的部分，生成通知时，必须在通知的*有效载荷(payload)*中包含相同的字符串。系统使用该字符串来定位相应的类别对象和任何操作。</p>
+<p>要将操作与通知类别相关联，请为其分配一个或多个<code>UNNotificationAction</code>对象。每个操作对象都包含要显示给用户的本地化字符串以及表示你希望如何处理该操作的选项。例如，当您将操作标记为破坏性(destructive)时，系统会以不同的高亮形式显示该操作以指示其行为。</p>
+<p>下面的代码展示了如何使用两个操作注册自定义类别。除标题和选项外，每个操作都有唯一的标识符。当用户选择操作时，系统会将该标识符传递给app。</p>
+<pre class="line-numbers"><code class="language-objc">UNNotificationAction *acceptAction = [UNNotificationAction actionWithIdentifier:@&quot;ACCEPT_ACTION&quot; 
+																		  title:@&quot;Accept&quot; 
+																		options:UNNotificationActionOptionNone];
+UNNotificationAction *declineAction = [UNNotificationAction actionWithIdentifier:@&quot;DECLINE_ACTION&quot; 
+																		   title:@&quot;Decline&quot; 
+																		 options:UNNotificationActionOptionNone];
+
+// Define the notification type
+UNNotificationCategory *meetingInviteCategory = [UNNotificationCategory categoryWithIdentifier:@&quot;MEETING_INVITATION&quot; 
+																					   actions:@[acceptAction, declineAction] 
+																			 intentIdentifiers:@[] 
+																 hiddenPreviewsBodyPlaceholder:@&quot;&quot; 
+																 					   options:UNNotificationCategoryOptionCustomDismissAction];
+
+// Register the notification type
+UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+[center setNotificationCategories:[NSSet setWithObject:meetingInviteCategory]];
+</code></pre>
+<p><strong>注意</strong>：所有操作(action)对象都必须具有唯一标识符。处理操作时，标识符是区分一个操作与另一个操作的唯一方法，即使这些操作属于不同的类别。</p>
+<p>大多数操作只会让用户选择，但文本输入操作也允许用户键入基于自定义文本的<em>响应(response)</em>。然后，app可以将用户输入的响应合并到您对操作的处理中。例如，一个聊天app可以将键入的文本作为对传入消息的响应。要创建文本输入操作，需要创建<code>UNTextInputNotificationAction</code>对象而不是<code>UNNotificationAction</code>对象。当用户点击输入按钮时，系统显示可编辑的文本字段(test field)。当系统向app报告该操作时，系统会包含用户在响应中键入的文本。</p>
+<h3><a id="%E5%9C%A8%E6%9C%89%E6%95%88%E8%BD%BD%E8%8D%B7payload%E4%B8%AD%E5%8C%85%E5%90%AB%E9%80%9A%E7%9F%A5%E7%B1%BB%E5%88%AB-notification-category" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>在有效载荷(Payload)中包含通知类别(Notification Category)</h3>
+<p>系统仅显示那些payload包含有效类*别标识符字符串(Category Identifier)*的通知的操作。系统使用类别标识符来查找应用程序的已注册类别及其相关操作。然后，它使用该信息将操作按钮添加到通知界面。系统使用类别标识符来查找应用程序的已注册类别及其相关操作。然后，它使用该信息将操作按钮添加到通知界面。</p>
+<p>下面的代码展示了如何创建一条会议邀请本地通知的内容(content)。要将类别分配给本地通知，需要将相应的字符串赋值给<code>UNMutableNotificationContent</code>对象的<code>categoryIdentifier</code>属性。除了基本信息之外，此代码还会将自定义数据添加到通知的<code>userInfo</code>字典中，稍后将使用该字典来处理该会议邀请。</p>
+<pre class="line-numbers"><code class="language-objc">UNMutableNotificationContent *content = [[UNMutableNotificationContent alloc] init];
+content.title = @&quot;Weekly Staff Meeting&quot;;
+content.body = @&quot;Every Tuesday at 2pm&quot;;
+content.userInfo = @{
+	@&quot;MEETING_ID&quot;: meetingID,
+	@&quot;USER_ID&quot;: userID
+};
+content.categoryIdentifier = @&quot;MEETING_INVITATION&quot;;
+</code></pre>
+<p>如果是在远程通知中添加类别标识符，需要将<code>category</code>字段添加到 JSON payload的<code>aps</code>字典中。</p>
+<pre class="line-numbers"><code class="language-json">{
+   &quot;aps&quot; : {
+      &quot;category&quot; : &quot;MEETING_INVITATION&quot;
+      &quot;alert&quot; : {
+         &quot;title&quot; : &quot;Weekly Staff Meeting&quot;
+         &quot;body&quot; : &quot;Every Tuesday at 2pm&quot;
+      },
+   },
+   &quot;MEETING_ID&quot; : &quot;123456789&quot;,
+   &quot;USER_ID&quot; : &quot;ABCD1234&quot;
+}
+</code></pre>
+<h3><a id="%E5%A4%84%E7%90%86%E9%80%89%E5%AE%9A%E7%9A%84%E6%93%8D%E4%BD%9C" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>处理选定的操作</h3>
+<p>App必须处理它定义的所有操作。当用户选择一个操作时，系统会在后台启动 app 并通知共享的<code>UNUserNotificationCenter</code>对象实例，该对象会通知其<em>代理对象(delegate)</em>。使用代理对象的<code>userNotificationCenter:didReceiveNotificationResponse:withCompletionHandler:</code>方法来识别所选操作并提供适当的响应。</p>
+<p>下面的代码实现了管理会议邀请的 app 的委托方法。该方法使用响应的<code>actionIdentifier</code>属性来确定是接受还是拒绝给定的邀请。它还依赖于通知有效载荷中的自定义数据来成功处理通知。完成处理操作后，应当始终调用<em>完成处理程序(completion handler)</em>。</p>
+<pre class="line-numbers"><code class="language-objc">- (void)userNotificationCenter:(UNUserNotificationCenter *)center 
+didReceiveNotificationResponse:(UNNotificationResponse *)response 
+		 withCompletionHandler:(void(^)(void))completionHandler {
+
+	// Get the meeting ID from the original notification
+	NSDictionary *userInfo = response.notification.request.content.userInfo;
+	NSString *meetingID = userInfo[@&quot;MEETING_ID&quot;];
+	NSString *userID = userInfo[@&quot;USER_ID&quot;];
+
+	// Perform the task associated with the action
+	if ([response.actionIdentifier isEqualToString:@&quot;ACCEPT_ACTION&quot;]) {
+		[sharedMeetingManager acceptMeeting:meetingID forUser:userID];
+	}
+	else if ([response.actionIdentifier isEqualToString:@&quot;DECLINE_ACTION&quot;]) {
+		[sharedMeetingManager declineMeeting:meetingID forUser:userID];
+	}
+	else {
+		// Handle other actions…
+	}
+
+	// Always call the completion handler when done
+	completionHandler();
+}
+</code></pre>
+<h2><a id="%E5%A4%84%E7%90%86%E9%80%9A%E7%9F%A5%E5%92%8C%E4%B8%8E%E9%80%9A%E7%9F%A5%E7%9B%B8%E5%85%B3%E7%9A%84%E6%93%8D%E4%BD%9C" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>处理通知和与通知相关的操作</h2>
+<blockquote>
+<p>响应用户与系统通知界面的交互，包括处理应用程序的自定义操作</p>
+</blockquote>
+<p>通知(Notifications)是将信息呈现在用户面前的一种主要方式，同时 app 本身也可以响应这些通知。例如 app 可以响应这些操作<sup class="footnote-ref"><a href="#fn-5" id="fnref-5_ref" data-footnote-ref>6</a></sup>：</p>
+<ul>
+<li>用户从通知界面中选择的操作</li>
+<li>App 在前台运行时收到的通知</li>
+<li>静默通知</li>
+<li>与<a href="https://developer.apple.com/documentation/pushkit?language=objc">PushKit</a>相关的通知</li>
+</ul>
+<h3><a id="%E5%A4%84%E7%90%86app%E5%9C%A8%E5%89%8D%E5%8F%B0%E8%BF%90%E8%A1%8C%E6%97%B6%E7%9A%84%E9%80%9A%E7%9F%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>处理 app 在前台运行时的通知</h3>
+<p>如果 app 在前台运行时收到通知，系统会将该通知直接发送到 app。收到通知后，可以使用通知的有效负载(Payload)执行任何操作。例如，你可以更新 app 的界面以反映通知中包含的新信息。然后，你可以禁止或修改任何已规划的 alert。<br />
+当通知到达时，系统调用<code>UNUserNotificationCenter</code>的*委托对象(delegate)<em>的<code>userNotificationCenter:willPresentNotification:withCompletionHandler:</code>方法。使用该方法处理通知，并让系统知道你希望如何继续。<br />
+下面的代码实现了该方法。当会议邀请到达时，app 会调用其自定义的<code>queueMeetingForDelivery</code>方法在 app 界面中显示新邀请。App 还要求系统通过将值<code>UNNotificationPresentationOptionSound</code>传递给</em>完成处理程(completion handler)*来播放通知的声音。对于其他通知类型，该方法使通知静音。</p>
+<pre class="line-numbers"><code class="language-objc">- (void)userNotificationCenter:(UNUserNotificationCenter *)center 
+	   willPresentNotification:(UNNotification *)notification 
+	     withCompletionHandler:(void (^)(UNNotificationPresentationOptions options))completionHandler {
+	
+	if ([notification.request.content.categoryIdentifier isEqualToString:@&quot;MEETING_INVITATION&quot;]) {
+		// Retrieve the meeting details
+		NSString *meetingID = userInfo[@&quot;MEETING_ID&quot;];
+		NSString *userID = userInfo[@&quot;USER_ID&quot;];
+
+		// Add the meeting to the queue
+		[sharedMeetingManager queueMeetingForDelivery:meetingID forUser:userID];
+
+		// Play a sound to let the user know about the invitation
+		completionHandler(UNNotificationPresentationOptionSound);
+		return;
+	}
+	else {
+		// Handle other notification types...
+	}
+
+	// Don't alert the user for other types
+	completionHandler(UNNotificationPresentationOptionNone);
+}
+</code></pre>
+<p>如果你使用 PushKit 注册了应用，则针对 PushKit 类型的通知始终会直接发送到您的应用，并且永远不会向用户显示。如果 app 位于前台或后台，系统会为 app 提供处理通知的时间。如果 app 未运行，系统会在后台启动 app，以便它可以处理通知。要发送 PushKit 通知，你的服务器必须将通知的主题设置为适当的目标，例如您的应用程序的复杂性。有关注册PushKit通知的更多信息，请参阅<a href="https://developer.apple.com/documentation/pushkit?language=objc">PushKit</a>。</p>
+<h2><a id="%E4%BF%AE%E6%94%B9%E9%80%9A%E7%9F%A5%E4%B8%AD%E7%9A%84%E5%86%85%E5%AE%B9" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>修改通知中的内容</h2>
+<blockquote>
+<p>在用户的iOS设备上显示之前修改远程通知的有效负载(Payload)</p>
+</blockquote>
+<p>如果需要，你可能要在用户的iOS设备上修改远程通知的内容：</p>
+<ul>
+<li>解密以加密格式发送的数据。</li>
+<li>下载大小超过最大有效载荷大小的图像或其他媒体附件。</li>
+<li>更新通知的内容，可能是通过合并用户设备的数据。</li>
+</ul>
+<p>修改远程通知需要通知<em>服务应用程序扩展(service app extension)</em>，您可以将其包含在iOS应用程序包(bundle)中。应用程序扩展在向用户显示之前会接收远程通知的内容，从而在用户收到alert之前更新通知的有效负载(Payload)。你可以控制扩展程序处理哪些通知。</p>
+<p><strong>注意</strong>，通知服务应用程序扩展仅对配置为向用户显示alert的远程通知进行操作。如果您的应用程序禁用了alert，或者有效负载仅指定播放声音或图标的标记，则扩展程序不生效<sup class="footnote-ref"><a href="#fn-6" id="fnref-6_ref" data-footnote-ref>7</a></sup>。</p>
+<h3><a id="%E4%B8%BA%E9%A1%B9%E7%9B%AE%E6%B7%BB%E5%8A%A0%E6%9C%8D%E5%8A%A1%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E6%89%A9%E5%B1%95service-app-extension" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>为项目添加服务应用程序扩展(Service App Extension)</h3>
+<p>通知服务应用扩展程序在你的iOS应用中作为单独的捆绑包发布。要将此扩展程序添加到您的应用中：</p>
+<ol>
+<li>在Xcode中选择 File &gt; New &gt; Target。</li>
+<li>从 iOS &gt; Application section 中选择 Notification Service Extension。</li>
+<li>点击 Next。</li>
+<li>指定应用扩展程序的名称和其他配置详细信息。</li>
+<li>点击 Finish。</li>
+</ol>
+<h3><a id="%E5%AE%9E%E7%8E%B0%E6%89%A9%E5%B1%95%E7%9A%84%E6%96%B9%E6%B3%95" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>实现扩展的方法</h3>
+<p>Xcode提供的通知服务扩展模板包含了一个可供修改的默认实现：</p>
+<ul>
+<li><code>didReceiveNotificationRequest:withContentHandler:</code>方法可以使用更新的内容创建<code>UNMutableNotificationContent</code>对象。</li>
+<li>使用<code>serviceExtensionTimeWillExpire</code>方法终止仍在运行的任何有效载荷修改任务。</li>
+</ul>
+<p><code>didReceiveNotificationRequest:withContentHandler:</code>方法大概只有30秒的时间来修改有效负载并调用提供的<em>完成处理程序(completion handler)</em>。如果你的代码需要更长的时间，系统将调用<code>serviceExtensionTimeWillExpire</code>方法，此时你必须立即向系统返回任何内容。如果你无法从任一方法调用完成处理程序，系统将显示通知的原始内容。</p>
+<p>下面的代码实现了<code>UNNotificationServiceExtension</code>对象，该对象解密使用远程通知传递的加密消息的内容。<code>didReceiveNotificationRequest:withContentHandler:</code>方法解密数据并在通知内容成功时返回修改后的内容。如果不成功，或者时间到期，则扩展程序返回指示数据仍处于加密状态的内容。</p>
+<pre class="line-numbers"><code class="language-objc">// Storage for the completion handler and content
+@interface NotificationService ()
+@property (nonatomic, strong) void (^contentHandler)(UNNotificationContent *contentToDeliver);
+@property (nonatomic, strong) UNMutableNotificationContent *bestAttemptContent;
+@end
+
+@implementation NotificationService
+// Modify the payload contents
+- (void)didReceiveNotificationRequest:(UNNotificationRequest *)request 
+				   withContentHandler:(void (^)(UNNotificationContent * _Nonnull))contentHandler {
+	self.contentHandler = contentHandler;
+    self.bestAttemptContent = [request.content mutableCopy];
+
+	// Try to decode the encrypted message data
+	NSData *encryptedData = bestAttemptContent.userInfo[@&quot;ENCRYPTED_DATA&quot;] ?: [NSData data];
+	NSString *decryptedMessage = [self decript:encryptedData];
+	bestAttemptContent.body = decryptedMessage ?: @&quot;(Encrypted)&quot;;
+
+	// Always call the completion handler when done
+	contentHandler(bestAttemptContent)
+}
+
+// Return something before time expires
+- (void)serviceExtensionTimeWillExpire {
+	// Mark the message as still encrypted
+	bestAttemptContent.subtitle = @&quot;(Encrypted)&quot;;
+	bestAttemptContent.body = @&quot;&quot;;
+	contentHandler(bestAttemptContent);
+}
+@end
+</code></pre>
+<h3><a id="%E9%85%8D%E7%BD%AE%E8%BF%9C%E7%A8%8B%E9%80%9A%E7%9F%A5%E7%9A%84%E6%9C%89%E6%95%88%E8%B4%9F%E8%BD%BD" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>配置远程通知的有效负载</h3>
+<p>仅当远程通知的有效负载包含以下信息时，系统才会执行通知内容应用程序扩展：</p>
+<ul>
+<li>有效负载必须包含<code>mutable-content</code>值为<code>1</code>。</li>
+<li>有效负载必须包含<code>alert</code>字典，包含<code>title</code>，<code>subtitle</code>或<code>body</code>。</li>
+</ul>
+<p>下面的JSON数据展示了包含加密数据的通知 payload。设置<code>mutable-content</code>值为<code>1</code>，以便用户的设备知道运行相应的服务应用程序扩展。</p>
+<pre class="line-numbers"><code class="language-json">{
+   &quot;aps&quot; : {
+      &quot;category&quot; : &quot;SECRET&quot;,
+      &quot;mutable-content&quot; : 1,
+    &quot;alert&quot; : {
+         &quot;title&quot; : &quot;Secret Message!&quot;,
+         &quot;body&quot;  : &quot;(Encrypted)&quot;
+     },
+   },
+   &quot;ENCRYPTED_DATA&quot; : &quot;Salted__·öîQÊ$UDì_¶Ù∞è	Ω^¬%gq∞NÿÒQùw&quot;
+}
+</code></pre>
+<section class="footnotes" data-footnotes>
+<ol>
+<li id="fn-1">
+<p><a href="https://developer.apple.com/documentation/usernotifications?language=objc#topics">UserNotifications</a> <a href="#fnref-1_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-2">
+<p><a href="https://developer.apple.com/documentation/usernotifications/asking_permission_to_use_notifications?language=objc">Asking Permission to Use Notifications</a> <a href="#fnref-2_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-3">
+<p><a href="https://developer.apple.com/documentation/usernotifications/scheduling_a_notification_locally_from_your_app?language=objc">Scheduling a Notification Locally from Your App</a> <a href="#fnref-3_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-7">
+<p><a href="https://developer.apple.com/documentation/usernotifications/registering_your_app_with_apns?language=objc">Registering Your App with APNs</a> <a href="#fnref-7_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-4">
+<p><a href="https://developer.apple.com/documentation/usernotifications/declaring_your_actionable_notification_types?language=objc">Declaring Your Actionable Notification Types</a> <a href="#fnref-4_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-5">
+<p><a href="https://developer.apple.com/documentation/usernotifications/handling_notifications_and_notification_related_actions?language=objc">Handling Notifications and Notification-Related Actions</a> <a href="#fnref-5_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-6">
+<p><a href="https://developer.apple.com/documentation/usernotifications/modifying_content_in_newly_delivered_notifications?language=objc">Modifying Content in Newly Delivered Notifications</a> <a href="#fnref-6_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+</ol>
+</section>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[《iOS面试之道》读书笔记 - 并发编程]]></title>
+    <link href="https://ltryee.gitee.io/15362253776879.html"/>
+    <updated>2018-09-06T17:16:17+08:00</updated>
+    <id>https://ltryee.gitee.io/15362253776879.html</id>
+    <content type="html"><![CDATA[
+<div class="mweb_toc"><ul>
+<li><a href="#os-x%E5%92%8C-ios%E4%B8%AD%E7%9A%84%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B-api">OS X 和 iOS 中的并发编程API</a>
+<ul>
+<li><a href="#dispatch-queues">Dispatch Queues</a></li>
+<li><a href="#dispatch-sources">Dispatch Sources</a></li>
+<li><a href="#operation-queues">Operation Queues</a></li>
+</ul>
+</li>
+<li><a href="#%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B8%AD%E7%9A%84%E5%9D%912">并发编程中的坑[^2]</a>
+<ul>
+<li><a href="#%E8%B5%84%E6%BA%90%E5%85%B1%E4%BA%AB">资源共享</a></li>
+<li><a href="#%E4%BA%92%E6%96%A5%E9%94%81">互斥锁</a></li>
+<li><a href="#%E6%AD%BB%E9%94%81">死锁</a></li>
+<li><a href="#%E8%B5%84%E6%BA%90%E9%A5%A5%E9%A5%BF">资源饥饿</a></li>
+<li><a href="#%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC">优先级反转</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p>并发(Concurrency)的概念即在同一时间运行多个任务(Task)。过去，将并发引入应用程序需要创建一个或多个其他线程(Thread)。然而编写直接操作线程的代码极具挑战性，你必须手动使用系统底层API。鉴于应用程序的最佳线程数可以根据当前系统负载和底层硬件动态更改，实现正确的线程解决方案会变得非常困难。此外，通常与线程一起使用的同步机制增加了软件设计的复杂性和风险，而没有任何改进性能的保证。</p>
+<h2><a id="os-x%E5%92%8C-ios%E4%B8%AD%E7%9A%84%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B-api" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>OS X 和 iOS 中的并发编程API</h2>
+<p>与传统的基于线程的系统和应用程序相比，OS X 和 iOS 都提供了异步的并发任务执行方法。应用程序只需定义特定任务，然后让系统执行它们，而不是直接创建线程。通过让系统管理线程，应用程序获得了原始线程无法实现的可伸缩性级别。应用程序开发人员还可以获得更简单，高效的编程模型。<sup class="footnote-ref"><a href="#fn-1" id="fnref-1_ref" data-footnote-ref>1</a></sup></p>
+<ul>
+<li>
+<p><code>Dispatch Queues</code>是一种基于C的用于执行自定义任务的机制。Dispatch Queues 串行或并行地执行任务，同时保证任务是先进先出的，换句话说，Dispatch Queues 中任务的<strong>执行</strong>完成顺序与任务的<strong>添加</strong>顺序是一致的。串行的 Dispatch Queue 同一时间只在一个线程上执行任务，需要等待上个任务完成，才能开始下个任务。并行的Dispatch Queue 同一时间执行多个任务，不需要等待上个任务完成。Dispatch Queues 有如下优势：</p>
+<ul>
+<li>提供简单易用的编程接口</li>
+<li>提供自动和全方位的线程池管理</li>
+<li>提供汇编级别的执行速度</li>
+<li>更好的内存效率</li>
+<li>加载时不会陷入内核</li>
+<li>任务的异步调用不会导致死锁</li>
+<li>竞争条件下合适的粒度</li>
+<li>串行队列提供更加有效的同步机制</li>
+</ul>
+</li>
+<li>
+<p><code>Dispatch Sources</code>是一种基于C用于异步处理特定类型的系统事件的机制。调度源封装有关特定类型的系统事件的信息，并在发生该事件时将特定的块对象或函数提交给调度队列。你可以使用调度源来监视以下类型的系统事件：</p>
+<ul>
+<li>Timers</li>
+<li>Signal handlers</li>
+<li>描述符相关事件</li>
+<li>进程相关事件</li>
+<li>Mach端口事件</li>
+<li>自定义的触发事件</li>
+</ul>
+</li>
+<li>
+<p><code>Operation Queues</code> Cocoa 中的 Operation Queue 与并发 Dispatch Queue 是等价的，由<code>NSOperationQueue</code>类实现。Dispatch Queue 始终以先进先出顺序执行任务，而Operation Queue 在确定任务的执行顺序时会考虑其他因素。其中主要因素是给定任务是否取决于其他任务的完成。你可以在定义任务时配置<a href="https://developer.apple.com/library/archive/documentation/General/Conceptual/ConcurrencyProgrammingGuide/OperationObjects/OperationObjects.html#//apple_ref/doc/uid/TP40008091-CH101-SW17">依赖关系</a>，用来实现复杂的任务执行顺序。</p>
+</li>
+</ul>
+<h3><a id="dispatch-queues" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dispatch Queues</h3>
+<h3><a id="dispatch-sources" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dispatch Sources</h3>
+<h3><a id="operation-queues" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Operation Queues</h3>
+<h2><a id="%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E4%B8%AD%E7%9A%84%E5%9D%912" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>并发编程中的坑<sup class="footnote-ref"><a href="#fn-2" id="fnref-2_ref" data-footnote-ref>2</a></sup></h2>
+<h3><a id="%E8%B5%84%E6%BA%90%E5%85%B1%E4%BA%AB" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>资源共享</h3>
+<h3><a id="%E4%BA%92%E6%96%A5%E9%94%81" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>互斥锁</h3>
+<h3><a id="%E6%AD%BB%E9%94%81" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>死锁</h3>
+<h3><a id="%E8%B5%84%E6%BA%90%E9%A5%A5%E9%A5%BF" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>资源饥饿</h3>
+<h3><a id="%E4%BC%98%E5%85%88%E7%BA%A7%E5%8F%8D%E8%BD%AC" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>优先级反转</h3>
+<section class="footnotes" data-footnotes>
+<ol>
+<li id="fn-1">
+<p><a href="https://developer.apple.com/library/archive/documentation/General/Conceptual/ConcurrencyProgrammingGuide/Introduction/NaN">Concurrency Programming Guide - Concurrency and Application Design</a> <a href="#fnref-1_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-2">
+<p><a href="https://www.objccn.io/issue-2-1/">并发编程：API 及挑战</a> <a href="#fnref-2_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+</ol>
+</section>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[《iOS面试之道》读书笔记 - atomic/nonatomic]]></title>
+    <link href="https://ltryee.gitee.io/15360488544502.html"/>
+    <updated>2018-09-04T16:14:14+08:00</updated>
+    <id>https://ltryee.gitee.io/15360488544502.html</id>
+    <content type="html"><![CDATA[
+<div class="mweb_toc"><ul>
+<li><a href="#%E4%BD%BF%E7%94%A8atomic%E4%BF%AE%E9%A5%B0%E7%9A%84-property%E6%98%AF%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E5%8E%9F%E5%AD%90%E6%80%A7%E7%9A%84%EF%BC%9F">使用 atomic 修饰的 property 是如何保证原子性的？</a></li>
+<li><a href="#%E4%BD%BF%E7%94%A8atomic%E4%BF%AE%E9%A5%B0%E7%9A%84-property%E6%98%AF%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E7%9A%84%E5%90%97%EF%BC%9F">使用 atomic 修饰的 property 是线程安全的吗？</a></li>
+<li><a href="#%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81property%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E6%80%A7%EF%BC%9F">如何保证 property 的线程安全性？</a></li>
+</ul>
+</div>
+<p><code>atomic</code>和<code>nonatomic</code>用于在定义 property 时指明其原子性：</p>
+<ul>
+<li><code>atomic</code>表示是原子性的，调用该 property 的 getter 和 setter 会保证对象的完整性。多线程操作时，任何调用都可以得到一个完整的对象，因此速度较慢。</li>
+<li><code>nonatomic</code>表示是<strong>非</strong>原子性的，调用该 property 的 getter 和 setter 不保证对象的完整性。多个线程对它进行访问，它可能会返回未初始化的对象，因此速度较快。</li>
+</ul>
+<p><strong>注意</strong>，以上讨论仅对编译器自动生成的 getter/setter 有效。如果你自己实现了 getter/setter，无论使用 atomic/nonatomic，property 的原子性都将取决于你自己的实现。</p>
+<h2><a id="%E4%BD%BF%E7%94%A8atomic%E4%BF%AE%E9%A5%B0%E7%9A%84-property%E6%98%AF%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E5%8E%9F%E5%AD%90%E6%80%A7%E7%9A%84%EF%BC%9F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>使用 atomic 修饰的 property 是如何保证原子性的？</h2>
+<p>对于任何没有手动实现的属性，编译器都会生成一个<code>objc_getProperty_non_gc</code>的函数作为 getter，同时生成一个<code>objc_setProperty_non_gc</code>的函数作为 setter。</p>
+<p>从<code>objc_getProperty_non_gc</code>函数的源代码可以看到<sup class="footnote-ref"><a href="#fn-1" id="fnref-1_ref" data-footnote-ref>1</a></sup>：</p>
+<pre class="line-numbers"><code class="language-c">// objc-accessors.mm
+
+id objc_getProperty_non_gc(id self, SEL _cmd, ptrdiff_t offset, BOOL atomic) {
+    if (offset == 0) {
+        return object_getClass(self);
+    }
+
+    // Retain release world
+    id *slot = (id*) ((char*)self + offset);
+    if (!atomic) return *slot;
+        
+    // Atomic retain release world
+    spinlock_t&amp; slotlock = PropertyLocks[slot];
+    slotlock.lock();
+    id value = objc_retain(*slot);
+    slotlock.unlock();
+    
+    // for performance, we (safely) issue the autorelease OUTSIDE of the spinlock.
+    return objc_autoreleaseReturnValue(value);
+}
+</code></pre>
+<p>而<code>objc_setProperty_non_gc</code>函数最终将调到<code>reallySetProperty</code>函数<sup class="footnote-ref"><a href="#fn-2" id="fnref-2_ref" data-footnote-ref>2</a></sup>：</p>
+<pre class="line-numbers"><code class="language-c">// objc-accessors.mm
+
+static inline void reallySetProperty(id self, SEL _cmd, id newValue, ptrdiff_t offset, bool atomic, bool copy, bool mutableCopy)
+{
+    if (offset == 0) {
+        object_setClass(self, newValue);
+        return;
+    }
+
+    id oldValue;
+    id *slot = (id*) ((char*)self + offset);
+
+    if (copy) {
+        newValue = [newValue copyWithZone:nil];
+    } else if (mutableCopy) {
+        newValue = [newValue mutableCopyWithZone:nil];
+    } else {
+        if (*slot == newValue) return;
+        newValue = objc_retain(newValue);
+    }
+
+    if (!atomic) {
+        oldValue = *slot;
+        *slot = newValue;
+    } else {
+        spinlock_t&amp; slotlock = PropertyLocks[slot];
+        slotlock.lock();
+        oldValue = *slot;
+        *slot = newValue;        
+        slotlock.unlock();
+    }
+
+    objc_release(oldValue);
+}
+</code></pre>
+<p>其中处理 atomic 的分支里，getter/setter 都使用了在<code>PropertyLocks</code>中的128个<a href="https://en.wikipedia.org/wiki/Spinlock">自旋锁(Spinlock)</a>中的1个来给操作上锁。这是一种务实和快速的方式，最糟糕的情况下，如果遇到了哈希碰撞，那么 setter 需要等待另一个和它无关的 setter 完成之后再进行工作<sup class="footnote-ref"><a href="#fn-3" id="fnref-3_ref" data-footnote-ref>3</a></sup>。</p>
+<h2><a id="%E4%BD%BF%E7%94%A8atomic%E4%BF%AE%E9%A5%B0%E7%9A%84-property%E6%98%AF%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E7%9A%84%E5%90%97%EF%BC%9F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>使用 atomic 修饰的 property 是线程安全的吗？</h2>
+<p>考虑对一个 nonatomic 的整形变量<code>integer</code>进行加1操作，可分为三个步骤：首先从内存中取出原始值，然后加1，最后将修改后的值写回内存。<br />
+现在有<code>A</code>和<code>B</code>两个并发线程，分别对<code>integer</code>进行加1操作，那么问题来了：两个线程都从变量中取出了原始值，假设<code>17</code>，然后<code>A</code>将值加1，然后将结果<code>18</code>写回内存；同时<code>B</code>也将值加1后将结果<code>18</code>写回内存。此时<code>integer</code>被加1了两次，但最终值却是<code>18</code>。</p>
+<p><img src="https://www.objccn.io/images/issues/issue-2/race-condition.png" alt="" /></p>
+<p>这个问题称为<a href="https://www.objccn.io/issue-2-1/">竞态条件</a>，atomic 通过在读写时加入自旋锁，能保证对象的完整性，保护你免于在 setter 中遭遇到竞态条件的困扰。<br />
+但这并<strong>不</strong>代表使用 atomic 就是线程安全的。考虑三个并发线程<code>A</code>，<code>B</code>和<code>C</code>，其中<code>A</code>和<code> B</code>对变量<code>integer</code>进行加1操作，<code>C</code>从变量<code>integer</code>中读取数据。因为三个线程是并发的，所以<code>C</code>读取数据的时机可能在其他两个写入数据的线程<code>A</code>、<code>B</code>之前，或在他们两个之间，也可能在他们两个之后，导致<code>C</code>读到的数据可能是<code>17</code>、<code>18</code>或<code>19</code>。</p>
+<h2><a id="%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81property%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E6%80%A7%EF%BC%9F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>如何保证 property 的线程安全性？</h2>
+<p>没有银弹，具体问题具体分析。<code>@synchronized</code>和<code>dispatch_queue</code>都是可选的解决方案，但也都各有利弊。这里就不展开说明了，那将又是一大块篇幅。</p>
+<section class="footnotes" data-footnotes>
+<ol>
+<li id="fn-1">
+<p><a href="https://github.com/opensource-apple/objc4/blob/master/runtime/objc-accessors.mm#L48">objc-accessors.mm - objc_getProperty_non_gc</a> <a href="#fnref-1_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-2">
+<p><a href="https://github.com/opensource-apple/objc4/blob/master/runtime/objc-accessors.mm#L70">objc-accessors.mm - reallySetProperty</a> <a href="#fnref-2_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-3">
+<p><a href="https://www.objccn.io/issue-2-4/">线程安全类的设计</a> <a href="#fnref-3_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+</ol>
+</section>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[《iOS面试之道》读书笔记 - NSRunLoop]]></title>
+    <link href="https://ltryee.gitee.io/ios-mian-shi-zhi-dao-du-shu-bi.html"/>
+    <updated>2018-09-04T13:40:02+08:00</updated>
+    <id>https://ltryee.gitee.io/ios-mian-shi-zhi-dao-du-shu-bi.html</id>
+    <content type="html"><![CDATA[
+<div class="mweb_toc"><ul>
+<li><a href="#run-loop%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5">Run Loop 基本概念</a></li>
+<li><a href="#run-loop%E4%B8%8E%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%85%B3%E7%B3%BB">Run Loop 与线程的关系</a></li>
+<li><a href="#run-loop%E7%9A%84%E7%BB%84%E6%88%90%E9%83%A8%E5%88%86">Run Loop 的组成部分</a></li>
+<li><a href="#%E4%BD%95%E6%97%B6%E4%BD%BF%E7%94%A8run-loop%EF%BC%9F">何时使用 Run Loop？</a>
+<ul>
+<li><a href="#timer">Timer</a></li>
+<li><a href="#performselector">performSelector:</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<h2><a id="run-loop%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Run Loop 基本概念</h2>
+<p><code>Run Loop</code>就是一个在线程(thread)里不停执行的do-while循环。当线程接收到事件(event)时，Run Loop 内的事件处理会使用对应的句柄(handler)处理事件。<br />
+Run Loop 接受的事件可分为两种不同的源(source)，<code>Input source</code>传递异步事件，通常是其他线程或应用发送过来的消息(message)。<code>Timer sources</code>传递同步事件，即发生于特定时间的或以一定时间间隔循环发送的事件。</p>
+<p><img src="https://developer.apple.com/library/ios/documentation/Cocoa/Conceptual/Multithreading/Art/runloop.jpg" alt="" /></p>
+<p>上图展示了 Run Loop 的工作原理：Run Loop 运行与线程之中，从<code>Input source</code>和<code>Timer sources</code>接受事件，然后调用相应的 handler 处理事件。iOS框架 Foundation 中定义了 Run Loop 的实现类<a href="https://developer.apple.com/library/archive/documentation/LegacyTechnologies/WebObjects/WebObjects_3.5/Reference/Frameworks/ObjC/Foundation/Classes/NSRunLoop/Description.html#//apple_ref/occ/cl/NSRunLoop"><code>NSRunLoop</code></a>。</p>
+<h2><a id="run-loop%E4%B8%8E%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%85%B3%E7%B3%BB" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Run Loop 与线程的关系</h2>
+<p>Run Loop 与线程是一一对应的关系。每一个线程都有且仅有一个 Run Loop 与其对应，没有线程，就没有 Run Loop。在iOS应用中，主线程的 Run Loop 是默认启动的，而其他线程的 Run Loop 默认是不启动的。苹果为我们提供了两种获取 Run Loop 对象的方式：</p>
+<ul>
+<li>使用<code>[NSRunLoop currentRunLoop]</code>获取<code>NSRunLoop</code>对象</li>
+<li>使用<a href="https://developer.apple.com/documentation/corefoundation/1542428-cfrunloopgetcurrent"><code>CFRunLoopGetCurrent</code></a>函数获取<a href="https://developer.apple.com/documentation/corefoundation/cfrunloopref?language=objc"><code>CFRunLoopRef</code></a></li>
+</ul>
+<p>获取的 Run Loop 对象的线程安全性取决于你所使用的API。Core Foundation 中的函数通常是线程安全的，可以从任何线程调用。但是，如果你正在执行修改 Run Loop 配置的操作，那么最佳实践是尽可能在 Run Loop 所在的线程进行这些操作。<br />
+<code>NSRunLoop</code>类不具有线程安装性。如果你使用<code>NSRunLoop</code>类来修改 Run Loop，则应仅从持有该 Run Loop 的线程内执行操作。</p>
+<h2><a id="run-loop%E7%9A%84%E7%BB%84%E6%88%90%E9%83%A8%E5%88%86" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Run Loop 的组成部分</h2>
+<p>一个 Run Loop 包含多个 Mode，每个 Mode 包含多个 Sources、Objservers 和 Timers。每次调用 Run Loop 时，需要指定一种 Mode，此时 Run Loop 只能处理该 Mode 包含的Sources、Objservers 和 Timers<sup class="footnote-ref"><a href="#fn-2" id="fnref-2_ref" data-footnote-ref>1</a></sup>。</p>
+<p><img src="https://blog.ibireme.com/wp-content/uploads/2015/05/RunLoop_0.png" alt="" /></p>
+<p>苹果<a href="https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Multithreading/RunLoopManagement/RunLoopManagement.html#//apple_ref/doc/uid/10000057i-CH16-SW12">官方文档</a>中提到的 Mode 类型有五种：</p>
+<ul>
+<li><a href="https://developer.apple.com/library/archive/documentation/LegacyTechnologies/WebObjects/WebObjects_3.5/Reference/Frameworks/ObjC/Foundation/TypesAndConstants/FoundationTypesConstants/Description.html#//apple_ref/c/data/NSDefaultRunLoopMode"><code>NSDefaultRunLoopMode</code></a></li>
+<li><a href="https://developer.apple.com/library/archive/documentation/LegacyTechnologies/WebObjects/WebObjects_3.5/Reference/Frameworks/ObjC/Foundation/TypesAndConstants/FoundationTypesConstants/Description.html#//apple_ref/c/data/NSConnectionReplyMode"><code>NSConnectionReplyMode</code></a></li>
+<li><a href="https://developer.apple.com/documentation/appkit/nsmodalpanelrunloopmode"><code>NSModalPanelRunLoopMode</code></a></li>
+<li><a href="https://developer.apple.com/documentation/appkit/nseventtrackingrunloopmode"><code>NSEventTrackingRunLoopMode</code></a></li>
+<li><a href="https://developer.apple.com/documentation/foundation/runloop/mode/1408609-common"><code>NSRunLoopCommonModes</code></a></li>
+</ul>
+<p>iOS中可供调用的只有<code>NSDefaultRunLoopMode</code>和<code>NSRunLoopCommonModes</code>两个，其中<code>NSRunLoopCommonModes</code>是一个集合，其中默认包括<code>NSDefaultRunLoopMode</code>和<code>NSEventTrackingRunLoopMode</code>。</p>
+<h2><a id="%E4%BD%95%E6%97%B6%E4%BD%BF%E7%94%A8run-loop%EF%BC%9F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>何时使用 Run Loop？</h2>
+<p>苹果官方文档<sup class="footnote-ref"><a href="#fn-1" id="fnref-1_ref" data-footnote-ref>2</a></sup>指出，需要显式运行 Run Loop 的唯一时机是为应用程序创建辅助线程(secondary thread)时。例如，如果你需要执行以下任何操作，则需要启动 Run Loop：</p>
+<ul>
+<li>使用端口(mach port)或自定义输入源(custom input source)与其他线程通信。</li>
+<li>在线程中使用计时器(timers)。</li>
+<li>使用任何<code>performSelector</code>方法。</li>
+<li>保持线程以执行周期任务。</li>
+</ul>
+<h3><a id="timer" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Timer</h3>
+<p>计时器源(timer source)在将来的预设时间将事件同步传递给线程。苹果为我们提供了两种计时器的实现，<a href="https://developer.apple.com/documentation/foundation/nstimer"><code>NSTimer</code></a>和<a href="https://developer.apple.com/documentation/corefoundation/cfrunlooptimer"><code>CFRunLoopTimerRef</code></a>。<br />
+RunLoop为了节省资源，并不会在非常准确的时间点回调这个Timer。Timer 有个属性叫做 Tolerance (宽容度)，标示了当时间点到后，容许有多少最大误差。如果某个时间点被错过了，例如执行了一个很长的任务，则那个时间点的回调也会跳过去，不会延后执行。就比如等公交，如果 10:10 时我忙着玩手机错过了那个点的公交，那我只能等 10:20 这一趟了。^1</p>
+<h3><a id="performselector" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>performSelector:</h3>
+<p>当调用<code>NSObject</code>的<code>performSelecter:afterDelay:</code>后，实际上其内部会创建一个 Timer 并添加到当前线程的 RunLoop 中。所以如果当前线程没有 RunLoop，则这个方法会失效。当调用<code>performSelector:onThread:</code>时，实际上其会创建一个 Timer 加到对应的线程去，同样的，如果对应线程没有 Run Loop 该方法也会失效。^1</p>
+<section class="footnotes" data-footnotes>
+<ol>
+<li id="fn-2">
+<p><a href="https://blog.ibireme.com/2015/05/18/runloop/">深入理解RunLoop</a> <a href="#fnref-2_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-1">
+<p><a href="https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Multithreading/RunLoopManagement/RunLoopManagement.html#//apple_ref/doc/uid/10000057i-CH16-SW12">Threading Programming Guide - Run Loops</a> <a href="#fnref-1_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+</ol>
+</section>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[使用XcodeCoverage统计单元测试覆盖率]]></title>
+    <link href="https://ltryee.gitee.io/15220556376633.html"/>
+    <updated>2018-03-26T17:13:57+08:00</updated>
+    <id>https://ltryee.gitee.io/15220556376633.html</id>
+    <content type="html"><![CDATA[
+<div class="mweb_toc"><ul>
+<li><a href="#%E4%B8%BA%E5%B7%A5%E7%A8%8B%E6%B7%BB%E5%8A%A0xcodecoverage%E4%BB%A3%E7%A0%81">为工程添加XcodeCoverage代码</a></li>
+<li><a href="#%E6%9B%B4%E6%96%B0xcode%E5%B7%A5%E7%A8%8Bscheme">更新Xcode工程Scheme</a></li>
+<li><a href="#%E6%9B%B4%E6%96%B0pods%E7%9A%84xcconfig%E6%96%87%E4%BB%B6">更新Pods的xcconfig文件</a></li>
+<li><a href="#%E6%B3%A8%E5%85%A5%E6%8F%90%E5%8F%96%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E7%9A%84%E8%84%9A%E6%9C%AC">注入提取环境变量的脚本</a></li>
+<li><a href="#%E8%BF%90%E8%A1%8Cxcodecoverage">运行XcodeCoverage</a></li>
+<li><a href="#tips">Tips</a></li>
+</ul>
+</div>
+<p><a href="https://github.com/jonreid/XcodeCoverage"><code>XcodeCoverage</code></a> 是一个基于<a href="https://github.com/linux-test-project/lcov"><code>lcov</code></a>的统计工具，用于计算Xcode项目的单元测试覆盖率，且能生成html格式的统计报表。配置过程可以分为以下几个步骤：</p>
+<ol>
+<li>为工程添加<code>XcodeCoverage</code>代码</li>
+<li>更新Xcode工程Scheme</li>
+<li>注入提取环境变量的脚本</li>
+</ol>
+<h2><a id="%E4%B8%BA%E5%B7%A5%E7%A8%8B%E6%B7%BB%E5%8A%A0xcodecoverage%E4%BB%A3%E7%A0%81" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>为工程添加XcodeCoverage代码</h2>
+<p>使用<code>CocoaPods</code>可以方便地添加XcodeCoverage代码。修改<code>Podfile</code>并执行<code>pod install</code>命令。</p>
+<pre class="line-numbers"><code class="language-plain_text"># Podfile
+
+...
+pod 'XcodeCoverage', '~&gt;1.0'
+...
+</code></pre>
+<h2><a id="%E6%9B%B4%E6%96%B0xcode%E5%B7%A5%E7%A8%8Bscheme" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>更新Xcode工程Scheme</h2>
+<ol>
+<li>
+<p>在<code>Configurations</code>下新增一个配置项，一般可以通过<code>Duplicate &quot;Debug&quot; Configuration</code>得到，并改名为<code>Coverage</code>。</p>
+<p><img src="media/15220556376633/15220564275488.png" alt="" /></p>
+</li>
+<li>
+<p>设置<code>Project</code> -&gt; <code>Build Settings</code> -&gt; <code>Instrument Program Flow</code>为<code>YES</code></p>
+<p><img src="media/15220556376633/15220566494529.jpg" alt="" /></p>
+</li>
+<li>
+<p>设置<code>Project</code> -&gt; <code>Build Settings</code> -&gt; <code>Generate Coverage Test Files</code>为<code>YES</code></p>
+<p><img src="media/15220556376633/15220567877573.jpg" alt="" /></p>
+</li>
+</ol>
+<h2><a id="%E6%9B%B4%E6%96%B0pods%E7%9A%84xcconfig%E6%96%87%E4%BB%B6" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>更新Pods的xcconfig文件</h2>
+<p>复制一份Pods的<code>xcconfig</code>文件。例如我的工程名为<code>MttHD</code>，则需要复制一份<code>Pods-MttHD.debug.xcconfig</code>，更名为<code>Pods-MttHD.coverage.xcconfig</code>，并引入工程。</p>
+<p><img src="media/15220556376633/15220569513535.jpg" alt="" /></p>
+<h2><a id="%E6%B3%A8%E5%85%A5%E6%8F%90%E5%8F%96%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E7%9A%84%E8%84%9A%E6%9C%AC" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>注入提取环境变量的脚本</h2>
+<p>在<code>Build Phases</code>中新增一个<code>New Run Script Phase</code>，添加下面的脚本：</p>
+<pre class="line-numbers"><code class="language-sh">if [ &quot;${CONFIGURATION}&quot; == &quot;Coverage&quot; ]
+then
+    Pods/XcodeCoverage/exportenv.sh
+else
+    echo &quot;ignore coverage&quot;
+fi
+</code></pre>
+<p><img src="media/15220556376633/15220573850275.jpg" alt="" /></p>
+<h2><a id="%E8%BF%90%E8%A1%8Cxcodecoverage" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>运行XcodeCoverage</h2>
+<p>如果是第一次运行，首先要clean一下工作目录，<code>Product</code> -&gt; <code>Clean</code>。<br />
+接下来执行任意一个单元测试，然后执行命令<code>bash ./Pods/XcodeCoverage/run_code_coverage_post.sh</code>。</p>
+<p><img src="media/15220556376633/15220579486956.jpg" alt="" /></p>
+<h2><a id="tips" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Tips</h2>
+<ul>
+<li>计算覆盖率的过程，需要在build过程中生成一些额外的文件，在开发调试的时候用不到，所以新增一个Scheme，以免降低Debug的build效率。</li>
+<li>通过注入提取环境变量的脚本，我们可以获取build过程中所有的环境变量。环境变量的列表可以查看以往的build log。</li>
+<li>第一次运行之前clean工作目录，因为在新增的Scheme目录下工作需要生成依赖的Pod库文件。</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[使用XcodeCoverage统计增量代码单元测试覆盖率]]></title>
+    <link href="https://ltryee.gitee.io/15220417245604.html"/>
+    <updated>2018-03-26T13:22:04+08:00</updated>
+    <id>https://ltryee.gitee.io/15220417245604.html</id>
+    <content type="html"><![CDATA[
+<div class="mweb_toc"><ul>
+<li><a href="#%E8%8E%B7%E5%8F%96%E4%B8%80%E4%B8%AA%E7%89%88%E6%9C%AC%E5%91%A8%E6%9C%9F%E5%86%85%E5%AD%98%E5%9C%A8%E4%BF%AE%E6%94%B9%E7%9A%84%E4%BB%A3%E7%A0%81%E6%96%87%E4%BB%B6%E5%88%97%E8%A1%A8">获取一个版本周期内存在修改的代码文件列表</a></li>
+<li><a href="#%E8%8E%B7%E5%8F%96xcode%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E7%94%9F%E6%88%90%E7%9A%84%E6%AF%8F%E4%B8%AA%E4%BB%A3%E7%A0%81%E6%96%87%E4%BB%B6%E7%9A%84%E8%A6%86%E7%9B%96%E7%8E%87%E6%95%B0%E6%8D%AE">获取Xcode单元测试生成的每个代码文件的覆盖率数据</a>
+<ul>
+<li><a href="#xcode%E6%89%A7%E8%A1%8C%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E6%97%B6%E6%8F%90%E5%8F%96%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F">Xcode执行单元测试时提取环境变量</a></li>
+<li><a href="#%E6%8F%90%E5%8F%96%E8%A6%86%E7%9B%96%E7%8E%87%E6%95%B0%E6%8D%AE">提取覆盖率数据</a></li>
+</ul>
+</li>
+<li><a href="#%E7%AD%9B%E9%80%89%E5%B9%B6%E8%AE%A1%E7%AE%97">筛选并计算</a></li>
+<li><a href="#tips">Tips</a></li>
+<li><a href="#%E5%8F%82%E8%80%83">参考</a></li>
+</ul>
+</div>
+<p><a href="https://github.com/jonreid/XcodeCoverage"><code>XcodeCoverage</code></a> 是一个基于<a href="https://github.com/linux-test-project/lcov"><code>lcov</code></a>的统计工具，用于计算Xcode项目的单元测试覆盖率，且能生成html格式的统计报表。<br />
+现在需要统计在一个版本周期中增量代码的覆盖率，而XcodeCoverage只能统计全量的覆盖率，因此需要借助XcodeCoverage生成的数据，手动计算版本周期中修改过的文件的覆盖率。问题可以分解为三个子问题：</p>
+<ol>
+<li>获取一个版本周期内存在修改的代码文件列表</li>
+<li>获取Xcode单元测试生成的每个代码文件的覆盖率数据</li>
+<li>筛选并计算</li>
+</ol>
+<h2><a id="%E8%8E%B7%E5%8F%96%E4%B8%80%E4%B8%AA%E7%89%88%E6%9C%AC%E5%91%A8%E6%9C%9F%E5%86%85%E5%AD%98%E5%9C%A8%E4%BF%AE%E6%94%B9%E7%9A%84%E4%BB%A3%E7%A0%81%E6%96%87%E4%BB%B6%E5%88%97%E8%A1%A8" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>获取一个版本周期内存在修改的代码文件列表</h2>
+<p>在版本库中，只要确定当某个本周期的<strong>起始</strong>和<strong>结束</strong>commit，就可以利用<code>git diff</code>命令筛选出我们想要的文件列表。<br />
+结束commit容易确定，如果统计当前正在开发的版本，那么结束commit对应的就是版本库的<code>HEAD</code>。<br />
+而起始commit的确定依赖于手动标记，本项目会对每个发布版本打一个tag，所以最新的一个tag对应的commit即为上个版本的发布commit，亦即当前版本的起始commit。</p>
+<pre class="line-numbers"><code class="language-sh"># get_modified_file_list.sh
+
+#!/bin/bash
+
+tag=`git --no-pager tag | sort -V | tail -1` #1
+beginCommit=`git --no-pager show $tag --pretty=raw | head -1 | awk '{print $2}'` #2
+endCommit=`git --no-pager log --max-count=1 --no-decorate | head -1 | awk '{print $2}'` #3
+
+# echo Calculation will start from $beginCommit to endCommit, since $tag
+
+git --no-pager diff $beginCommit $endCommit --name-status \ #4
+| awk '$2 ~ /\.m$/ {print $2}' \ #5
+| awk -F '/' '{print $NF}' #6
+</code></pre>
+<ol>
+<li>
+<p>获取最新的tag，这里需注意，tag名是符合<code>SemVer</code>规则描述的版本号，因此可以使用<code>sort</code>命令排序</p>
+<pre class="line-numbers"><code class="language-sh">➜  MttHD_vector git:(develop) git --no-pager tag | sort -V | tail -1
+v6.4.1
+</code></pre>
+</li>
+<li>
+<p>根据上个版本的tag获取起始commit</p>
+<pre class="line-numbers"><code class="language-sh">➜  MttHD_vector git:(develop) git --no-pager show $tag --pretty=raw | head -1 | awk '{print $2}'
+32a6c5e3434357cbb0584c647e3e8e2ec1e9df1d
+</code></pre>
+</li>
+<li>
+<p>获取结束commit</p>
+<pre class="line-numbers"><code class="language-sh">➜  MttHD_vector git:(develop) git --no-pager log --max-count=1 --no-decorate | head -1 | awk '{print $2}'
+7a7a538e1cbecc57023e3e26ecaa336d51fc6d08
+</code></pre>
+</li>
+<li>
+<p>打印起始/结束commit之间存在修改的文件列表</p>
+<pre class="line-numbers"><code class="language-sh">➜  MttHD_vector git:(develop) tag=`git --no-pager tag | sort -V | tail -1` #1
+beginCommit=`git --no-pager show $tag --pretty=raw | head -1 | awk '{print $2}'` #2
+endCommit=`git --no-pager log --max-count=1 --no-decorate | head -1 | awk '{print $2}'` #3
+➜  MttHD_vector git:(develop) git --no-pager diff $beginCommit $endCommit --name-status
+M	.gitignore
+M	MttHD.xcodeproj/project.pbxproj
+M	MttHD.xcodeproj/xcshareddata/xcschemes/MttHD.xcscheme
+A	MttHD/BundleResources/Data/adblockplus/easylistchina_iOS11_custom.txt
+M	MttHD/BundleResources/Data/adblockplus/mainlist.txt
+M	MttHD/BundleResources/Data/categoryconfig/categoryconfig.plist
+M	MttHD/BundleResources/Entitlements/MttHD.entitlements
+M	MttHD/BundleResources/Patch/MttPatchResDefaults.plist
+
+...
+</code></pre>
+</li>
+<li>
+<p>提取文件路径</p>
+<pre class="line-numbers"><code class="language-sh">➜  MttHD_vector git:(develop) git --no-pager diff $beginCommit $endCommit --name-status | awk '$2 ~ /\.m$/ {print $2}' 
+MttHD/src/AppMain/MttAppDelegate.m
+MttHD/src/AppMain/MttMainViewController.m
+MttHD/src/Business/Browser/BrowserWindow/BrowserUnit/MttBrowserUnitNativeNewTabViewController.m
+MttHD/src/Business/Browser/BrowserWindow/BrowserUnit/MttNativeNewTabFeedsWrapperView.m
+MttHD/src/Business/Browser/BrowserWindow/BrowserUnit/MttNativeNewTabSettings.m
+MttHD/src/Business/Browser/BrowserWindow/BrowserUnit/MttNewTabFeedView.m
+MttHD/src/Business/Browser/BrowserWindow/BrowserUnit/NewTabFeeds/LocalNews/MttLocalNewsFeedView.m
+    
+...
+</code></pre>
+</li>
+<li>
+<p>提取文件名</p>
+<pre class="line-numbers"><code class="language-sh">➜  MttHD_vector git:(develop) git --no-pager diff $beginCommit $endCommit --name-status | awk '$2 ~ /\.m$/ {print $2}' | awk -F '/' '{print $NF}'
+MttAppDelegate.m
+MttMainViewController.m
+MttBrowserUnitNativeNewTabViewController.m
+MttNativeNewTabFeedsWrapperView.m
+MttNativeNewTabSettings.m
+MttNewTabFeedView.m
+MttLocalNewsFeedView.m
+
+...
+</code></pre>
+</li>
+</ol>
+<h2><a id="%E8%8E%B7%E5%8F%96xcode%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E7%94%9F%E6%88%90%E7%9A%84%E6%AF%8F%E4%B8%AA%E4%BB%A3%E7%A0%81%E6%96%87%E4%BB%B6%E7%9A%84%E8%A6%86%E7%9B%96%E7%8E%87%E6%95%B0%E6%8D%AE" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>获取Xcode单元测试生成的每个代码文件的覆盖率数据</h2>
+<p>通过分析XcodeCoverage的脚本可以知道，执行Xcode单元测试之后生成的覆盖率数据文件在</p>
+<pre class="line-numbers"><code class="language-plain_text">~/Library/Developer/Xcode/DerivedData/MttHD-axxzxbxzjokinpghkkhgihkbcrgo/Build/ProfileData/F76FA0C5-258D-4233-BE5A-C672666F0D1C/Coverage.profdata
+</code></pre>
+<p>生成的二进制包在</p>
+<pre class="line-numbers"><code class="language-plain_text">~/Library/Developer/Xcode/DerivedData/MttHD-axxzxbxzjokinpghkkhgihkbcrgo/Build/Products/Debug-iphonesimulator/MttHD.app/MttHD
+</code></pre>
+<p>其中<code>~/Library/Developer/Xcode/DerivedData/MttHD-axxzxbxzjokinpghkkhgihkbcrgo/Build/</code>这个路径，在脚本的执行过程中存储在环境变量<code>BUILD_ROOT</code>中，而<code>F76FA0C5-258D-4233-BE5A-C672666F0D1C</code>代表测试设备的UUID，存储在环境变量<code>TARGET_DEVICE_IDENTIFIER</code>中。因此只需要仿照XcodeCoverage导入环境变量的方式，自己实现一个<code>exportsnv.sh</code>，在单元测试运行时将我们需要的路径注入到<code>env.sh</code>，待计算覆盖率时使用<code>source</code>命令导入即可。</p>
+<h3><a id="xcode%E6%89%A7%E8%A1%8C%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E6%97%B6%E6%8F%90%E5%8F%96%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Xcode执行单元测试时提取环境变量</h3>
+<p>将<code>exportsnv.sh</code>加到Project相应的Scheme的Run Scripts中，Xcode执行单元测试时即可将所需的环境变量导入到<code>env.sh</code>。</p>
+<pre class="line-numbers"><code class="language-sh"># exportsnv.sh
+
+#!/bin/bash
+
+scripts=&quot;$( cd &quot;$( dirname &quot;${BASH_SOURCE[0]}&quot; )&quot; &amp;&amp; pwd )&quot;
+export | egrep '(TARGET_DEVICE_IDENTIFIER)|(BUILD_ROOT)|(TARGET_NAME)' &gt; &quot;${scripts}/env.sh&quot;
+</code></pre>
+<pre class="line-numbers"><code class="language-sh"># env.sh
+
+declare -x BUILD_ROOT=&quot;/Users/vectorliu_1/Library/Developer/Xcode/DerivedData/MttHD-bxynohvelscfkufcyzjsxmqxonmn/Build/Products&quot;
+declare -x TARGET_DEVICE_IDENTIFIER=&quot;6C2F1A5C-31E0-4495-9802-B870196E0399&quot;
+declare -x TARGET_NAME=&quot;MttHD&quot;
+</code></pre>
+<h3><a id="%E6%8F%90%E5%8F%96%E8%A6%86%E7%9B%96%E7%8E%87%E6%95%B0%E6%8D%AE" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>提取覆盖率数据</h3>
+<p>覆盖率数据通过<code>xcrun llvm-cov report</code>命令导出。</p>
+<pre class="line-numbers"><code class="language-sh">xcrun llvm-cov report -instr-profile \
+    ~/Library/Developer/Xcode/DerivedData/MttHD-axxzxbxzjokinpghkkhgihkbcrgo/Build/ProfileData/F76FA0C5-258D-4233-BE5A-C672666F0D1C/Coverage.profdata \
+    ~/Library/Developer/Xcode/DerivedData/MttHD-axxzxbxzjokinpghkkhgihkbcrgo/Build/Products/Debug-iphonesimulator/MttHD.app/MttHD \
+    &gt; file_level_coverage.txt
+</code></pre>
+<h2><a id="%E7%AD%9B%E9%80%89%E5%B9%B6%E8%AE%A1%E7%AE%97" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>筛选并计算</h2>
+<pre class="line-numbers"><code class="language-sh"># analize_coverage.sh
+
+#!/bin/bash
+
+ScriptsPath=&quot;$( cd &quot;$( dirname &quot;${BASH_SOURCE[0]}&quot; )&quot; &amp;&amp; pwd )&quot;
+
+XcodeCoveragePath=&quot;${ScriptsPath}/../Pods/XcodeCoverage&quot;
+source &quot;${XcodeCoveragePath}/envcov.sh&quot; #1
+
+source &quot;./env.sh&quot; #2
+
+CoverageDataName=&quot;Coverage.profdata&quot;
+CoverageDataPath=&quot;${BUILD_ROOT}/../ProfileData/${TARGET_DEVICE_IDENTIFIER}/${CoverageDataName}&quot;
+BinPackagePath=&quot;${BUILT_PRODUCTS_DIR}/${TARGET_NAME}.app/${TARGET_NAME}&quot;
+
+# test
+xcodebuild test \
+	-workspace ../MttHD.xcworkspace \
+	-scheme ${TARGET_NAME} \
+	-destination 'platform=iOS Simulator,name=iPad Pro (12.9-inch) (2nd generation)' \
+	-only-testing:MttHDUnitTests \
+	-enableCodeCoverage YES #3
+
+# get modified files during current app version from repo
+echo Fetching modified files...
+fileList=&quot;$(./get_modified_file_list.sh | tr '\n' '|')&quot;
+fileList=${fileList%?} #4
+
+TotalLines=11
+MissLines=12
+
+# convert coverage data to humanity-readable format
+echo Calculating...
+CoverageDataName=&quot;file_level_coverage.txt&quot;
+xcrun llvm-cov report -instr-profile ${CoverageDataPath} ${BinPackagePath} \ #5
+| awk -v total=$TotalLines -v miss=$MissLines 'NR&gt;=3 &amp;&amp; $1 ~ /'&quot;$fileList&quot;'/ {print $1,$total,$miss}' \ #6
+| awk -f cal_coverage.awk #7
+
+echo Done.
+</code></pre>
+<pre class="line-numbers"><code class="language-awk"># cal_coverage.awk
+
+#!/bin/awk -f
+
+BEGIN {
+	totalsum = 0
+	misssum = 0
+}
+{
+	totalsum += $2
+	misssum += $3
+}
+END	{
+	printf &quot;Coverage rate: %.2f%%\n&quot;, (totalsum - misssum) / totalsum * 100
+}
+</code></pre>
+<ol>
+<li>
+<p>导入XcodeCoverage生成的环境变量</p>
+</li>
+<li>
+<p>导入自己生成的环境变量</p>
+</li>
+<li>
+<p><code>-enableCodeCoverage</code>设置为<code>YES</code>，才能生成<code>Coverage.profdata</code>文件</p>
+</li>
+<li>
+<p>导入文件名列表，并修改成awk命令中正则表达式的格式</p>
+</li>
+<li>
+<p>导入所有文件的单元测试覆盖率</p>
+</li>
+<li>
+<p>筛选出<code>$fileList</code>中相应文件的覆盖率数据</p>
+</li>
+<li>
+<p>计算增量代码覆盖率</p>
+<pre class="line-numbers"><code class="language-sh">➜  scripts git:(develop) ✗ ./analize_coverage.sh
+Feching modified files...
+Calculating...
+Coverage rate: 10.42%
+Done.
+</code></pre>
+</li>
+</ol>
+<h2><a id="tips" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Tips</h2>
+<ul>
+<li><code>--no-pager</code>: Do not pipe Git output into a pager</li>
+<li><code>$( cd &quot;$( dirname &quot;${BASH_SOURCE[0]}&quot; )&quot; &amp;&amp; pwd )</code>用于输出当前执行的脚本所在目录</li>
+</ul>
+<h2><a id="%E5%8F%82%E8%80%83" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>参考</h2>
+<ul>
+<li><a href="https://github.com/jonreid/XcodeCoverage">XcodeCoverage</a></li>
+<li><a href="https://github.com/linux-test-project/lcov">lcov</a></li>
+<li><a href="http://www.cnblogs.com/turtle-fly/archive/2013/01/09/2851474.html">gcov lcov 覆盖c/c++项目入门</a></li>
+<li><a href="https://git-scm.com/book/zh/v1/Git-%E5%9F%BA%E7%A1%80-%E6%89%93%E6%A0%87%E7%AD%BE">Git 基础 - 打标签</a></li>
+<li><a href="https://llvm.org/docs/CommandGuide/llvm-cov.html#llvm-cov-report">llvm-cov</a></li>
+<li><a href="https://coolshell.cn/articles/9070.html">AWK 简明教程</a></li>
+<li><a href="http://www.runoob.com/linux/linux-comm-awk.html">Linux awk 命令</a></li>
+<li><a href="https://linux.cn/article-7586-1.html">awk 系列：如何使用 awk 和正则表达式过滤文本或文件中的字符串</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[在Taf NodeJS工程中使用node-gyp]]></title>
+    <link href="https://ltryee.gitee.io/15089947525979.html"/>
+    <updated>2017-10-26T13:12:32+08:00</updated>
+    <id>https://ltryee.gitee.io/15089947525979.html</id>
+    <content type="html"><![CDATA[
+<div class="mweb_toc"><ul>
+<li><a href="#%E5%BC%80%E5%8F%91%E8%BF%87%E7%A8%8B">开发过程</a>
+<ul>
+<li><a href="#%E7%BC%96%E5%86%99%E4%BB%A3%E7%A0%81">编写代码</a></li>
+<li><a href="#%E7%BC%96%E8%AF%91%E6%89%93%E5%8C%85">编译打包</a></li>
+<li><a href="#%E9%83%A8%E7%BD%B2%E5%88%B0%E8%BF%9C%E7%A8%8B%E6%9C%8D%E5%8A%A1%E5%99%A8">部署到远程服务器</a></li>
+</ul>
+</li>
+<li><a href="#tips">Tips</a>
+<ul>
+<li><a href="#docker-taf">Docker &amp; Taf</a></li>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88tnpm-install%E5%91%BD%E4%BB%A4%E4%BC%9A%E8%A7%A6%E5%8F%91-node-gyp%E7%9A%84%E6%89%93%E5%8C%85%E6%B5%81%E7%A8%8B">为什么<code>tnpm install</code>命令会触发node-gyp的打包流程</a></li>
+<li><a href="#%E5%A6%82%E6%9E%9Cdocker%E5%AE%B9%E5%99%A8%E4%B8%AD%E6%B2%A1%E6%9C%89%E5%85%A8%E5%B1%80%E5%AE%89%E8%A3%85node-gyp">如果Docker容器中没有全局安装node-gyp</a></li>
+<li><a href="#%E5%9C%A8binding-gyp%E7%9A%84-source%E4%B8%AD%E5%BC%95%E7%94%A8%E6%96%87%E4%BB%B6">在<code>binding.gyp</code>的<code>source</code>中引用文件</a></li>
+</ul>
+</li>
+<li><a href="#%E5%85%B8%E5%9E%8B%E9%97%AE%E9%A2%98%E5%92%8C%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95">典型问题和解决方法</a>
+<ul>
+<li><a href="#the-program-node-gyp-is-currently-not-installed">The program 'node-gyp' is currently not installed.</a></li>
+<li><a href="#error-cannot-use-throw-with-exceptions-disabled">ERROR: cannot use 'throw' with exceptions disabled</a></li>
+<li><a href="#%E7%BC%96%E8%AF%91%E5%87%BA%E9%94%99%E7%9A%84%E4%B8%80%E7%A7%8D%E5%8F%AF%E8%83%BD">编译出错的一种可能</a></li>
+</ul>
+</li>
+<li><a href="#%E5%8F%82%E8%80%83">参考</a></li>
+</ul>
+</div>
+<p>最近需要将一个c++编写的功能模块部署到Node服务上，所以研究了一下node-gyp。整个过程中遇到不少坑，下面会列举一些典型问题和解决方法。</p>
+<p>Node模块上线和申请域名的过程暂且不表，有需要可以参考附录中列出的文章。</p>
+<h2><a id="%E5%BC%80%E5%8F%91%E8%BF%87%E7%A8%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>开发过程</h2>
+<h3><a id="%E7%BC%96%E5%86%99%E4%BB%A3%E7%A0%81" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>编写代码</h3>
+<p>开发一个c++插件需要编辑以下若干文件：</p>
+<ul>
+<li><code>binding.gyp</code>是node-gyp的配置文件，告诉node-gyp要编译哪些功能模块和需要的参数。这个文件需要放在工程根目录下。</li>
+<li><code>*.cc</code>可以理解为胶水代码，作用是为你的c++代码加上v8的壳，以便打包。</li>
+</ul>
+<h3><a id="%E7%BC%96%E8%AF%91%E6%89%93%E5%8C%85" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>编译打包</h3>
+<ol>
+<li>开发完成后，执行<code>sudo tnpm install node-gyp -g</code>命令，安装全局的node-gyp模块。</li>
+<li>第一次打包时，执行<code>node-gyp configure build</code>，等价于<code>node-gyp configure &amp;&amp; node-gyp build</code>。以后可以执行<code>node-gyp rebuild</code>命令，重新打包。</li>
+<li>也可以执行<code>tnpm install</code>命令，在安装完依赖模块之后node-gyp会开始打包流程(原理会在后面介绍)。</li>
+</ol>
+<p>这是一个执行<code>node-gyp configure build</code>的示例：</p>
+<pre class="line-numbers"><code class="language-bash">➜  QBDFInterpretServer git:(master) ✗ node-gyp configure build
+gyp info it worked if it ends with ok
+gyp info using node-gyp@3.6.0
+gyp info using node@8.7.0 | darwin | x64
+gyp info spawn /usr/local/bin/python2
+gyp info spawn args [ '/usr/local/lib/node_modules/node-gyp/gyp/gyp_main.py',
+gyp info spawn args   'binding.gyp',
+gyp info spawn args   '-f',
+gyp info spawn args   'make',
+gyp info spawn args   '-I',
+gyp info spawn args   '/Users/vectorliu/Documents/Projects/MttHDServer/QBDFInterpretServer/build/config.gypi',
+gyp info spawn args   '-I',
+gyp info spawn args   '/usr/local/lib/node_modules/node-gyp/addon.gypi',
+gyp info spawn args   '-I',
+gyp info spawn args   '/Users/vectorliu/.node-gyp/8.7.0/include/node/common.gypi',
+gyp info spawn args   '-Dlibrary=shared_library',
+gyp info spawn args   '-Dvisibility=default',
+gyp info spawn args   '-Dnode_root_dir=/Users/vectorliu/.node-gyp/8.7.0',
+gyp info spawn args   '-Dnode_gyp_dir=/usr/local/lib/node_modules/node-gyp',
+gyp info spawn args   '-Dnode_lib_file=node.lib',
+gyp info spawn args   '-Dmodule_root_dir=/Users/vectorliu/Documents/Projects/MttHDServer/QBDFInterpretServer',
+gyp info spawn args   '-Dnode_engine=v8',
+gyp info spawn args   '--depth=.',
+gyp info spawn args   '--no-parallel',
+gyp info spawn args   '--generator-output',
+gyp info spawn args   'build',
+gyp info spawn args   '-Goutput_dir=.' ]
+gyp info spawn make
+gyp info spawn args [ 'BUILDTYPE=Release', '-C', 'build' ]
+  CXX(target) Release/obj.target/interpret/addons/interpreter/interpret.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLScriptInterpreter.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLScriptMainDefine.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLTKProcess.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLToken.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLVarTypeHelper.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/main.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_reader.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_value.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_writer.o
+  SOLINK_MODULE(target) Release/interpret.node
+gyp info ok
+</code></pre>
+<p>这是一个执行<code>tnpm install</code>的示例：</p>
+<pre class="line-numbers"><code class="language-bash">➜  QBDFInterpretServer git:(master) ✗ tnpm install
+
+&gt; QBDFInterpretServer@0.1.0 install /Users/vectorliu/Documents/Projects/MttHDServer/QBDFInterpretServer
+&gt; node-gyp rebuild
+  CXX(target) Release/obj.target/interpret/addons/interpreter/interpret.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLScriptInterpreter.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLScriptMainDefine.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLTKProcess.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLToken.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLVarTypeHelper.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/main.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_reader.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_value.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_writer.o
+  SOLINK_MODULE(target) Release/interpret.node
+added 211 packages in 20.159s
+</code></pre>
+<h3><a id="%E9%83%A8%E7%BD%B2%E5%88%B0%E8%BF%9C%E7%A8%8B%E6%9C%8D%E5%8A%A1%E5%99%A8" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>部署到远程服务器</h3>
+<p>部署到测试环境，可以使用NodeTools。</p>
+<h2><a id="tips" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Tips</h2>
+<h3><a id="docker-taf" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Docker &amp; Taf</h3>
+<p>现在的服务基本上都是使用Docker部署的。所以部署出错时有可能需要进入Docker容器中查找问题。</p>
+<ol>
+<li>ssh到服务器</li>
+<li>查找Docker容器，执行<code>docker ps -a</code>，容器名就是server名。或查找名字以taf.QB开头的容器<code>docker ps -a -f name=taf.QB</code></li>
+<li>进入容器，执行<code>docker attach [CONTAINER ID or NAME]</code></li>
+</ol>
+<pre class="line-numbers"><code class="language-bash">[running]mqq@100.107.26.88:~$ docker ps -f name=taf.QB
+CONTAINER ID        IMAGE                                       COMMAND             CREATED             STATUS              PORTS               NAMES
+81085e4a4eb1        tafimage/taf-common-v2.0.20160526:1.0.1     &quot;/bin/bash&quot;         23 hours ago        Up 17 hours                             taf.QB.QBDFInterpretServer.P1
+a6106f0d7737        tafimage/pcqb_redis:20170922120733          &quot;/bin/bash&quot;         13 days ago         Up 13 days                              taf.QB.IndexBuilderServer.P3
+d47d60ca510b        tafimage/protobuf:20170913112258850         &quot;/bin/bash&quot;         6 weeks ago         Up 6 weeks                              taf.QB.QBWeiyunProxyTestServer.P1
+0616095f8d49        tafimage/taf-common-v1.0.20160219:1.0.0     &quot;/bin/bash&quot;         6 weeks ago         Up 6 weeks                              taf.QB.TranslatorCloudServer.P1
+c7bb64ea23bb        tafimage/taf-common-v2.0.20160526:1.0.1     &quot;/bin/bash&quot;         9 weeks ago         Up 9 weeks                              taf.QB.TranslatorCrawlerServer.P4
+9e08e262f33d        tafimage/taf-common-v2.0.20160526:1.0.1     &quot;/bin/bash&quot;         9 weeks ago         Up 9 weeks                              taf.QB.TranslatorNiuCalczh2en.P6
+338dc07851d7        tafimage/taf-common-v2.0.20160526:1.0.1     &quot;/bin/bash&quot;         9 weeks ago         Up 9 weeks                              taf.QB.UtherServer.P7
+1c7faa342e3f        tafimage/taf-common-v1.0.20160219:1.0.0     &quot;/bin/bash&quot;         9 weeks ago         Up 9 weeks                              taf.QB.TranslatorModulesTest.P2
+fe1b07f10951        tafimage/redis-pcqb-1.0:20170815213458233   &quot;/bin/bash&quot;         10 weeks ago        Up 10 weeks                             taf.QB.ReverseIndexServer.P3
+[running]mqq@100.107.26.88:~$ docker attach 81085e4a4eb1
+[running]mqq@:~/taf/QB.QBDFInterpretServer/bin/src/addons/interpreter/source$
+</code></pre>
+<p>这里需要注意的是，使用<code>docker attach</code>命令进入容器，并没有新开一个bash，而是所有终端共享一个bash，所以在一个终端内操作容器，所有进入该容器的终端都将显示同样的内容。如果退出bash，则容器中没有进程运行，<strong>容器将停止</strong>！重启容器可以使用<code>docker start [CONTAINER ID or NAME]</code>命令。</p>
+<p>个人以为<code>attach</code>没有<code>nsenter</code>命令好用，<code>nsenter</code>可以重开一个进程并且进入容器，所以每个bash之间是互不影响的。可惜服务器并没有安装这个命令……更过<code>nsenter</code>的讨论见参考。</p>
+<h3><a id="%E4%B8%BA%E4%BB%80%E4%B9%88tnpm-install%E5%91%BD%E4%BB%A4%E4%BC%9A%E8%A7%A6%E5%8F%91-node-gyp%E7%9A%84%E6%89%93%E5%8C%85%E6%B5%81%E7%A8%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>为什么<code>tnpm install</code>命令会触发node-gyp的打包流程</h3>
+<p>这要从npm脚本说起。在<code>package.json</code>文件中，<code>script</code>键值对定义了npm可执行的脚本命令，其中有两个命令是默认的：</p>
+<pre class="line-numbers"><code class="language-json">{
+  // ...
+  &quot;scripts&quot;: {
+    &quot;start&quot;: &quot;node server.js&quot;,
+    &quot;install&quot;: &quot;node-gyp rebuild&quot;
+  }
+}
+</code></pre>
+<p>如果存在<code>./binding.gyp</code>文件，则每当<code>npm install</code>执行时，会在安装完依赖包之后执行node-gyp的rebuild命令。</p>
+<h3><a id="%E5%A6%82%E6%9E%9Cdocker%E5%AE%B9%E5%99%A8%E4%B8%AD%E6%B2%A1%E6%9C%89%E5%85%A8%E5%B1%80%E5%AE%89%E8%A3%85node-gyp" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>如果Docker容器中没有全局安装node-gyp</h3>
+<p>这几乎是一定的，原因是并不是每一个node服务都会用到node-gyp。因此我们需要为工程单独安装一个node-gyp模块。在部署之前执行<code>tnpm install node-gyp --save</code>，安装完成之后会在<code>./node_modules/.bin/</code>生成<code>node-gyp.js</code>文件。</p>
+<p>同时<code>./node_modules/.bin/</code>这个路径会在运行时被加入到系统的PATH变量，因此在运行npm时，就可以不带路径，直接通过命令来调用这些脚本。所以上文提到的npm脚本<code>node-gyp rebuild</code>执行时不会报错。</p>
+<p>下面是一个使用本地node-gyp打包的例子，执行命令<code>../taf_nodejs/node node_modules/.bin/node-gyp rebuild</code></p>
+<pre class="line-numbers"><code class="language-bash">[running]mqq@:~/taf/QB.QBDFInterpretServer/bin/src$ ../taf_nodejs/node node_modules/.bin/node-gyp rebuild
+gyp info it worked if it ends with ok
+gyp info using node-gyp@3.6.2
+gyp info using node@8.7.0 | linux | x64
+gyp info spawn /usr/bin/python2
+gyp info spawn args [ '/usr/local/app/taf/QB.QBDFInterpretServer/bin/src/node_modules/node-gyp/gyp/gyp_main.py',
+gyp info spawn args   'binding.gyp',
+gyp info spawn args   '-f',
+gyp info spawn args   'make',
+gyp info spawn args   '-I',
+gyp info spawn args   '/usr/local/app/taf/QB.QBDFInterpretServer/bin/src/build/config.gypi',
+gyp info spawn args   '-I',
+gyp info spawn args   '/usr/local/app/taf/QB.QBDFInterpretServer/bin/src/node_modules/node-gyp/addon.gypi',
+gyp info spawn args   '-I',
+gyp info spawn args   '/usr/local/app/.node-gyp/8.7.0/include/node/common.gypi',
+gyp info spawn args   '-Dlibrary=shared_library',
+gyp info spawn args   '-Dvisibility=default',
+gyp info spawn args   '-Dnode_root_dir=/usr/local/app/.node-gyp/8.7.0',
+gyp info spawn args   '-Dnode_gyp_dir=/usr/local/app/taf/QB.QBDFInterpretServer/bin/src/node_modules/node-gyp',
+gyp info spawn args   '-Dnode_lib_file=/usr/local/app/.node-gyp/8.7.0/&lt;(target_arch)/node.lib',
+gyp info spawn args   '-Dmodule_root_dir=/usr/local/app/taf/QB.QBDFInterpretServer/bin/src',
+gyp info spawn args   '-Dnode_engine=v8',
+gyp info spawn args   '--depth=.',
+gyp info spawn args   '--no-parallel',
+gyp info spawn args   '--generator-output',
+gyp info spawn args   'build',
+gyp info spawn args   '-Goutput_dir=.' ]
+gyp info spawn make
+gyp info spawn args [ 'BUILDTYPE=Release', '-C', 'build' ]
+make: Entering directory `/usr/local/app/taf/QB.QBDFInterpretServer/bin/src/build'
+  CXX(target) Release/obj.target/interpret/addons/interpreter/interpret.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLScriptInterpreter.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLScriptMainDefine.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLTKProcess.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLToken.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLVarTypeHelper.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/main.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_reader.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_value.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_writer.o
+  SOLINK_MODULE(target) Release/obj.target/interpret.node
+  COPY Release/interpret.node
+make: Leaving directory `/usr/local/app/taf/QB.QBDFInterpretServer/bin/src/build'
+gyp info ok
+</code></pre>
+<h3><a id="%E5%9C%A8binding-gyp%E7%9A%84-source%E4%B8%AD%E5%BC%95%E7%94%A8%E6%96%87%E4%BB%B6" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>在<code>binding.gyp</code>的<code>source</code>中引用文件</h3>
+<p>是的，如果不这么做，node-gyp无法将我们所需的c++文件全部打包进去。如果我们需要引用成百上千个文件，还好<code>sources</code>中可以接受shell命令：<code>&lt;!(cmd)</code>或<code>&lt;!@(cmd)</code>，前者返回值为string，后者返回值为list。</p>
+<p>这样，虽然gyp没有提供通配符，但是可以通过命令实现这个功能，如实现添加<code>addons/interpreter/source/QBDFOLInterpreter/</code>和<code>addons/interpreter/source/QBDFOLInterpreter/jsoncpp/</code>目录下所有<code>cpp</code>后缀的文件作为<code>sources</code>：</p>
+<pre class="line-numbers"><code class="language-python"># binding.gyp
+{
+  &quot;targets&quot;: [
+    {
+      ...
+      
+      &quot;sources&quot;: [&quot;addons/interpreter/interpret.cc&quot;,
+                  &quot;&lt;!@(ls -1 addons/interpreter/source/QBDFOLInterpreter/*.cpp)&quot;,
+                  &quot;&lt;!@(ls -1 addons/interpreter/source/QBDFOLInterpreter/jsoncpp/*.cpp)&quot;,
+                  ],
+                  
+      ...
+    }
+  ]
+}
+</code></pre>
+<h2><a id="%E5%85%B8%E5%9E%8B%E9%97%AE%E9%A2%98%E5%92%8C%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>典型问题和解决方法</h2>
+<h3><a id="the-program-node-gyp-is-currently-not-installed" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>The program 'node-gyp' is currently not installed.</h3>
+<p>在容器中打包时出现以下错误提示：</p>
+<pre class="line-numbers"><code class="language-bash">[mqq@100-107-26-88 ~/taf/QB.QBDFInterpretServer/bin/src]$ ../taf_nodejs/node node_modules/.bin/node-gyp rebuild
+gyp info it worked if it ends with ok
+gyp info using node-gyp@3.6.2
+gyp info using node@8.7.0 | linux | x64
+gyp http GET https://nodejs.org/download/release/v8.7.0/node-v8.7.0-headers.tar.gz
+gyp WARN install got an error, rolling back install
+gyp ERR! configure error
+gyp ERR! stack Error: connect ENETUNREACH 104.20.22.46:443
+gyp ERR! stack     at Object._errnoException (util.js:1021:11)
+gyp ERR! stack     at _exceptionWithHostPort (util.js:1043:20)
+gyp ERR! stack     at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1175:14)
+gyp ERR! System Linux 3.10.104-1-tlinux2-0041.tl1
+gyp ERR! command &quot;/usr/local/app/taf/QB.QBDFInterpretServer/bin/taf_nodejs/node&quot; &quot;/usr/local/app/taf/QB.QBDFInterpretServer/bin/src/node_modules/.bin/node-gyp&quot; &quot;rebuild&quot;
+gyp ERR! cwd /usr/local/app/taf/QB.QBDFInterpretServer/bin/src
+gyp ERR! node -v v8.7.0
+gyp ERR! node-gyp -v v3.6.2
+gyp ERR! not ok
+</code></pre>
+<p>原因是node-gyp在第一次运行之前要到<code>https://nodejs.org/</code>下载node源码头文件，然而开发网是连不上外网的(啊坑爹的开发网)。所以要指定公司内部的tnpm镜像路径：</p>
+<ol>
+<li>进入Docker容器</li>
+<li>在<code>~/.bash_profile</code>中添加一句<code>export NODEJS_ORG_MIRROR=http://tnpm.oa.com/mirrors/node/</code></li>
+<li>执行<code>source ~/.bash_profile</code>命令</li>
+<li>继续使用node-gyp</li>
+</ol>
+<h3><a id="error-cannot-use-throw-with-exceptions-disabled" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>ERROR: cannot use 'throw' with exceptions disabled</h3>
+<p>取消掉<code>-fno-exceptions</code>标记即可。可以在<code>binding.gyp</code>中加入：</p>
+<pre class="line-numbers"><code class="language-python">{
+  &quot;targets&quot;: [
+    {
+      ...
+      
+      &quot;cflags!&quot; : [
+        &quot;-fno-exceptions&quot;
+      ],
+      &quot;cflags_cc!&quot;: [
+        &quot;-fno-exceptions&quot;
+      ],
+      
+      ...
+    }
+  ]
+}
+</code></pre>
+<p>如果是在<code>macOS</code>下开发，还需要加入：</p>
+<pre class="line-numbers"><code class="language-python">{
+  &quot;targets&quot;: [
+    {
+      ...
+      
+      'conditions': [
+        ['OS==&quot;mac&quot;', {
+          'xcode_settings': {
+            'GCC_ENABLE_CPP_EXCEPTIONS': 'YES'
+          }
+        }]
+      ],
+      
+      ...
+    }
+  ]
+}
+</code></pre>
+<h3><a id="%E7%BC%96%E8%AF%91%E5%87%BA%E9%94%99%E7%9A%84%E4%B8%80%E7%A7%8D%E5%8F%AF%E8%83%BD" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>编译出错的一种可能</h3>
+<p>如果在开发环境写好的代码，部署到服务器后出现一些莫名其妙的编译错误，请注意开发环境和部署环境c++编译器的版本差异。<br />
+我拿macOS下clang编译好的代码放到g++里编译，想想真是无知者无畏啊……</p>
+<h2><a id="%E5%8F%82%E8%80%83" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>参考</h2>
+<ul>
+<li><a href="http://km.oa.com/articles/show/314098">taf nodejs快速入门教程（一）-- hello word</a> 这篇文章介绍了如何上线一个基于nodejs的hello world服务</li>
+<li><a href="http://km.oa.com/group/2804/articles/show/285311">Sparta业务接入和变更指引</a> 这篇文章介绍了如何申请域名</li>
+<li><a href="https://github.com/nodejs/node-gyp/issues/17">error: exception handling disabled, use -fexceptions to enable</a></li>
+<li><a href="http://km.oa.com/group/22525/articles/show/225277">使用c++编写node.js插件</a></li>
+<li><a href="http://erikge.com/articles/HelloGyp/">Hello GYP</a></li>
+<li><a href="https://yeasy.gitbooks.io/docker_practice/content/container/enter.html">docker attach &amp; nsenter</a></li>
+<li><a href="http://www.ruanyifeng.com/blog/2016/10/npm_scripts.html">npm scripts 使用指南</a></li>
+<li><a href="http://javascript.ruanyifeng.com/nodejs/packagejson.html">package.json文件</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[依赖注入实现内存释放]]></title>
+    <link href="https://ltryee.gitee.io/14822246956860.html"/>
+    <updated>2016-12-20T17:04:55+08:00</updated>
+    <id>https://ltryee.gitee.io/14822246956860.html</id>
+    <content type="html"><![CDATA[
+<p>本文介绍了一种名为<strong>依赖注入</strong>(Dependency Injection)的设计模式，并使用这种模式释放不必一直持有的对象，用来达到释放内存的效果。</p>
+<h2><a id="%E4%BB%80%E4%B9%88%E6%98%AF%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>什么是依赖注入</h2>
+<p>举个栗子：</p>
+<blockquote>
+<p>“When you go and get things out of the refrigerator for yourself, you can cause problems. You might leave the door open, you might get something Mommy or Daddy doesn’t want you to have. You might even be looking for something we don’t even have or which has expired.</p>
+</blockquote>
+<blockquote>
+<p>What you should be doing is stating a need, “I need something to drink with lunch,” and then we will make sure you have something when you sit down to eat.”</p>
+</blockquote>
+<p>以上答案来自<a href="http://stackoverflow.com/questions/1638919/how-to-explain-dependency-injection-to-a-5-year-old">Stack Overflow</a>，大概意思是，对于一个5岁大的小朋友来说，从冰箱里取东西出来是一件危险的事情，你可能忘记关冰箱门，或者取出爸爸的伏特加，也可能寻找根本不存在的食物或者用舌头舔冷冻室的铁栏杆……</p>
+<p>因此，这件事的解决办法就是，对你的父母说：“我想在吃午饭时喝点什么”，然后父母就会拿出一些喝的给你。</p>
+<p>换成程序员能听懂的话就是：高层类(5岁小孩)应该依赖底层基础设施(家长)来提供必要的服务。</p>
+<p>依赖注入是一个将行为从依赖中分离的技术，简单地说，它允许开发者定义一个方法函数依赖于外部其他各种交互，而不需要编码如何获得这些外部交互的实例。 这样就在各种组件之间解耦，从而获得干净的代码，相比依赖的硬编码， 一个组件只有在运行时才调用其所需要的其他组件，因此在代码运行时，通过特定的框架或容器，将其所需要的其他依赖组件进行注入，主动推入。</p>
+<h2><a id="%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>为什么需要依赖注入</h2>
+<p>依赖注入框架的运用可以帮我们将APP的设计分割成好几个模块，分给不同的开人员，当完成开发之后再进行合并充分解决了团队之间模块化分工的不足。<br />
+借用objccn.io的话说：</p>
+<blockquote>
+<p>我最初决定钻研DI是因为在执行测试驱动开发 (TDD)，而在 TDD 的过程中有一个很纠结的问题会时常跳出来：“对于这个实现，如何编写单元测试？”。后来我发现其实 DI 本身是在彰显一个更高层面的概念：代码组成了模块，模块拼接构建成了应用本身。</p>
+</blockquote>
+<h2><a id="%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>如何实现依赖注入</h2>
+<p>以下例子来自<a href="http://objccn.io/issue-15-3/">objeccn.io</a>。</p>
+<h3><a id="%E6%9E%84%E9%80%A0%E5%99%A8%E6%B3%A8%E5%85%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>构造器注入</h3>
+<p>构造器注入，即将某个依赖对象传入到构造器中 (在 Objective- C中指 designated 初始化方法) 并存储起来，以便在后续过程中使用：</p>
+<pre class="line-numbers"><code class="language-Objc">- (NSNumber *)nextReminderId
+{
+    NSNumber *currentReminderId = [self.userDefaults objectForKey:@&quot;currentReminderId&quot;];
+    if (currentReminderId) {
+        currentReminderId = @([currentReminderId intValue] + 1);
+    } else {
+        currentReminderId = @0;
+    }
+    [self.userDefaults setObject:currentReminderId forKey:@&quot;currentReminderId&quot;];
+    return currentReminderId;
+}
+</code></pre>
+<h3><a id="%E5%B1%9E%E6%80%A7%E6%B3%A8%E5%85%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>属性注入</h3>
+<p>对于属性注入，<code>nextReminderId</code> 的代码看起来和 <code>self.userDefaults</code> 的做法是一致的。只是这次不是将依赖对象传递给初始化方法，而是采用属性赋值方式：</p>
+<pre class="line-numbers"><code class="language-Objc">@interface Example
+@property (nonatomic, strong) NSUserDefaults *userDefaults;
+- (NSNumber *)nextReminderId;
+@end
+</code></pre>
+<p>现在可以在单元测试中创建一个对象，然后将需要的东西通过对 userDefaults 属性进行赋值。但是要是这个属性没有被预先设定的话要怎么办呢？这时，我们可以使用 lazy 加载的方法为其设置一个适当的默认值，这能保证始终可以通过 getter 拿到一个确切的值：</p>
+<pre class="line-numbers"><code class="language-Objc">- (NSUserDefaults *)userDefaults
+{
+    if (!_userDefaults) {
+        _userDefaults = [NSUserDefaults standardUserDefaults];
+    }
+    return _userDefaults;
+}
+</code></pre>
+<p>这样的话，对 <code>userDefaults</code> 来说，如果在使用者取值之前做过赋值操作，那么从 <code>self.userDefaults</code> 得到的就是通过 setter 赋的值。如果这个属性在使用前未被赋值，从 self.userDefaults 得到的就是<code>[NSUserDefaults standardUserDefaults]</code>。</p>
+<h3><a id="%E6%96%B9%E6%B3%95%E6%B3%A8%E5%85%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>方法注入</h3>
+<p>如果依赖对象只在某一个方法中被使用，则可以利用方法参数做注入：</p>
+<pre class="line-numbers"><code class="language-Objc">- (NSNumber *)nextReminderIdWithUserDefaults:(NSUserDefaults *)userDefaults
+{
+    NSNumber *currentReminderId = [userDefaults objectForKey:@&quot;currentReminderId&quot;];
+    if (currentReminderId) {
+        currentReminderId = @([currentReminderId intValue] + 1);
+    } else {
+        currentReminderId = @0;
+    }
+    [userDefaults setObject:currentReminderId forKey:@&quot;currentReminderId&quot;];
+    return currentReminderId;
+}
+</code></pre>
+<p>再一次说明，这样看起来可能会很奇怪，并不是所有的例子中 <code>NSUserDefaults</code>作为依赖都显得恰如其分。比如说这个例子中，如果使用 <code>NSDate</code> 做注入参数传入可能更会彰显其特点。</p>
+<h2><a id="%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%86%85%E5%AD%98%E9%87%8A%E6%94%BE" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>如何实现内存释放</h2>
+<p>上面提到的几种实现依赖注入的方法中，可以用来释放不必一直持有的对象的方法是<strong>属性注入</strong>。如果在一个对象的生命周期中，有什么属性是可以随时从文件系统中(或是其他方法)恢复的，那就让我们注入它吧！</p>
+<p>举个例子，设备横屏时显示红色按钮<code>redButton</code>，设备竖屏时显示绿色按钮<code>greenButton</code>，同时两个button的行为完全一致，对外暴露的接口可以统一为一个<code>button</code>：</p>
+<pre class="line-numbers"><code class="language-Objc">// 这是对外接口，属性注入
+- (UIButton *)button
+{
+    if(UIInterfaceOrientationIsLandscape([[UIApplication sharedApplication] statusBarOrientation])) {
+        return self.redButton;
+    }
+    else {
+        return self.greenButton;
+    }
+}
+
+// 继续注入两个button
+- (UIButton *)redButton
+{
+    if(!_redButton) {
+        _redButton = [UIButton new];
+        // do sth.
+    }
+    return _redButton;
+}
+- (UIButton *)greenButton
+{
+    if(!_greenButton) {
+        _greenButton = [UIButton new];
+        // do sth.
+    }
+    return _greenButton;
+}
+</code></pre>
+<p>设备处于某个方向时，同时只有一个button被显示，因此可以释放掉不被显示的一个以节约内存</p>
+<pre class="line-numbers"><code class="language-objc">- (UIButton *)removeHiddenButton
+{
+    if(UIInterfaceOrientationIsLandscape([[UIApplication sharedApplication] statusBarOrientation])) {
+        [_greenButton removeFromSuperView];
+        _greenButton = nil;
+    }
+    else {
+        [_redButton removeFromSuperView];
+        _redButton = nil;
+    }
+}
+- (void)layoutSubviews
+{
+    [self button];
+    [self removeHiddenButton];
+}
+</code></pre>
+<p>属性注入保证了调用者（高级类）不必关心被调用对象的初始化情况，所以即使被调用对象已经释放，通过调用注入接口，仍然可以在需要时生成。利用这一特性，我们可以在收到内存警告时释放掉暂时不用的对象，同时也必须注意，<strong>被释放的对象必须是可恢复的</strong>。</p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[iOS 控件设置圆角（上）]]></title>
+    <link href="https://ltryee.gitee.io/14822246957173.html"/>
+    <updated>2016-12-20T17:04:55+08:00</updated>
+    <id>https://ltryee.gitee.io/14822246957173.html</id>
+    <content type="html"><![CDATA[
+<div class="mweb_toc"><ul>
+<li><a href="#%E4%B8%80%E7%A7%8D%E8%AE%BE%E7%BD%AE%E5%9C%86%E8%A7%92%E7%9A%84%E7%AE%80%E5%8D%95%E6%96%B9%E6%B3%95">一种设置圆角的简单方法</a></li>
+<li><a href="#%E6%80%A7%E8%83%BD%E6%8D%9F%E8%80%97%EF%BC%9A%E6%8E%89%E5%B8%A7">性能损耗：掉帧</a>
+<ul>
+<li><a href="#uiview%E5%92%8Ccalayer%E7%9A%84%E5%85%B3%E7%B3%BB">UIView和CALayer的关系</a></li>
+<li><a href="#%E7%A6%BB%E5%B1%8F%E6%B8%B2%E6%9F%93">离屏渲染</a></li>
+</ul>
+</li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
+</ul>
+</div>
+<p>圆角是iOS系统中常见的视觉样式，从系统图标到导航栏按钮，圆角无处不在。因为圆角是符合人类视觉安全体验的，圆角让人觉得舒适，而尖角在潜意识层次是具有伤害体验的，因为尖尖的东西总是有可能对人造成伤害的，所以我们更喜欢圆角。在iOS开发过程中，苹果提供了一种添加圆角的方法，简单暴力有效，但并不是所有的开发者都清楚原理，因此设置圆角有时会带来一定的性能损耗。本文将从理论上介绍设置圆角方法，性能损耗的原因这两方面展开讨论。下一篇文章将从具体项目的实践中介绍如何避免性能损耗。</p>
+<h2><a id="%E4%B8%80%E7%A7%8D%E8%AE%BE%E7%BD%AE%E5%9C%86%E8%A7%92%E7%9A%84%E7%AE%80%E5%8D%95%E6%96%B9%E6%B3%95" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>一种设置圆角的简单方法</h2>
+<p>在iOS开发过程中，有一种非常简单的方法，只需一行代码，就可以给<code>UIView</code>加上圆角效果。</p>
+<pre class="line-numbers"><code class="language-objc">view.layer.cornerRadius = 5;
+</code></pre>
+<p>这一行代码<strong>并不会</strong>带来任何性能上的损耗，然而理想和现实是有差距的，并不是所有的<code>UIView</code>都可以只通过一行代码添加上圆角。我们来看苹果对<code>cornerRadius</code>这一属性的解释：</p>
+<blockquote>
+<p>By default, the corner radius does not apply to the image in the layer’s contents property; it applies only to the background color and border of the layer. However, setting the masksToBounds property to YES causes the content to be clipped to the rounded corners.</p>
+</blockquote>
+<p>在通常情况下，<code>cornerRadius</code>属性只应用于<code>layer</code>的背景色和边线。将<code>masksToBounds</code>属性设置为<code>YES</code>才能把内容按圆角形状裁剪。</p>
+<p>也就是说，如果<code>UIView</code>中含有子视图，还需要设置<code>masksToBounds</code>属性为<code>YES</code>，才能实现圆角。于是代码变成了两行：</p>
+<pre class="line-numbers"><code class="language-objc">view.layer.cornerRadius = 5;
+view.layer.masksToBounds = YES;
+</code></pre>
+<p>就是这一行设置<code>masksToBounds</code>的代码，让我们的显示帧率蹭蹭往下掉。如果屏幕中同时显示的圆角个数过多，就会明显感觉到卡顿和跳帧。这是为什么呢？</p>
+<h2><a id="%E6%80%A7%E8%83%BD%E6%8D%9F%E8%80%97%EF%BC%9A%E6%8E%89%E5%B8%A7" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>性能损耗：掉帧</h2>
+<p>如果我们打开模拟器的<code>Color Offscreen-Rendered Yellow</code>选项，运行代码后会发现，在我们绘制圆角的地方出现了黄色的标记。黄色标记出现的地方即<strong>离屏渲染</strong>。</p>
+<p>在解释离屏渲染之前，先来介绍一点背景知识：</p>
+<h3><a id="uiview%E5%92%8Ccalayer%E7%9A%84%E5%85%B3%E7%B3%BB" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>UIView和CALayer的关系</h3>
+<p>简单地说，<code>UIView</code>是对<code>CALayer</code>的封装。<code>CALayer</code>包含三个基本视觉元素：<code>border</code>(属性包括宽度，颜色)，<code>background</code>(属性包括颜色)和<code>contents</code>，其中<code>contents</code>必须是一个<code>CGImage</code>。</p>
+<p><img src="http://oizh36h9r.bkt.clouddn.com/2018-05-15-layer_border_background_2x.png" alt="layer_border_background_2x" /></p>
+<p>回到UIView和CALayer的关系：<strong><code>CALayer</code>的<code>contents</code>负责显示内容，同时<code>UIView</code>为其提供内容，以及负责处理触摸等事件，参与响应链</strong>。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/37334-b25adbf4848acdd9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="WWDC 2012: iOS App Performance: Graphics and Animations" /></p>
+<h3><a id="%E7%A6%BB%E5%B1%8F%E6%B8%B2%E6%9F%93" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>离屏渲染</h3>
+<p>关于离屏渲染的介绍，可以参考<a href="http://www.jianshu.com/p/6d24a4c29e18">这篇文章</a>。文中提到：</p>
+<blockquote>
+<p>当使用圆角，阴影，遮罩的时候，图层属性的混合体被指定为在未预合成之前不能直接在屏幕中绘制，所以就需要屏幕外渲染被唤起。</p>
+</blockquote>
+<blockquote>
+<p>屏幕外渲染并不意味着软件绘制，但是它意味着图层必须在被显示之前在一个屏幕外上下文中被渲染（不论CPU还是GPU）。</p>
+</blockquote>
+<blockquote>
+<p>所以当使用离屏渲染的时候会很容易造成性能消耗，因为在OPENGL里离屏渲染会单独在内存中创建一个屏幕外缓冲区并进行渲染，而屏幕外缓冲区跟当前屏幕缓冲区上下文切换是很耗性能的。</p>
+</blockquote>
+<p>上文提到，<code>cornerRadius</code>属性只对前景框和背景色起作用，再看<code>CALayer</code>的结构，如果<code>contents</code>有内容或者内容的背景不是透明的话，还需要把这部分弄个角出来，不然合成的结果还是没有圆角，所以才要修改<code>masksToBounds</code>为<code>YES</code>(在<code>UIView</code>上对应的属性是<code>clipsToBounds</code>)。前些日子很热闹的圆角优化文章中的2篇指出是修改<code>masksToBounds</code>为<code>YES</code>而非修改<code>cornerRadius</code>才是触发离屏渲染的原因，但如果以<code>Color Offscreen-Renderd Yellow</code>的特征为标准的话，这两个属性单独作用时都不是引发离屏渲染的原因，他俩合体才是。</p>
+<p>简单来说，卡顿和跳帧的原因是我们设置圆角的两行代码，触发系统对圆角进行离屏渲染，进而影响了帧率。</p>
+<h2><a id="%E6%80%BB%E7%BB%93" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>总结</h2>
+<ol>
+<li>离屏渲染使用不当会导致性能问题。</li>
+<li>只设置<code>cornerRadius</code>时不会触发离屏渲染，仅适用于特殊情况：<code>contents</code>为空或者<code>contents</code>不会遮挡背景色圆角。</li>
+<li>打开模拟器的<code>Color Offscreen-Rendered Yellow</code>选项，可以检测离屏渲染。</li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[iOS 控件设置圆角（下）]]></title>
+    <link href="https://ltryee.gitee.io/14822246957408.html"/>
+    <updated>2016-12-20T17:04:55+08:00</updated>
+    <id>https://ltryee.gitee.io/14822246957408.html</id>
+    <content type="html"><![CDATA[
+<div class="mweb_toc"><ul>
+<li><a href="#%E6%8F%90%E5%8D%87%E6%80%A7%E8%83%BD%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E6%B3%95">提升性能的几种方法</a>
+<ul>
+<li><a href="#%E5%85%89%E6%A0%85%E5%8C%96">光栅化</a></li>
+<li><a href="#%E8%A3%81%E5%89%AA%E5%9B%BE%E7%89%87">裁剪图片</a></li>
+<li><a href="#%E5%9C%86%E8%A7%92%E9%81%AE%E7%BD%A9">圆角遮罩</a></li>
+<li><a href="#%E5%9C%86%E8%A7%92%E8%83%8C%E6%99%AF%E5%9B%BE">圆角背景图</a></li>
+<li><a href="#%E6%96%87%E6%9C%AC%E8%A7%86%E5%9B%BE%E7%B1%BB%E4%B8%8A%E5%AE%9E%E7%8E%B0%E5%9C%86%E8%A7%92">文本视图类上实现圆角</a></li>
+</ul>
+</li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
+</ul>
+</div>
+<p>圆角是iOS系统中常见的视觉样式，从系统图标到导航栏按钮，圆角无处不在。因为圆角是符合人类视觉安全体验的，圆角让人觉得舒适，而尖角在潜意识层次是具有伤害体验的，因为尖尖的东西总是有可能对人造成伤害的，所以我们更喜欢圆角。在iOS开发过程中，苹果提供了一种添加圆角的方法，简单暴力有效，但并不是所有的开发者都清楚原理，因此设置圆角有时会带来一定的性能损耗。</p>
+<p>上一篇文章从理论上介绍设置圆角方法，性能损耗的原因这两方面展开讨论。本文将从具体项目的实践中介绍如何避免性能损耗。</p>
+<h2><a id="%E6%8F%90%E5%8D%87%E6%80%A7%E8%83%BD%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E6%B3%95" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>提升性能的几种方法</h2>
+<p>前文已经提到，圆角设置不当会导致系统进行离屏渲染，进而造成卡顿和跳帧。具体到项目实践中，解决问题的途径有两种：一是尽量减小离屏渲染造成的CPU/GPU资源消耗，达到减缓卡顿的程度，下面将要介绍的光栅化(Rasterization)就是遵循这个思路的解决途径；二是通过其他方法实现『圆形的角』效果，尽量避免离屏渲染。具体方法包括裁剪图片，圆角遮罩等。</p>
+<h3><a id="%E5%85%89%E6%A0%85%E5%8C%96" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>光栅化</h3>
+<p>光栅化(Rasterization)，将layer渲染为bitmap存储于帧缓冲区中(一种特殊的离屏渲染)，每个像素对应帧缓冲区中的一像素。开启光栅化只需下面两行代码：</p>
+<pre class="line-numbers"><code class="language-plain_text">view.layer.shouldRasterize = YES;
+view.layer.rasterizationScale = cell.layer.contentsScale;
+</code></pre>
+<p>以下是<a href="http://liutianyangdeiMac.local:51239/Dash/oqpyzwaw/developer.apple.com/reference/quartzcore/calayer/1410905-shouldrasterize1742.html">官方文档</a>对<code>shouldRasterize</code>属性的解释：</p>
+<blockquote>
+<p>When the value of this property is YES, the layer is rendered as a bitmap in its local coordinate space and then composited to the destination with any other content. Shadow effects and any filters in the filters property are rasterized and included in the bitmap. However, the current opacity of the layer is not rasterized.</p>
+</blockquote>
+<p><code>shouldRasterize = YES</code>在其他属性触发离屏渲染的同时，会将光栅化后的内容缓存起来，如果对应的layer及其sublayers没有发生改变，在下一帧的时候可以直接复用。<code>shouldRasterize = YES</code>，这将隐式的创建一个位图，各种阴影遮罩等效果也会保存到位图中并缓存起来，从而减少渲染的频度（不是矢量图）。(<a href="http://www.jianshu.com/p/6d24a4c29e18">来源</a>)</p>
+<p>开启光栅化后，GPU 只合成一次内容，然后复用合成的结果；合成的内容超过 100ms 没有使用会从缓存里移除，在更新内容时还会产生<strong>更多的</strong>离屏渲染。对于内容不发生变化的视图，原本拖后腿的离屏渲染就成为了助力；如果视图内容是动态变化的，使用这个方案有可能让性能变得更糟。</p>
+<h3><a id="%E8%A3%81%E5%89%AA%E5%9B%BE%E7%89%87" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>裁剪图片</h3>
+<p>我们得到一张图片之后，对图片本身进行裁剪，把图片的直角裁剪为圆角。以后每次使用此图片时，都是一张带圆角的图片，这就从源头控制了后续获取圆角的各种操作，非常适用于频繁动态更新的场景。</p>
+<pre class="line-numbers"><code class="language-objc">- (UIImage *)roundedCornerImageWithCornerRadius:(CGFloat)cornerRadius
+{
+    CGFloat w = self.size.width;
+    CGFloat h = self.size.height;
+    CGFloat scale = [UIScreen mainScreen].scale;
+    
+    // 防止圆角半径小于0，或者大于宽/高中较小值的一半。
+    if (cornerRadius &lt; 0) {
+        cornerRadius = 0;
+    }
+    else if (cornerRadius &gt; MIN(w, h)) {
+        cornerRadius = MIN(w, h) / 2.;
+    }
+    
+    UIImage *image = nil;
+    CGRect imageFrame = CGRectMake(0., 0., w, h);
+    UIGraphicsBeginImageContextWithOptions(self.size, NO, scale);
+    [[UIBezierPath bezierPathWithRoundedRect:imageFrame cornerRadius:cornerRadius] addClip];
+    [self drawInRect:imageFrame];
+    image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    return image;
+}
+</code></pre>
+<h3><a id="%E5%9C%86%E8%A7%92%E9%81%AE%E7%BD%A9" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>圆角遮罩</h3>
+<p>在要添加圆角的视图上再叠加一个部分透明的视图，只对圆角部分进行遮挡。遮挡的部分背景最好与周围背景相同。多一个图层会增加合成的工作量，但这点工作量与离屏渲染相比微不足道，性能上无论各方面都和无效果持平。如果叠加的视图都一样，可以只加载一次遮罩图片以减少内存占用。</p>
+<p>除了用软件画出来保存在项目里，直接用代码画出来也是很简单的。在一个设置<code>opaque = NO</code>的 CGContext 里，设定填充颜色然后用两条曲线围成一个封闭区域，最后从这个绘制环境导出图像即可。</p>
+<pre class="line-numbers"><code class="language-objc">/**
+ *  生成一张图片，用于遮盖UIView的四角，使UIView呈现圆角效果
+ *
+ *  @param color  遮罩颜色
+ *  @param radius 圆角半径
+ *
+ *  @return 一张resizable图片，图片尺寸(2 * radius + 1) * (2 * radius + 1)，中心的1px为透明色，用于拉伸
+ */
+ + (UIImage *)roundedCornerMaskImageWithColor:(UIColor *)color radius:(CGFloat)radius
+{
+    if (radius &lt;= 0) {
+        return nil;
+    }
+    
+    CGRect rect = CGRectMake(0, 0, radius * 2 + 1, radius * 2 + 1);
+    
+    UIGraphicsBeginImageContextWithOptions(rect.size, NO, 0.0);
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    
+    [color set];
+    
+    CGPathRef rectPath = CGPathCreateWithRect(rect, NULL);
+    CGContextAddPath(context, rectPath);
+    CGPathRef roundedCornerPath = CGPathCreateWithRoundedRect(rect, radius, radius, NULL);
+    CGContextAddPath(context, roundedCornerPath);
+    CGContextEOFillPath(context);
+    
+    UIImage *maskImage = UIGraphicsGetImageFromCurrentImageContext();
+    
+    UIGraphicsEndImageContext();
+    CGPathRelease(rectPath);
+    CGPathRelease(roundedCornerPath);
+    
+    return [maskImage resizableImageWithCapInsets:UIEdgeInsetsMake(radius, radius, radius, radius)];
+}
+</code></pre>
+<h3><a id="%E5%9C%86%E8%A7%92%E8%83%8C%E6%99%AF%E5%9B%BE" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>圆角背景图</h3>
+<p>生成一张圆角图片，叠加在目标视图的最底部。效率和圆角遮罩一样。这种方法特别适用于<code>UIButton</code>，调用<code>UIButton</code>的<code>setBackgroundImage:forState:</code>方法，将生成的图片设置为背景图即可。</p>
+<pre class="line-numbers"><code class="language-objc">- (UIImage *)roundedCorner:(CGFloat)cornerRadius tintedGradientColor:(UIColor *)tintColor
+{
+    CGFloat w = self.size.width;
+    CGFloat h = self.size.height;
+    CGFloat scale = [UIScreen mainScreen].scale;
+    // 防止圆角半径小于0，或者大于宽/高中较小值的一半。
+    if (cornerRadius &lt; 0)
+        cornerRadius = 0;
+    else if (cornerRadius &gt; MIN(w, h))
+        cornerRadius = MIN(w, h) / 2.;
+    
+    CGRect imageFrame = CGRectMake(0., 0., w, h);
+    UIGraphicsBeginImageContextWithOptions(self.size, NO, scale);
+    [[UIBezierPath bezierPathWithRoundedRect:imageFrame cornerRadius:cornerRadius] addClip];
+    [self drawInRect:imageFrame];
+    
+    [tintColor setFill];
+    UIRectFill(imageFrame);
+    [self drawInRect:imageFrame blendMode:kCGBlendModeOverlay alpha:1.0f];
+    
+    UIImage *tintedImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    return tintedImage;
+}
+</code></pre>
+<h3><a id="%E6%96%87%E6%9C%AC%E8%A7%86%E5%9B%BE%E7%B1%BB%E4%B8%8A%E5%AE%9E%E7%8E%B0%E5%9C%86%E8%A7%92" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>文本视图类上实现圆角</h3>
+<p>文本视图主要是这三类：<code>UILabel</code>, <code>UITextField</code>, <code>UITextView</code>。其中 <code>UITextField</code> 类自带圆角风格的外型，<code>UILabel</code> 和 <code>UITextView</code> 要想显示圆角需要表现出与周围不同的背景色才行。想要在 <code>UILabel</code> 和 <code>UITextView</code> 上实现低成本的圆角(不触发离屏渲染)，需要保证 <code>layer</code> 的<code>contents</code>呈现透明的背景色，文本视图类的 <code>layer</code> 的<code>contents</code>默认是透明的(字符就在这个透明的环境里绘制、显示)，此时只需要设置 <code>layer</code> 的<code>backgroundColor</code>，再加上<code>cornerRadius</code>就可以搞定了。不过 <code>UILabel</code> 上设置<code>backgroundColor</code>的行为被更改了，不再是设定 <code>layer</code> 的背景色而是为<code>contents</code>设置背景色，<code>UITextView</code> 则没有改变这一点，所以在 UILabel 上实现圆角要这么做：</p>
+<pre class="line-numbers"><code class="language-objc">//不要这么做：label.backgroundColor = aColor 以及不要在 IB 里为 label 设置背景色
+label.layer.backgroundColor = aColor;
+label.layer.cornerRadius = 5;
+</code></pre>
+<h2><a id="%E6%80%BB%E7%BB%93" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>总结</h2>
+<ol>
+<li>光栅化(Rasterization)可以有效提高帧率，前提是layer的contents<strong>不</strong>频繁更新。</li>
+<li>裁剪图片可以一劳永逸地解决生成图片圆角的问题，但仅限于图片，不能有多个视图叠加在图片之上。同时一旦裁剪完成，圆角大小就不可更改，适用范围很窄。</li>
+<li>圆角遮罩方法在目标视图上再添加一层视图，可以盖住底层所有的视图，可扩展性强，但要求父视图是<strong>纯色背景</strong>。</li>
+<li>没有哪种方法可以cover所有的情况，总有一种情况没有办法做任何优化，听天由命吧……</li>
+</ol>
+
+]]></content>
+  </entry>
+  
+</feed>

@@ -1,0 +1,538 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>
+    
+  使用 LLDB Python API 自动存储后台请求数据用于单元测试 - ltryee's blog
+  
+
+  </title>
+  <meta name="author" content="">
+  <meta name="description" content="ltryee's blog">
+
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link href="asset/css/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="atom.xml" rel="alternate" title="ltryee's blog" type="application/atom+xml">
+  <script src="asset/js/modernizr-2.0.js"></script>
+  <script src="asset/js/jquery.min.js"></script>
+  <style type="text/css">
+  .cat-children-p{ padding: 6px 0px;}
+  .hljs{background: none;}
+  </style>
+  <script type="text/javascript">
+  var isAddSildbar = true;
+  </script>
+  <script src="asset/js/octopress.js" type="text/javascript"></script>
+</head>
+<script type="text/javascript">
+//链接新开窗口
+function addBlankTargetForLinks () {
+  $('a[href^="http"]').each(function(){
+      $(this).attr('target', '_blank');
+  });
+}
+$(document).ready(function(event) {
+  addBlankTargetForLinks();
+});
+</script>
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="index.html">ltryee's blog</a></h1>
+  
+    <h2>ltryee's blog</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:ltryee.gitee.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+
+  <li id=""><a target="_self" href="index.html">Home</a></li>
+
+  <li id=""><a target="_self" href="archives.html">Archives</a></li>
+
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content"> 
+<div>
+	<article class="hentry" role="article">
+	<header>
+			  	<h1 class="entry-title">使用 LLDB Python API 自动存储后台请求数据用于单元测试</h1>
+				<p class="meta"><time datetime="2020-02-25T00:46:41+08:00" pubdate data-updated="true">2020/02/25</time></p>
+			 </header>
+		  	<div class="entry-content">
+			  	<div class="mweb_toc"><ul>
+<li><a href="#%E5%B7%B2%E6%9C%89%E6%96%B9%E6%B3%95">已有方法</a></li>
+<li><a href="#%E5%9F%BA%E4%BA%8Elldb-python-api%E7%9A%84%E6%96%B9%E6%A1%88">基于 LLDB Python API 的方案</a>
+<ul>
+<li><a href="#%E6%96%B9%E6%B3%95%E7%AE%80%E4%BB%8B">方法简介</a></li>
+<li><a href="#%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87">环境准备</a></li>
+<li><a href="#%E5%AD%98%E5%82%A8%E6%B5%81%E7%A8%8B">存储流程</a></li>
+</ul>
+</li>
+<li><a href="#%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5">最佳实践</a>
+<ul>
+<li><a href="#lldb%E7%9A%84-python%E7%8E%AF%E5%A2%83">LLDB 的 Python 环境</a></li>
+<li><a href="#python-repl">Python REPL</a></li>
+<li><a href="#%E5%AF%BC%E5%85%A5%E8%87%AA%E5%AE%9A%E4%B9%89%E5%91%BD%E4%BB%A4">导入自定义命令</a></li>
+<li><a href="#%E6%9F%A5%E7%9C%8B%E5%B7%B2%E5%AF%BC%E5%85%A5lldb%E7%9A%84%E8%87%AA%E5%AE%9A%E4%B9%89%E5%91%BD%E4%BB%A4">查看已导入 lldb 的自定义命令</a></li>
+<li><a href="#python-api%E4%B8%AD%E7%9A%84-lldb%E6%A8%A1%E5%9D%97">Python API 中的 lldb 模块</a></li>
+</ul>
+</li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
+<li><a href="#%E5%8F%82%E8%80%83">参考</a></li>
+</ul>
+</div>
+<p>在编写单元测试的过程中，我们经常需要编写一类用例，用于验证后台返回的数据的正确性。<br />
+其中，用于验证的数据如何取得，受限于发送请求的安全性要求，一般 app 发送网络请求时会在数据中加入一些校验、防刷的额外信息，导致请求数据内容严重依赖于 app 上下文环境。目前获取后台响应数据主要有两种方法，一种是在 app 中发起真实的请求，接收到响应后存储到文件；第二种是在单元测试用例中模拟 app 发送请求，接收到响应后存储到文件。但以上两种方法都存在一些问题，会对单测的编写和执行效率造成严重影响。<br />
+本文提出一种使用 LLDB 调试器自动存储网络请求的响应数据到指定文件的方法，解决了已有方法中存在的问题，并且显著提高了单元测试的编写、执行效率。</p>
+<h2><a id="%E5%B7%B2%E6%9C%89%E6%96%B9%E6%B3%95" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>已有方法</h2>
+<p>方法一，在 app 中发起真实的请求，接收到响应后存储到文件。因为是发送真实的网络请求，同时要把我们需要的响应数据存储到文件，所以不可避免地要在 app 工程里修改代码，在接受响应处增加额外的写文件的代码逻辑，对已有功能做一些侵入性修改。<br />
+方法二，在单元测试用例中模拟 app 发送请求，接收到响应后存储到文件。由于网络请求的延迟，这种方法会导致单测执行时间过长，且用例失败时不易区分到底是后台返回的响应数据出错，还是本地解析响应数据的代码逻辑出错。</p>
+<h2><a id="%E5%9F%BA%E4%BA%8Elldb-python-api%E7%9A%84%E6%96%B9%E6%A1%88" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>基于 LLDB Python API 的方案</h2>
+<p>为了解决侵入性修改代码逻辑的问题，我们可以考虑在调试器中捕获数据，并写入文件。因为是在 LLDB 调试器界面中执行自定义操作，所以不需要对代码本身进行修改。为了解决编写、执行效率的问题，我们决定不在单元测试中进行网络请求的验证，只验证客户端代码解析响应数据的逻辑，同时利用 Xcode 提供的自动执行断点的能力，在 app 运行过程中不间断地存储数据。</p>
+<h3><a id="%E6%96%B9%E6%B3%95%E7%AE%80%E4%BB%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>方法简介</h3>
+<ol>
+<li>利用 LLDB 调试器提供的 Python API，自定义一个将 NSData 类型数据写入文件系统指定路径的 Python 函数，再让 LLDB 运行期间加载这个 Python 函数，同时映射为一个 LLDB 命令。</li>
+<li>在 Xcode 调试过程中，在接收相应数据的代码处加上断点，断点处执行上一步加载的 LLDB 命令，从而将 NSData 类型数据写入文件系统指定路径。</li>
+</ol>
+<h3><a id="%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>环境准备</h3>
+<p>克隆代码库到开发机的指定路径：</p>
+<pre class="line-numbers"><code class="language-sh">git clone https://github.com/liyanage/lldb_utilities ~/git/lldb_utilities
+</code></pre>
+<p>链接代码库里的lldb配置文件到开发机的用户目录：</p>
+<pre class="line-numbers"><code class="language-sh">ln -s ~/git/lldb_utilities/lldbinit ~/.lldbinit
+</code></pre>
+<p>重启 Xcode。至此，每当 Xcode 调试运行 app 时，LLDB 都会加载已写好的自定义命令。</p>
+<h3><a id="%E5%AD%98%E5%82%A8%E6%B5%81%E7%A8%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>存储流程</h3>
+<p><img src="media/16553980014674/15826478132496.jpg" alt="" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<ol>
+<li>在接收响应数据的代码打断点，并编辑断点</li>
+<li>点击 Action 最右侧的➕️，新增一项</li>
+<li>Action 类型选择 <code>Debugger Command</code></li>
+<li>文本框中输入命令 <code>script import lldb</code>，表示向 Python 环境中加载<code>lldb</code>模块</li>
+<li>点击 Action 最右侧的➕️，继续新增一项</li>
+<li>Action 类型仍然选择 <code>Debugger Command</code></li>
+<li>文本框中输入命令 <code>dump_test_data respData</code>。这里<code>dump_test_data</code>命令就是在 Python 中已写好，已加载到 LLDB 中的命令，后面的<code>respData</code>是代码中 NSData 数据的表达式</li>
+<li>勾选最下方的 <code>Automatically continue after evaluating actions</code>，即表示此断点处在执行完上述命令后会继续运行代码，不会暂停</li>
+</ol>
+<p>添加断点后，在调试过程中每次执行过该断点后均会保存一个数据文件到指定位置。默认路径以及文件命名规则为：<code>/tmp/[类名].[方法名].[随机字符串].dat</code>，随机字符串可以保证每次写文件不会覆盖上一次存储的数据。<br />
+例如：<code>+[POISearchProtocolV2 parseOnTheWaySearchData:]</code>方法中保存的文件路径为<code>/tmp/POISearchProtocolV2.parseOnTheWaySearchData.01kcl06c.dat</code>。</p>
+<p><img src="media/16553980014674/15826484649743.jpg" alt="" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<h2><a id="%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>最佳实践</h2>
+<h3><a id="lldb%E7%9A%84-python%E7%8E%AF%E5%A2%83" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>LLDB 的 Python 环境</h3>
+<p>在 lldb 调试界面执行命令 <code>script print(sys.version)</code>，</p>
+<pre class="line-numbers"><code class="language-sh">(lldb) script print(sys.version)
+3.7.3 (default, Dec 13 2019, 19:58:14) 
+[Clang 11.0.0 (clang-1100.0.33.17)]
+(lldb) 
+</code></pre>
+<h3><a id="python-repl" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Python REPL</h3>
+<p>在 lldb 调试界面执行命令 <code>script</code>，进入 REPL。</p>
+<pre class="line-numbers"><code class="language-sh">(lldb) script
+Python Interactive Interpreter. To exit, type 'quit()', 'exit()'.
+&gt;&gt;&gt; print('Hello, world')
+Hello, world
+&gt;&gt;&gt; 
+</code></pre>
+<h3><a id="%E5%AF%BC%E5%85%A5%E8%87%AA%E5%AE%9A%E4%B9%89%E5%91%BD%E4%BB%A4" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>导入自定义命令</h3>
+<p>TODO:</p>
+<h3><a id="%E6%9F%A5%E7%9C%8B%E5%B7%B2%E5%AF%BC%E5%85%A5lldb%E7%9A%84%E8%87%AA%E5%AE%9A%E4%B9%89%E5%91%BD%E4%BB%A4" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>查看已导入 lldb 的自定义命令</h3>
+<p>执行命令<code>command script list</code>：</p>
+<pre class="line-numbers"><code class="language-sh">(lldb) command script list
+Current user-defined commands:
+  cstr_refs      -- For more information run 'help cstr_refs'
+  dump_nsdata    -- For more information run 'help dump_nsdata'
+  dump_test_data -- For more information run 'help dump_test_data'
+  find_variable  -- For more information run 'help find_variable'
+  malloc_info    -- For more information run 'help malloc_info'
+  objc_refs      -- For more information run 'help objc_refs'
+  pflags         -- For more information run 'help pflags'
+  poc            -- For more information run 'help poc'
+  pp             -- For more information run 'help pp'
+  ptr_refs       -- For more information run 'help ptr_refs'
+  tempdir        -- For more information run 'help tempdir'
+For more information on any command, type 'help &lt;command-name&gt;'.
+(lldb) 
+</code></pre>
+<h3><a id="python-api%E4%B8%AD%E7%9A%84-lldb%E6%A8%A1%E5%9D%97" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Python API 中的 lldb 模块</h3>
+<p>lldb 模块可以看作是调试器在 Python 环境中的上下文。文档见<a href="https://lldb.llvm.org/python_reference/index.html">LLDB Python API</a></p>
+<h2><a id="%E6%80%BB%E7%BB%93" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>总结</h2>
+<ul>
+<li>在调试器中执行文件存储操作，可以避免对代码的侵入式修改，同时省去了“加代码”-“删代码”这种无意义的操作。</li>
+<li>使用自动执行断点可以显著提高执行效率。</li>
+<li><code>script import lldb</code>是必需的，不加会导致调试器执行<code>dump_test_data</code>命令时找不到当前frame。但不能理解为什么调试器加载自定义命令的过程中，lldb 模块不能自动导入到 Python 环境中。</li>
+<li>这种方法只能在<strong>模拟器</strong>调试时使用，真机调试会有文件权限报错。(感谢 paulineli 同学)</li>
+</ul>
+<h2><a id="%E5%8F%82%E8%80%83" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>参考</h2>
+<ul>
+<li><a href="https://developer.apple.com/videos/play/wwdc2019/429/">LLDB: Beyond &quot;po&quot; - WWDC 2019</a></li>
+<li><a href="https://github.com/liyanage/lldb_utilities">GitHub / lldb_utilities</a></li>
+<li><a href="https://www.jianshu.com/p/39c3c7de6dd7">用 Python 玩转 LLDB</a></li>
+<li><a href="https://lldb.llvm.org/python_reference/index.html">LLDB Python API</a></li>
+</ul>
+
+			</div>
+
+		
+	  
+		<footer>
+		 <p class="meta">
+
+			
+			<span class="categories">
+			 
+			</span>
+		    </p>
+		    <p class="meta">
+		      
+		 </p>
+	    
+		<div class="sharing">
+		  
+          
+
+          
+
+		</div>
+
+	    <p class="meta">
+	    
+	        <a class="basic-alignment left" href="wan-zhuan-cocoapods-xu-yao-le.html" 
+	        title="Previous Post: 玩转 CocoaPods 需要了解的 Ruby 基础知识">&laquo; 玩转 CocoaPods 需要了解的 Ruby 基础知识</a>
+	    
+	    
+	        <a class="basic-alignment right" href="15372506301626.html" 
+	        title="Next Post: JavaScript for Automation(JXA) 入门">JavaScript for Automation(JXA) 入门 &raquo;</a>
+	    
+	    </p>
+	  </footer>
+	</article>
+</div>
+ <aside class="sidebar"> 
+
+	<section>
+	  <h1>Categories</h1>
+	  <ul id="recent_posts">
+	  
+	      <li class="post">
+	        <a href="%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html"><strong>《iOS面试之道》读书笔记&nbsp;(6)</strong></a>
+	        
+	        
+	        
+	      </li>
+	   
+	  </ul>
+	</section>
+	<section>
+	  <h1>Recent Posts</h1>
+	  <ul id="recent_posts">
+	  
+	      
+		      <li class="post">
+		        <a href="16566860725573.html">使用 framework 转换 XCFramework</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16558196375003.html">记一次私有 pod 发布报错</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="wan-zhuan-cocoapods-xu-yao-le.html">玩转 CocoaPods 需要了解的 Ruby 基础知识</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16553980014674.html">使用 LLDB Python API 自动存储后台请求数据用于单元测试</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="15372506301626.html">JavaScript for Automation(JXA) 入门</a>
+		      </li>
+	     
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	   
+	  </ul>
+	</section>
+	
+</aside> </div></div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 -  -
+  <span class="credit">Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a> &nbsp;&nbsp; Theme by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="asset/prism.js"></script>
+
+
+<style type="text/css">
+  
+/* PrismJS 1.14.0
+https://prismjs.com/download.html#themes=prism-solarizedlight&languages=markup+css+clike+javascript */
+/*
+ Solarized Color Schemes originally by Ethan Schoonover
+ http://ethanschoonover.com/solarized
+
+ Ported for PrismJS by Hector Matos
+ Website: https://krakendev.io
+ Twitter Handle: https://twitter.com/allonsykraken)
+*/
+
+/*
+SOLARIZED HEX
+--------- -------
+base03    #002b36
+base02    #073642
+base01    #586e75
+base00    #657b83
+base0     #839496
+base1     #93a1a1
+base2     #eee8d5
+base3     #fdf6e3
+yellow    #b58900
+orange    #cb4b16
+red       #dc322f
+magenta   #d33682
+violet    #6c71c4
+blue      #268bd2
+cyan      #2aa198
+green     #859900
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #657b83; /* base00 */
+  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+
+  line-height: 1.5;
+
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+  background: #073642; /* base02 */
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+  background: #073642; /* base02 */
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+  padding: 1em;
+  margin: .5em 0;
+  overflow: auto;
+  border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  background-color: #fdf6e3; /* base3 */
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+  padding: .1em;
+  border-radius: .3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #93a1a1; /* base1 */
+}
+
+.token.punctuation {
+  color: #586e75; /* base01 */
+}
+
+.namespace {
+  opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #268bd2; /* blue */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.url,
+.token.inserted {
+  color: #2aa198; /* cyan */
+}
+
+.token.entity {
+  color: #657b83; /* base00 */
+  background: #eee8d5; /* base2 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #859900; /* green */
+}
+
+.token.function,
+.token.class-name {
+  color: #b58900; /* yellow */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #cb4b16; /* orange */
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+
+pre[class*="language-"].line-numbers {
+    position: relative;
+    padding-left: 3.8em;
+    counter-reset: linenumber;
+}
+
+pre[class*="language-"].line-numbers > code {
+    position: relative;
+    white-space: inherit;
+}
+
+.line-numbers .line-numbers-rows {
+    position: absolute;
+    pointer-events: none;
+    top: 0;
+    font-size: 100%;
+    left: -3.8em;
+    width: 3em; /* works for line-numbers below 1000 lines */
+    letter-spacing: -1px;
+    border-right: 1px solid #999;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+}
+
+    .line-numbers-rows > span {
+        pointer-events: none;
+        display: block;
+        counter-increment: linenumber;
+    }
+
+        .line-numbers-rows > span:before {
+            content: counter(linenumber);
+            color: #999;
+            display: block;
+            padding-right: 0.8em;
+            text-align: right;
+        }
+
+</style>
+  
+    
+
+
+</body>
+</html>

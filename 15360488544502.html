@@ -1,0 +1,524 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>
+    
+  《iOS面试之道》读书笔记 - atomic/nonatomic - ltryee's blog
+  
+
+  </title>
+  <meta name="author" content="">
+  <meta name="description" content="ltryee's blog">
+
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link href="asset/css/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="atom.xml" rel="alternate" title="ltryee's blog" type="application/atom+xml">
+  <script src="asset/js/modernizr-2.0.js"></script>
+  <script src="asset/js/jquery.min.js"></script>
+  <style type="text/css">
+  .cat-children-p{ padding: 6px 0px;}
+  .hljs{background: none;}
+  </style>
+  <script type="text/javascript">
+  var isAddSildbar = true;
+  </script>
+  <script src="asset/js/octopress.js" type="text/javascript"></script>
+</head>
+<script type="text/javascript">
+//链接新开窗口
+function addBlankTargetForLinks () {
+  $('a[href^="http"]').each(function(){
+      $(this).attr('target', '_blank');
+  });
+}
+$(document).ready(function(event) {
+  addBlankTargetForLinks();
+});
+</script>
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="index.html">ltryee's blog</a></h1>
+  
+    <h2>ltryee's blog</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:ltryee.gitee.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+
+  <li id=""><a target="_self" href="index.html">Home</a></li>
+
+  <li id=""><a target="_self" href="archives.html">Archives</a></li>
+
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content"> 
+<div>
+	<article class="hentry" role="article">
+	<header>
+			  	<h1 class="entry-title">《iOS面试之道》读书笔记 - atomic/nonatomic</h1>
+				<p class="meta"><time datetime="2018-09-04T16:14:14+08:00" pubdate data-updated="true">2018/09/04</time></p>
+			 </header>
+		  	<div class="entry-content">
+			  	<div class="mweb_toc"><ul>
+<li><a href="#%E4%BD%BF%E7%94%A8atomic%E4%BF%AE%E9%A5%B0%E7%9A%84-property%E6%98%AF%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E5%8E%9F%E5%AD%90%E6%80%A7%E7%9A%84%EF%BC%9F">使用 atomic 修饰的 property 是如何保证原子性的？</a></li>
+<li><a href="#%E4%BD%BF%E7%94%A8atomic%E4%BF%AE%E9%A5%B0%E7%9A%84-property%E6%98%AF%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E7%9A%84%E5%90%97%EF%BC%9F">使用 atomic 修饰的 property 是线程安全的吗？</a></li>
+<li><a href="#%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81property%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E6%80%A7%EF%BC%9F">如何保证 property 的线程安全性？</a></li>
+</ul>
+</div>
+<p><code>atomic</code>和<code>nonatomic</code>用于在定义 property 时指明其原子性：</p>
+<ul>
+<li><code>atomic</code>表示是原子性的，调用该 property 的 getter 和 setter 会保证对象的完整性。多线程操作时，任何调用都可以得到一个完整的对象，因此速度较慢。</li>
+<li><code>nonatomic</code>表示是<strong>非</strong>原子性的，调用该 property 的 getter 和 setter 不保证对象的完整性。多个线程对它进行访问，它可能会返回未初始化的对象，因此速度较快。</li>
+</ul>
+<p><strong>注意</strong>，以上讨论仅对编译器自动生成的 getter/setter 有效。如果你自己实现了 getter/setter，无论使用 atomic/nonatomic，property 的原子性都将取决于你自己的实现。</p>
+<h2><a id="%E4%BD%BF%E7%94%A8atomic%E4%BF%AE%E9%A5%B0%E7%9A%84-property%E6%98%AF%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E5%8E%9F%E5%AD%90%E6%80%A7%E7%9A%84%EF%BC%9F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>使用 atomic 修饰的 property 是如何保证原子性的？</h2>
+<p>对于任何没有手动实现的属性，编译器都会生成一个<code>objc_getProperty_non_gc</code>的函数作为 getter，同时生成一个<code>objc_setProperty_non_gc</code>的函数作为 setter。</p>
+<p>从<code>objc_getProperty_non_gc</code>函数的源代码可以看到<sup class="footnote-ref"><a href="#fn-1" id="fnref-1_ref" data-footnote-ref>1</a></sup>：</p>
+<pre class="line-numbers"><code class="language-c">// objc-accessors.mm
+
+id objc_getProperty_non_gc(id self, SEL _cmd, ptrdiff_t offset, BOOL atomic) {
+    if (offset == 0) {
+        return object_getClass(self);
+    }
+
+    // Retain release world
+    id *slot = (id*) ((char*)self + offset);
+    if (!atomic) return *slot;
+        
+    // Atomic retain release world
+    spinlock_t&amp; slotlock = PropertyLocks[slot];
+    slotlock.lock();
+    id value = objc_retain(*slot);
+    slotlock.unlock();
+    
+    // for performance, we (safely) issue the autorelease OUTSIDE of the spinlock.
+    return objc_autoreleaseReturnValue(value);
+}
+</code></pre>
+<p>而<code>objc_setProperty_non_gc</code>函数最终将调到<code>reallySetProperty</code>函数<sup class="footnote-ref"><a href="#fn-2" id="fnref-2_ref" data-footnote-ref>2</a></sup>：</p>
+<pre class="line-numbers"><code class="language-c">// objc-accessors.mm
+
+static inline void reallySetProperty(id self, SEL _cmd, id newValue, ptrdiff_t offset, bool atomic, bool copy, bool mutableCopy)
+{
+    if (offset == 0) {
+        object_setClass(self, newValue);
+        return;
+    }
+
+    id oldValue;
+    id *slot = (id*) ((char*)self + offset);
+
+    if (copy) {
+        newValue = [newValue copyWithZone:nil];
+    } else if (mutableCopy) {
+        newValue = [newValue mutableCopyWithZone:nil];
+    } else {
+        if (*slot == newValue) return;
+        newValue = objc_retain(newValue);
+    }
+
+    if (!atomic) {
+        oldValue = *slot;
+        *slot = newValue;
+    } else {
+        spinlock_t&amp; slotlock = PropertyLocks[slot];
+        slotlock.lock();
+        oldValue = *slot;
+        *slot = newValue;        
+        slotlock.unlock();
+    }
+
+    objc_release(oldValue);
+}
+</code></pre>
+<p>其中处理 atomic 的分支里，getter/setter 都使用了在<code>PropertyLocks</code>中的128个<a href="https://en.wikipedia.org/wiki/Spinlock">自旋锁(Spinlock)</a>中的1个来给操作上锁。这是一种务实和快速的方式，最糟糕的情况下，如果遇到了哈希碰撞，那么 setter 需要等待另一个和它无关的 setter 完成之后再进行工作<sup class="footnote-ref"><a href="#fn-3" id="fnref-3_ref" data-footnote-ref>3</a></sup>。</p>
+<h2><a id="%E4%BD%BF%E7%94%A8atomic%E4%BF%AE%E9%A5%B0%E7%9A%84-property%E6%98%AF%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E7%9A%84%E5%90%97%EF%BC%9F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>使用 atomic 修饰的 property 是线程安全的吗？</h2>
+<p>考虑对一个 nonatomic 的整形变量<code>integer</code>进行加1操作，可分为三个步骤：首先从内存中取出原始值，然后加1，最后将修改后的值写回内存。<br />
+现在有<code>A</code>和<code>B</code>两个并发线程，分别对<code>integer</code>进行加1操作，那么问题来了：两个线程都从变量中取出了原始值，假设<code>17</code>，然后<code>A</code>将值加1，然后将结果<code>18</code>写回内存；同时<code>B</code>也将值加1后将结果<code>18</code>写回内存。此时<code>integer</code>被加1了两次，但最终值却是<code>18</code>。</p>
+<p><img src="https://www.objccn.io/images/issues/issue-2/race-condition.png" alt="" /></p>
+<p>这个问题称为<a href="https://www.objccn.io/issue-2-1/">竞态条件</a>，atomic 通过在读写时加入自旋锁，能保证对象的完整性，保护你免于在 setter 中遭遇到竞态条件的困扰。<br />
+但这并<strong>不</strong>代表使用 atomic 就是线程安全的。考虑三个并发线程<code>A</code>，<code>B</code>和<code>C</code>，其中<code>A</code>和<code> B</code>对变量<code>integer</code>进行加1操作，<code>C</code>从变量<code>integer</code>中读取数据。因为三个线程是并发的，所以<code>C</code>读取数据的时机可能在其他两个写入数据的线程<code>A</code>、<code>B</code>之前，或在他们两个之间，也可能在他们两个之后，导致<code>C</code>读到的数据可能是<code>17</code>、<code>18</code>或<code>19</code>。</p>
+<h2><a id="%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81property%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E6%80%A7%EF%BC%9F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>如何保证 property 的线程安全性？</h2>
+<p>没有银弹，具体问题具体分析。<code>@synchronized</code>和<code>dispatch_queue</code>都是可选的解决方案，但也都各有利弊。这里就不展开说明了，那将又是一大块篇幅。</p>
+<section class="footnotes" data-footnotes>
+<ol>
+<li id="fn-1">
+<p><a href="https://github.com/opensource-apple/objc4/blob/master/runtime/objc-accessors.mm#L48">objc-accessors.mm - objc_getProperty_non_gc</a> <a href="#fnref-1_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-2">
+<p><a href="https://github.com/opensource-apple/objc4/blob/master/runtime/objc-accessors.mm#L70">objc-accessors.mm - reallySetProperty</a> <a href="#fnref-2_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-3">
+<p><a href="https://www.objccn.io/issue-2-4/">线程安全类的设计</a> <a href="#fnref-3_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+</ol>
+</section>
+
+			</div>
+
+		
+	  
+		<footer>
+		 <p class="meta">
+
+			<strong>Categories:</strong>&nbsp; 
+			<span class="categories">
+			
+			    <a class='category' href='%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html'>《iOS面试之道》读书笔记</a>&nbsp;
+			 
+			</span>
+		    </p>
+		    <p class="meta">
+		      
+		 </p>
+	    
+		<div class="sharing">
+		  
+          
+
+          
+
+		</div>
+
+	    <p class="meta">
+	    
+	        <a class="basic-alignment left" href="15362253776879.html" 
+	        title="Previous Post: 《iOS面试之道》读书笔记 - 并发编程">&laquo; 《iOS面试之道》读书笔记 - 并发编程</a>
+	    
+	    
+	        <a class="basic-alignment right" href="ios-mian-shi-zhi-dao-du-shu-bi.html" 
+	        title="Next Post: 《iOS面试之道》读书笔记 - NSRunLoop">《iOS面试之道》读书笔记 - NSRunLoop &raquo;</a>
+	    
+	    </p>
+	  </footer>
+	</article>
+</div>
+ <aside class="sidebar"> 
+
+	<section>
+	  <h1>Categories</h1>
+	  <ul id="recent_posts">
+	  
+	      <li class="post">
+	        <a href="%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html"><strong>《iOS面试之道》读书笔记&nbsp;(6)</strong></a>
+	        
+	        
+	        
+	      </li>
+	   
+	  </ul>
+	</section>
+	<section>
+	  <h1>Recent Posts</h1>
+	  <ul id="recent_posts">
+	  
+	      
+		      <li class="post">
+		        <a href="16566860725573.html">使用 framework 转换 XCFramework</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16558196375003.html">记一次私有 pod 发布报错</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="wan-zhuan-cocoapods-xu-yao-le.html">玩转 CocoaPods 需要了解的 Ruby 基础知识</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16553980014674.html">使用 LLDB Python API 自动存储后台请求数据用于单元测试</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="15372506301626.html">JavaScript for Automation(JXA) 入门</a>
+		      </li>
+	     
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	   
+	  </ul>
+	</section>
+	
+</aside> </div></div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 -  -
+  <span class="credit">Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a> &nbsp;&nbsp; Theme by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="asset/prism.js"></script>
+
+
+<style type="text/css">
+  
+/* PrismJS 1.14.0
+https://prismjs.com/download.html#themes=prism-solarizedlight&languages=markup+css+clike+javascript */
+/*
+ Solarized Color Schemes originally by Ethan Schoonover
+ http://ethanschoonover.com/solarized
+
+ Ported for PrismJS by Hector Matos
+ Website: https://krakendev.io
+ Twitter Handle: https://twitter.com/allonsykraken)
+*/
+
+/*
+SOLARIZED HEX
+--------- -------
+base03    #002b36
+base02    #073642
+base01    #586e75
+base00    #657b83
+base0     #839496
+base1     #93a1a1
+base2     #eee8d5
+base3     #fdf6e3
+yellow    #b58900
+orange    #cb4b16
+red       #dc322f
+magenta   #d33682
+violet    #6c71c4
+blue      #268bd2
+cyan      #2aa198
+green     #859900
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #657b83; /* base00 */
+  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+
+  line-height: 1.5;
+
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+  background: #073642; /* base02 */
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+  background: #073642; /* base02 */
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+  padding: 1em;
+  margin: .5em 0;
+  overflow: auto;
+  border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  background-color: #fdf6e3; /* base3 */
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+  padding: .1em;
+  border-radius: .3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #93a1a1; /* base1 */
+}
+
+.token.punctuation {
+  color: #586e75; /* base01 */
+}
+
+.namespace {
+  opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #268bd2; /* blue */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.url,
+.token.inserted {
+  color: #2aa198; /* cyan */
+}
+
+.token.entity {
+  color: #657b83; /* base00 */
+  background: #eee8d5; /* base2 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #859900; /* green */
+}
+
+.token.function,
+.token.class-name {
+  color: #b58900; /* yellow */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #cb4b16; /* orange */
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+
+pre[class*="language-"].line-numbers {
+    position: relative;
+    padding-left: 3.8em;
+    counter-reset: linenumber;
+}
+
+pre[class*="language-"].line-numbers > code {
+    position: relative;
+    white-space: inherit;
+}
+
+.line-numbers .line-numbers-rows {
+    position: absolute;
+    pointer-events: none;
+    top: 0;
+    font-size: 100%;
+    left: -3.8em;
+    width: 3em; /* works for line-numbers below 1000 lines */
+    letter-spacing: -1px;
+    border-right: 1px solid #999;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+}
+
+    .line-numbers-rows > span {
+        pointer-events: none;
+        display: block;
+        counter-increment: linenumber;
+    }
+
+        .line-numbers-rows > span:before {
+            content: counter(linenumber);
+            color: #999;
+            display: block;
+            padding-right: 0.8em;
+            text-align: right;
+        }
+
+</style>
+  
+    
+
+
+</body>
+</html>

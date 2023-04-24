@@ -1,0 +1,539 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>
+    
+  使用 framework 转换 XCFramework - ltryee's blog
+  
+
+  </title>
+  <meta name="author" content="">
+  <meta name="description" content="ltryee's blog">
+
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link href="asset/css/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="atom.xml" rel="alternate" title="ltryee's blog" type="application/atom+xml">
+  <script src="asset/js/modernizr-2.0.js"></script>
+  <script src="asset/js/jquery.min.js"></script>
+  <style type="text/css">
+  .cat-children-p{ padding: 6px 0px;}
+  .hljs{background: none;}
+  </style>
+  <script type="text/javascript">
+  var isAddSildbar = true;
+  </script>
+  <script src="asset/js/octopress.js" type="text/javascript"></script>
+</head>
+<script type="text/javascript">
+//链接新开窗口
+function addBlankTargetForLinks () {
+  $('a[href^="http"]').each(function(){
+      $(this).attr('target', '_blank');
+  });
+}
+$(document).ready(function(event) {
+  addBlankTargetForLinks();
+});
+</script>
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="index.html">ltryee's blog</a></h1>
+  
+    <h2>ltryee's blog</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:ltryee.gitee.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+
+  <li id=""><a target="_self" href="index.html">Home</a></li>
+
+  <li id=""><a target="_self" href="archives.html">Archives</a></li>
+
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content"> 
+<div>
+	<article class="hentry" role="article">
+	<header>
+			  	<h1 class="entry-title">使用 framework 转换 XCFramework</h1>
+				<p class="meta"><time datetime="2022-07-01T22:34:32+08:00" pubdate data-updated="true">2022/07/01</time></p>
+			 </header>
+		  	<div class="entry-content">
+			  	<div class="mweb_toc"><ul>
+<li><a href="#xcframework%E7%AE%80%E4%BB%8B">XCFramework 简介</a>
+<ul>
+<li><a href="#xcframework%E9%87%8C%E6%9C%89%E4%BB%80%E4%B9%88">XCFramework 里有什么</a></li>
+<li><a href="#%E5%A6%82%E4%BD%95%E5%88%B6%E4%BD%9Cxcframework">如何制作 XCFramework</a></li>
+</ul>
+</li>
+<li><a href="#%E8%BD%AC%E6%8D%A2arm64%E4%BA%8C%E8%BF%9B%E5%88%B6">转换 arm64 二进制</a></li>
+<li><a href="#demo">Demo</a></li>
+<li><a href="#references">References</a></li>
+</ul>
+</div>
+<p>我们在<a href="16558196375003.html">前一篇文章</a>中提到，由于真机使用的 arm64 架构的二进制与 M1 模拟器使用的 arm64 架构二进制不兼容，在 xcode 工程中引入一些较早时间构建的 framework，会导致 arm64 架构模拟器链接失败。<br />
+构建年代久远的 framework，是没有模拟器可用的 arm64 二进制的，若是三方提供的闭源 framework，甚至连使用源码重新构建的机会都没有。</p>
+<p>基于上述原因，我们只能通过现有的 framework 想办法。 此时要解决的问题有两个，一是如何使用现有的真机 arm64 二进制，生成模拟器可用的 arm64 二进制；二是两个 arm64 二进制如何共存。<br />
+对于前一个问题，我们使用 <a href="https://github.com/bogo/arm64-to-sim">arm64-to-sim</a> 工具能够把为真机构建的 arm64 架构的二进制转换成模拟器可用的 arm64 二进制。对于后一个问题，苹果为我们提供的解决方案是<a href="https://help.apple.com/xcode/mac/11.4/#/dev544efab96">创建 XCFramework</a>。</p>
+<h2><a id="xcframework%E7%AE%80%E4%BB%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>XCFramework 简介</h2>
+<blockquote>
+<p>An XCFramework is a distributable binary package created by Xcode that contains variants of a framework or library so that it can be used on multiple platforms (iOS, macOS, tvOS, and watchOS), including Simulator builds. An XCFramework can be either static or dynamic and can include headers.<sup class="footnote-ref"><a href="#fn-1" id="fnref-1_ref" data-footnote-ref>1</a></sup></p>
+</blockquote>
+<p>XCFramework 是一种可用于分发的二进制包，它由 Xcode 创建，内部包含多个 framework 或 library，基于上述原因，XCFramework 可用于多平台场景，包括模拟器。XCFramework 可以是静态或动态库，且能够包含头文件。</p>
+<h3><a id="xcframework%E9%87%8C%E6%9C%89%E4%BB%80%E4%B9%88" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>XCFramework 里有什么</h3>
+<p>Framework 有其特定的结构，通常情况下包含一个 <code>Info.plist</code> 文件，定义了该 framework 的基本属性。XCFramework 也不例外，XCFramework 的 <code>Info.plist</code> 继承了 framework 的大部分属性，其中 <code>CFBundlePackageType</code> 的值由原来的 <code>FMWK</code> 变成了 <code>XFWK</code>。</p>
+<p><img src="media/16566860725573/16568234501810.jpg" alt="" /></p>
+<p>剩下的部分是一个或多个 framework，分别存放于不同的路径下。同时路径名中描述了该 framework 对应的平台、处理器架构信息。<sup class="footnote-ref"><a href="#fn-2" id="fnref-2_ref" data-footnote-ref>2</a></sup><br />
+<img src="media/16566860725573/16568236669806.jpg" alt="" /></p>
+<h3><a id="%E5%A6%82%E4%BD%95%E5%88%B6%E4%BD%9Cxcframework" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>如何制作 XCFramework</h3>
+<p>使用<code>xcodebuild -create-xcframework</code> 命令，把生成好的库（可以是 .a / framework / Swift Package，）制作成 XCFramework。命令参数如下<sup class="footnote-ref"><a href="#fn-3" id="fnref-3_ref" data-footnote-ref>3</a></sup>：</p>
+<pre class="line-numbers"><code class="language-shell"># 通过 farmework 创建
+xcodebuild -create-xcframework -framework &lt;path&gt; [-framework &lt;path&gt;...] -output &lt;path&gt;
+# 或 通过 .a 创建
+xcodebuild -create-xcframework -library &lt;path&gt; [-headers &lt;path&gt;] [-library &lt;path&gt; [-headers &lt;path&gt;]...] -output &lt;path&gt;
+</code></pre>
+<h2><a id="%E8%BD%AC%E6%8D%A2arm64%E4%BA%8C%E8%BF%9B%E5%88%B6" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>转换 arm64 二进制</h2>
+<p>根据<a href="https://bogo.wtf/arm64-to-sim.html">这篇文章</a>的操作，我们可以修改已有的 arm64 二进制，使之能够运行在 arm64 架构的<strong>模拟器</strong>上面。</p>
+<p>这里需要注意的是，重新生成的适配模拟器的 arm64 模拟器，与原有的适配真机的 arm64，无法在同一个胖二进制中共存。若使用 <code>lipo -create</code> 命令强行捏成一个会报错。</p>
+<p>XCFramework 能够解决这个问题，因为它为不同的架构创建了多个对应的 framework。例如上图中的 <code>ios-arm64</code> 和 <code>ios-x86_64-simulator</code>，分别用于真机 arm64 和模拟器。其中模拟器使用的 framework 中包含了两种架构，分别是 <code>x86_64</code> 和 <code>arm64</code>。</p>
+<h2><a id="demo" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Demo</h2>
+<p>以下脚本实现了这个功能：通过已有的包含 fat binary 的 framework，生成 xcframework。</p>
+<pre class="line-numbers"><code class="language-shell">#!/bin/bash
+
+INPUT_FRAMEWORK_PATH=${1:-&quot;/tmp/Protobuf/Protobuf.framework&quot;}
+NAKED_NAME=$(basename &quot;$INPUT_FRAMEWORK_PATH&quot; .framework)
+FRAMEWORK_NAME=$(basename &quot;$INPUT_FRAMEWORK_PATH&quot;)
+
+IOS_FRAMEWORK_PATH=&quot;iOS/$FRAMEWORK_NAME&quot;
+SIM_FRAMEWORK_PATH=&quot;sim/$FRAMEWORK_NAME&quot;
+
+# Step-0: 准备胖二进制
+ORIGIN_BINARY_PATH=&quot;$NAKED_NAME&quot;
+cp &quot;$INPUT_FRAMEWORK_PATH/Versions/A/$NAKED_NAME&quot; &quot;$ORIGIN_BINARY_PATH&quot;
+
+# Step-1: 处理真机二进制
+mkdir -p iOS
+cp -a &quot;$INPUT_FRAMEWORK_PATH&quot; &quot;$IOS_FRAMEWORK_PATH&quot;
+lipo &quot;$ORIGIN_BINARY_PATH&quot; \
+     -extract arm64 \
+     -output &quot;$IOS_FRAMEWORK_PATH/Versions/A/$NAKED_NAME&quot;
+
+# Step-2: 处理模拟器 arm64 二进制
+mkdir -p sim
+cp -a &quot;$INPUT_FRAMEWORK_PATH&quot; &quot;$SIM_FRAMEWORK_PATH&quot;
+
+# Step-2.1: 提取瘦二进制
+lipo &quot;$ORIGIN_BINARY_PATH&quot; -thin arm64 -output &quot;$NAKED_NAME.arm64&quot;
+lipo &quot;$ORIGIN_BINARY_PATH&quot; -thin x86_64 -output &quot;$NAKED_NAME.x86_64&quot;
+
+mkdir -p &quot;$NAKED_NAME-reworked&quot;
+cd &quot;$NAKED_NAME-reworked&quot;
+    # Step-2.2: 从瘦二进制提取 .o 文件
+    ar x &quot;../$NAKED_NAME.arm64&quot;
+
+    # Step-2.3: 修改 .o 文件
+    # see https://bogo.wtf/arm64-to-sim.html
+    for file in *.o; do arm64-to-sim $file; done;
+
+    # Step-2.4: 聚合 .o 生成新的瘦二进制
+    ar crv &quot;../$NAKED_NAME.arm64-reworked&quot; *.o
+cd -
+
+# Step-2.5: 生成新的胖二进制
+lipo -create &quot;$NAKED_NAME.arm64-reworked&quot; &quot;$NAKED_NAME.x86_64&quot; \
+     -output &quot;$SIM_FRAMEWORK_PATH/Versions/A/$NAKED_NAME&quot;
+
+# Step-3: 制作 XCFramework
+XCFRAMEWORK_PATH=&quot;$NAKED_NAME.xcframework&quot;
+xcodebuild -create-xcframework \
+           -framework &quot;$SIM_FRAMEWORK_PATH&quot; \
+           -framework &quot;$IOS_FRAMEWORK_PATH&quot; \
+           -output &quot;$XCFRAMEWORK_PATH&quot;
+
+# Step-4: 清理
+rm &quot;$ORIGIN_BINARY_PATH&quot; &quot;$NAKED_NAME.arm64-reworked&quot; &quot;$NAKED_NAME.arm64&quot; &quot;$NAKED_NAME.x86_64&quot;
+rm -rf sim
+rm -rf iOS
+rm -rf &quot;$NAKED_NAME-reworked&quot;
+</code></pre>
+<h2><a id="references" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>References</h2>
+<ul>
+<li><a href="https://github.com/bielikb/xcframeworks">GitHub / xcframeworks</a></li>
+</ul>
+<section class="footnotes" data-footnotes>
+<ol>
+<li id="fn-1">
+<p><a href="https://help.apple.com/xcode/mac/11.4/#/dev6f6ac218b">What is an XCFramework?</a> <a href="#fnref-1_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-2">
+<p><a href="https://appspector.com/blog/xcframeworks">XCFrameworks Internals</a> <a href="#fnref-2_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-3">
+<p><a href="https://help.apple.com/xcode/mac/11.4/#/dev544efab96">Create an XCFramework</a> <a href="#fnref-3_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+</ol>
+</section>
+
+			</div>
+
+		
+	  
+		<footer>
+		 <p class="meta">
+
+			
+			<span class="categories">
+			 
+			</span>
+		    </p>
+		    <p class="meta">
+		      
+		 </p>
+	    
+		<div class="sharing">
+		  
+          
+
+          
+
+		</div>
+
+	    <p class="meta">
+	    
+	    
+	        <a class="basic-alignment right" href="16558196375003.html" 
+	        title="Next Post: 记一次私有 pod 发布报错">记一次私有 pod 发布报错 &raquo;</a>
+	    
+	    </p>
+	  </footer>
+	</article>
+</div>
+ <aside class="sidebar"> 
+
+	<section>
+	  <h1>Categories</h1>
+	  <ul id="recent_posts">
+	  
+	      <li class="post">
+	        <a href="%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html"><strong>《iOS面试之道》读书笔记&nbsp;(6)</strong></a>
+	        
+	        
+	        
+	      </li>
+	   
+	  </ul>
+	</section>
+	<section>
+	  <h1>Recent Posts</h1>
+	  <ul id="recent_posts">
+	  
+	      
+		      <li class="post">
+		        <a href="16566860725573.html">使用 framework 转换 XCFramework</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16558196375003.html">记一次私有 pod 发布报错</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="wan-zhuan-cocoapods-xu-yao-le.html">玩转 CocoaPods 需要了解的 Ruby 基础知识</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16553980014674.html">使用 LLDB Python API 自动存储后台请求数据用于单元测试</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="15372506301626.html">JavaScript for Automation(JXA) 入门</a>
+		      </li>
+	     
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	   
+	  </ul>
+	</section>
+	
+</aside> </div></div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 -  -
+  <span class="credit">Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a> &nbsp;&nbsp; Theme by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="asset/prism.js"></script>
+
+
+<style type="text/css">
+  
+/* PrismJS 1.14.0
+https://prismjs.com/download.html#themes=prism-solarizedlight&languages=markup+css+clike+javascript */
+/*
+ Solarized Color Schemes originally by Ethan Schoonover
+ http://ethanschoonover.com/solarized
+
+ Ported for PrismJS by Hector Matos
+ Website: https://krakendev.io
+ Twitter Handle: https://twitter.com/allonsykraken)
+*/
+
+/*
+SOLARIZED HEX
+--------- -------
+base03    #002b36
+base02    #073642
+base01    #586e75
+base00    #657b83
+base0     #839496
+base1     #93a1a1
+base2     #eee8d5
+base3     #fdf6e3
+yellow    #b58900
+orange    #cb4b16
+red       #dc322f
+magenta   #d33682
+violet    #6c71c4
+blue      #268bd2
+cyan      #2aa198
+green     #859900
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #657b83; /* base00 */
+  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+
+  line-height: 1.5;
+
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+  background: #073642; /* base02 */
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+  background: #073642; /* base02 */
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+  padding: 1em;
+  margin: .5em 0;
+  overflow: auto;
+  border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  background-color: #fdf6e3; /* base3 */
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+  padding: .1em;
+  border-radius: .3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #93a1a1; /* base1 */
+}
+
+.token.punctuation {
+  color: #586e75; /* base01 */
+}
+
+.namespace {
+  opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #268bd2; /* blue */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.url,
+.token.inserted {
+  color: #2aa198; /* cyan */
+}
+
+.token.entity {
+  color: #657b83; /* base00 */
+  background: #eee8d5; /* base2 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #859900; /* green */
+}
+
+.token.function,
+.token.class-name {
+  color: #b58900; /* yellow */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #cb4b16; /* orange */
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+
+pre[class*="language-"].line-numbers {
+    position: relative;
+    padding-left: 3.8em;
+    counter-reset: linenumber;
+}
+
+pre[class*="language-"].line-numbers > code {
+    position: relative;
+    white-space: inherit;
+}
+
+.line-numbers .line-numbers-rows {
+    position: absolute;
+    pointer-events: none;
+    top: 0;
+    font-size: 100%;
+    left: -3.8em;
+    width: 3em; /* works for line-numbers below 1000 lines */
+    letter-spacing: -1px;
+    border-right: 1px solid #999;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+}
+
+    .line-numbers-rows > span {
+        pointer-events: none;
+        display: block;
+        counter-increment: linenumber;
+    }
+
+        .line-numbers-rows > span:before {
+            content: counter(linenumber);
+            color: #999;
+            display: block;
+            padding-right: 0.8em;
+            text-align: right;
+        }
+
+</style>
+  
+    
+
+
+</body>
+</html>

@@ -1,0 +1,811 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>
+    
+  《iOS面试之道》读书笔记 - UserNotifications框架概况 - ltryee's blog
+  
+
+  </title>
+  <meta name="author" content="">
+  <meta name="description" content="ltryee's blog">
+
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link href="asset/css/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="atom.xml" rel="alternate" title="ltryee's blog" type="application/atom+xml">
+  <script src="asset/js/modernizr-2.0.js"></script>
+  <script src="asset/js/jquery.min.js"></script>
+  <style type="text/css">
+  .cat-children-p{ padding: 6px 0px;}
+  .hljs{background: none;}
+  </style>
+  <script type="text/javascript">
+  var isAddSildbar = true;
+  </script>
+  <script src="asset/js/octopress.js" type="text/javascript"></script>
+</head>
+<script type="text/javascript">
+//链接新开窗口
+function addBlankTargetForLinks () {
+  $('a[href^="http"]').each(function(){
+      $(this).attr('target', '_blank');
+  });
+}
+$(document).ready(function(event) {
+  addBlankTargetForLinks();
+});
+</script>
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="index.html">ltryee's blog</a></h1>
+  
+    <h2>ltryee's blog</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:ltryee.gitee.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+
+  <li id=""><a target="_self" href="index.html">Home</a></li>
+
+  <li id=""><a target="_self" href="archives.html">Archives</a></li>
+
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content"> 
+<div>
+	<article class="hentry" role="article">
+	<header>
+			  	<h1 class="entry-title">《iOS面试之道》读书笔记 - UserNotifications框架概况</h1>
+				<p class="meta"><time datetime="2018-09-10T09:57:53+08:00" pubdate data-updated="true">2018/09/10</time></p>
+			 </header>
+		  	<div class="entry-content">
+			  	<div class="mweb_toc"><ul>
+<li><a href="#%E8%AF%B7%E6%B1%82%E4%BD%BF%E7%94%A8%E6%9D%83%E9%99%90">请求使用权限</a>
+<ul>
+<li><a href="#%E5%9C%A8app%E5%90%AF%E5%8A%A8%E6%97%B6%E8%AF%B7%E6%B1%82%E6%8E%88%E6%9D%83">在app启动时请求授权</a></li>
+<li><a href="#%E6%A0%B9%E6%8D%AE%E6%8E%88%E6%9D%83%E9%85%8D%E7%BD%AE%E6%94%AF%E6%8C%81%E7%9A%84%E9%80%9A%E7%9F%A5%E7%B1%BB%E5%9E%8B">根据授权配置支持的通知类型</a></li>
+</ul>
+</li>
+<li><a href="#%E4%BB%8Eapp%E5%8F%91%E8%B5%B7%E6%9C%AC%E5%9C%B0%E9%80%9A%E7%9F%A5">从app发起本地通知</a>
+<ul>
+<li><a href="#%E5%88%9B%E5%BB%BA%E9%80%9A%E7%9F%A5%E7%9A%84%E5%86%85%E5%AE%B9notification-content">创建通知的内容(Notification Content)</a></li>
+<li><a href="#%E6%8C%87%E5%AE%9A%E8%A7%A6%E5%8F%91%E6%9D%A1%E4%BB%B6notification-trigger">指定触发条件(Notification Trigger)</a></li>
+<li><a href="#%E5%88%9B%E5%BB%BA%E5%B9%B6%E6%B3%A8%E5%86%8C%E9%80%9A%E7%9F%A5%E8%AF%B7%E6%B1%82notification-request">创建并注册通知请求(Notification Request)</a></li>
+<li><a href="#%E5%8F%96%E6%B6%88%E5%B7%B2%E8%A7%84%E5%88%92%E7%9A%84%E8%AF%B7%E6%B1%82">取消已规划的请求</a></li>
+</ul>
+</li>
+<li><a href="#%E5%90%91apns%E6%B3%A8%E5%86%8C%E4%BD%A0%E7%9A%84app">向APNs注册你的app</a>
+<ul>
+<li><a href="#%E5%90%AF%E7%94%A8%E6%8E%A8%E5%8A%A8%E9%80%9A%E7%9F%A5%E5%8A%9F%E8%83%BD">启用推动通知功能</a></li>
+<li><a href="#%E6%B3%A8%E5%86%8C%E4%BD%A0%E7%9A%84app%E5%B9%B6%E8%8E%B7%E5%8F%96%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E7%9A%84%E8%AE%BE%E5%A4%87%E4%BB%A4%E7%89%8C-device-token">注册你的app并获取应用程序的设备令牌(Device Token)</a></li>
+<li><a href="#%E5%B0%86token%E8%BD%AC%E5%8F%91%E5%88%B0%E4%B8%9A%E5%8A%A1%E6%9C%8D%E5%8A%A1%E5%99%A8">将token转发到业务服务器</a></li>
+</ul>
+</li>
+<li><a href="#%E5%A3%B0%E6%98%8E%E5%8F%AF%E6%93%8D%E4%BD%9C%E7%9A%84%E9%80%9A%E7%9F%A5%E7%B1%BB%E5%9E%8B">声明可操作的通知类型</a>
+<ul>
+<li><a href="#%E5%A3%B0%E6%98%8E%E8%87%AA%E5%AE%9A%E4%B9%89%E6%93%8D%E4%BD%9Ccustom-action%E5%92%8C%E9%80%9A%E7%9F%A5%E7%B1%BB%E5%9E%8B-notification-type">声明自定义操作(Custom Action)和通知类型(Notification Type)</a></li>
+<li><a href="#%E5%9C%A8%E6%9C%89%E6%95%88%E8%BD%BD%E8%8D%B7payload%E4%B8%AD%E5%8C%85%E5%90%AB%E9%80%9A%E7%9F%A5%E7%B1%BB%E5%88%AB-notification-category">在有效载荷(Payload)中包含通知类别(Notification Category)</a></li>
+<li><a href="#%E5%A4%84%E7%90%86%E9%80%89%E5%AE%9A%E7%9A%84%E6%93%8D%E4%BD%9C">处理选定的操作</a></li>
+</ul>
+</li>
+<li><a href="#%E5%A4%84%E7%90%86%E9%80%9A%E7%9F%A5%E5%92%8C%E4%B8%8E%E9%80%9A%E7%9F%A5%E7%9B%B8%E5%85%B3%E7%9A%84%E6%93%8D%E4%BD%9C">处理通知和与通知相关的操作</a>
+<ul>
+<li><a href="#%E5%A4%84%E7%90%86app%E5%9C%A8%E5%89%8D%E5%8F%B0%E8%BF%90%E8%A1%8C%E6%97%B6%E7%9A%84%E9%80%9A%E7%9F%A5">处理 app 在前台运行时的通知</a></li>
+</ul>
+</li>
+<li><a href="#%E4%BF%AE%E6%94%B9%E9%80%9A%E7%9F%A5%E4%B8%AD%E7%9A%84%E5%86%85%E5%AE%B9">修改通知中的内容</a>
+<ul>
+<li><a href="#%E4%B8%BA%E9%A1%B9%E7%9B%AE%E6%B7%BB%E5%8A%A0%E6%9C%8D%E5%8A%A1%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E6%89%A9%E5%B1%95service-app-extension">为项目添加服务应用程序扩展(Service App Extension)</a></li>
+<li><a href="#%E5%AE%9E%E7%8E%B0%E6%89%A9%E5%B1%95%E7%9A%84%E6%96%B9%E6%B3%95">实现扩展的方法</a></li>
+<li><a href="#%E9%85%8D%E7%BD%AE%E8%BF%9C%E7%A8%8B%E9%80%9A%E7%9F%A5%E7%9A%84%E6%9C%89%E6%95%88%E8%B4%9F%E8%BD%BD">配置远程通知的有效负载</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p>UserNotifications 框架可以用来从应用程序本地生成通知，也可以从你的服务器远程生成通知。对于<em>本地通知(local notifications)</em>，应用程序会创建通知内容，并指定触发通知传递的条件，如时间或位置。对于<em>远程通知(remote notifications)</em>（也称为推送通知），使用某个服务器生成通知，Apple推送通知服务（APN）处理将这些通知传递到用户的设备<sup class="footnote-ref"><a href="#fn-1" id="fnref-1_ref" data-footnote-ref>1</a></sup>。</p>
+<h2><a id="%E8%AF%B7%E6%B1%82%E4%BD%BF%E7%94%A8%E6%9D%83%E9%99%90" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>请求使用权限</h2>
+<blockquote>
+<p>请用户允许显示警报(alerts)，播放声音或标记应用程序图标(badge)以响应通知。</p>
+</blockquote>
+<p>本地和远程通知通过alert，声音或badge引起用户的注意。当app未运行或处于后台时，仍然会发生这些互动。通知让用户知道app具有相关信息供他们查看。由于用户可能会认为基于通知​​的交互具有破坏性，因此必须显式地获得使用通知的权限<sup class="footnote-ref"><a href="#fn-2" id="fnref-2_ref" data-footnote-ref>2</a></sup>。</p>
+<h3><a id="%E5%9C%A8app%E5%90%AF%E5%8A%A8%E6%97%B6%E8%AF%B7%E6%B1%82%E6%8E%88%E6%9D%83" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>在app启动时请求授权</h3>
+<p>在app启动时发起授权请求，在代码中获取<code>UNUserNotificationCenter</code>对象，并调用<code>requestAuthorizationWithOptions:completionHandler:</code>方法，指定app使用的所有交互类型。</p>
+<pre class="line-numbers"><code class="language-objc">UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+[center requestAuthorizationWithOptions:(UNAuthorizationOptionAlert | UNAuthorizationOptionBadge | UNAuthorizationOptionSound) 
+                      completionHandler:^(BOOL granted, NSError * _Nullable error) {
+                          // 基于用户的授权状态打开或关闭app的相关功能
+                      }];
+
+</code></pre>
+<p>App首次发出此授权请求时，系统会提示用户授予或拒绝该请求并记录用户的响应。后续授权请求不会提示用户。</p>
+<h3><a id="%E6%A0%B9%E6%8D%AE%E6%8E%88%E6%9D%83%E9%85%8D%E7%BD%AE%E6%94%AF%E6%8C%81%E7%9A%84%E9%80%9A%E7%9F%A5%E7%B1%BB%E5%9E%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>根据授权配置支持的通知类型</h3>
+<p>在试图发起本地通知之前，请确保app已获得授权。即使最初获取了授权，用户也可以随时取消app的授权设置。用户也可以改变允许的交互类型，这可能回导致你改变通知的配置。</p>
+<p>使用授权设置能够为用户提供更好的体验。即使你在<code>UNMutableNotificationContent</code>对象中指定了适当的信息，如果app没有获取相应的授权，系统也不会执行交互。调用<code>UNUserNotificationCenter</code>的<code>getNotificationSettingsWithCompletionHandler:</code>方法以获取当前的授权配置。</p>
+<pre class="line-numbers"><code class="language-objc">UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+[center getNotificationSettingsWithCompletionHandler:^(UNNotificationSettings * _Nonnull settings) {
+    if (settings.authorizationStatus != UNAuthorizationStatusAuthorized) {
+        return;
+    }
+    
+    if (settings.alertSetting == UNNotificationSettingEnabled) {
+        // 发送alert
+        [self myScheduleAlertNotification];
+    }
+    else {
+        // 发送声音和badge
+        [self badgeAppAndPlaySound];
+    }
+}];
+</code></pre>
+<p>即使app未获取特定的授权，你也可能希望使用相关信息配置通知。如果<code>UNNotificationSettings</code>的<code>notificationCenterSetting</code>属性设置为<code>UNNotificationSettingEnabled</code>，则通知中心仍会显示包含alert的通知。同时当app处于前台时，通知也会传递到<code> userNotificationCenter:willPresentNotification:withCompletionHandler:</code>方法。</p>
+<h2><a id="%E4%BB%8Eapp%E5%8F%91%E8%B5%B7%E6%9C%AC%E5%9C%B0%E9%80%9A%E7%9F%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>从app发起本地通知</h2>
+<blockquote>
+<p>当你想引起用户的注意时，请从app创建并安排通知。</p>
+</blockquote>
+<p>系统会根据你指定的时间或地点传递和处理通知。如果在app未运行或在后台运行通知时，系统会与用户进行交互。如果app位于前台，系统会将通知发送到app以进行处理<sup class="footnote-ref"><a href="#fn-3" id="fnref-3_ref" data-footnote-ref>3</a></sup>。</p>
+<h3><a id="%E5%88%9B%E5%BB%BA%E9%80%9A%E7%9F%A5%E7%9A%84%E5%86%85%E5%AE%B9notification-content" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>创建通知的内容(Notification Content)</h3>
+<p>使用<code>UNMutableNotificationContent</code>对象表示通知内容。</p>
+<pre class="line-numbers"><code class="language-objc">UNMutableNotificationContent *content = [[UNMutableNotificationContent alloc] init];
+content.title = @&quot;Weekly Staff Meeting&quot;;
+content.body = @&quot;Every Tuesday at 2pm&quot;;
+</code></pre>
+<h3><a id="%E6%8C%87%E5%AE%9A%E8%A7%A6%E5%8F%91%E6%9D%A1%E4%BB%B6notification-trigger" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>指定触发条件(Notification Trigger)</h3>
+<p>为通知指定触发条件，使用<code>UNCalendarNotificationTrigger</code>，<code> UNTimeIntervalNotificationTrigger</code>或<code>UNLocationNotificationTrigger</code>对象。不同的 trigger 需要使用不同的参数，例如基于日历的 trigger 需要指定触发日期和时间。<br />
+下面的代码展示了如何配置每周二下午2点发送的通知。<code>NSDateComponents</code>对象指定事件的触发时间。配置 trigger 的<code>repeats</code>属性会使系统在传递事件后重新规划该事件，从而实现周期性触发通知的效果。</p>
+<pre class="line-numbers"><code class="language-objc">NSDateComponents *components = [[NSDateComponents alloc] init];
+components.calendar = [NSCalendar currentCalendar];
+components.weekday = 3;
+components.hour = 14;
+
+UNCalendarNotificationTrigger *trigger = [UNCalendarNotificationTrigger triggerWithDateMatchingComponents:components repeats:YES];
+</code></pre>
+<h3><a id="%E5%88%9B%E5%BB%BA%E5%B9%B6%E6%B3%A8%E5%86%8C%E9%80%9A%E7%9F%A5%E8%AF%B7%E6%B1%82notification-request" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>创建并注册通知请求(Notification Request)</h3>
+<p>创建一个包含内容(content)和触发条件(trigger)的<code>UNNotificationRequest</code>对象，并调用<code>addNotificationRequest:withCompletionHandler:</code>方法使系统规划你的请求(request)。</p>
+<pre class="line-numbers"><code class="language-objc">// Create the request
+UNNotificationRequest *request = [UNNotificationRequest requestWithIdentifier:[NSUUID UUID] content:content trigger:trigger];
+
+// Schedule the request with the system
+UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+[center addNotificationRequest:request withCompletionHandler:^(NSError * _Nullable error) {
+    if (error) {
+        // Handle any errors
+    }
+}];
+</code></pre>
+<h3><a id="%E5%8F%96%E6%B6%88%E5%B7%B2%E8%A7%84%E5%88%92%E7%9A%84%E8%AF%B7%E6%B1%82" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>取消已规划的请求</h3>
+<p>一旦被规划，通知请求(Notification Request)将保持活动状态，直到满足其触发条件，或被显式地取消。一般来说，你可以在条件改变时取消通知，而不再需要通知用户。取消一个活动的通知请求，需要调用<code>UNUserNotificationCenter</code>的<code> removePendingNotificationRequestsWithIdentifiers:</code>或<code>removeAllPendingNotificationRequests</code>方法。</p>
+<h2><a id="%E5%90%91apns%E6%B3%A8%E5%86%8C%E4%BD%A0%E7%9A%84app" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>向APNs注册你的app</h2>
+<blockquote>
+<p>与 APNs 通信并接收标识 app 的唯一设备令牌(unique device token)</p>
+</blockquote>
+<p>APNs 必须先知道用户设备的地址，然后才能向该设备发送通知。此地址采用设备令牌(device token)的形式，该设备令牌对于设备和应用程序都是唯一的。在启动时，app 与 APNs 通信并接收其t oken，然后将其转发到你的业务服务器。你的服务器包含该 token 及其发送的任何通知。</p>
+<p><strong>注意</strong>，即使两个 app 都安装在同一设备上，一个 app 的 token 也无法用于其他 app。两个 app 都必须请求自己唯一的 token 并将其转发到业务服务器<sup class="footnote-ref"><a href="#fn-7" id="fnref-7_ref" data-footnote-ref>4</a></sup>。</p>
+<h3><a id="%E5%90%AF%E7%94%A8%E6%8E%A8%E5%8A%A8%E9%80%9A%E7%9F%A5%E5%8A%9F%E8%83%BD" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>启用推动通知功能</h3>
+<p>要推送通知功能，app 必须具有合适的 entitlement。要将这些 entitlements 添加到 app，需要在Xcode项目中启用推送通知功能，如下图所示。在 iOS 中启用此选项会将 aps-environment 代码签名 entitlement 添加到 app 中。</p>
+<p><img src="https://docs-assets.developer.apple.com/published/dd2f56dbe9/f3327ebb-70be-4a12-9a76-b1a8badc0cd0.png" alt="启用推送通知功能" /></p>
+<p><strong>注意</strong>，在你的开发者帐户中，你还必须启用该项目的App ID推送通知服务。有关配置开发者帐户的详细信息，请转到<a href="https://developer.apple.com/account/#/overview/">开发者帐户</a>页面。</p>
+<h3><a id="%E6%B3%A8%E5%86%8C%E4%BD%A0%E7%9A%84app%E5%B9%B6%E8%8E%B7%E5%8F%96%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E7%9A%84%E8%AE%BE%E5%A4%87%E4%BB%A4%E7%89%8C-device-token" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>注册你的app并获取应用程序的设备令牌(Device Token)</h3>
+<p>使用 APNs 注册你的 app 并接收<em>全局唯一设备令牌(Globally Unique Device Token)</em>，该 token 是当前设备上你 app 的有效地址。业务服务器必须先具有此 token 才能向设备发送通知。<br />
+每次使用苹果提供的API(Apple-provided APIs)启动 app 时，都需注册 app 并接收 token。注册过程在各个平台上类似：</p>
+<ul>
+<li>在iOS和tvOS中，调用<code>UIApplication</code>对象的<code>registerForRemoteNotifications</code>方法用来请求 token。注册成功后，你将在<code>application:didRegisterForRemoteNotificationsWithDeviceToken:</code>方法中收到 token。</li>
+<li>在 macOS 中，调用<code>NSApplication</code>对象的<code>registerForRemoteNotificationTypes:</code>方法用来请求 token。注册成功后，你将在<code>application:didRegisterForRemoteNotificationsWithDeviceToken:</code>方法中收到 token。</li>
+<li>在 watchOS 中，不需要显式地注册远程通知。用户的 iPhone 会在适当的时间自动将远程通知转发给watchOS应用程序。</li>
+</ul>
+<p>除了处理成功注册 APNs 之外，还要实现<code>application:didFailToRegisterForRemoteNotificationsWithError:</code>方法，处理失败的注册。如果用户的设备未连接到网络，APNs 服务器因任何原因无法访问，或者应用程序没有正确的代码签名权限，则注册可能会失败。发生故障时，设置一个标志并尝试稍后再次注册。</p>
+<p>下面代码实现了远程通知和接收相应 token 所需的委托方法。<code>sendDeviceTokenToServer</code>方法是 app 用于将数据发送到其提供程序服务器的自定义方法。</p>
+<pre class="line-numbers"><code class="language-objc">- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+	// Override point for customization after application launch
+	
+	[[UIApplication sharedApplication] registerForRemoteNotifications];
+	return YES;
+}
+
+- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+	[self sendDeviceTokenToServer:deviceToken];
+}
+
+- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
+	// Try again later
+}
+</code></pre>
+<p><strong>注意</strong>，切勿在本地存储中缓存 token。当用户从备份还原设备，用户在新设备上安装 app 以及用户重新安装操作系统时，APNs 会发出新 token。如果你要求系统每次都提供令牌，则可以保证获得最新的令牌。</p>
+<h3><a id="%E5%B0%86token%E8%BD%AC%E5%8F%91%E5%88%B0%E4%B8%9A%E5%8A%A1%E6%9C%8D%E5%8A%A1%E5%99%A8" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>将token转发到业务服务器</h3>
+<p>获取 token 后，打开从应用程序到提供商服务器的网络连接。安全地转发 token 以及识别服务器特定用户所需的任何其他信息。例如，可以包含用户的登录名或将其连接到业务服务的内容。加密任何通过网络发送的信息。<br />
+在业务服务器上，将令牌存储在安全的位置，您可以在其中访问它们以发送通知。生成通知时，你的服务器必须能够向特定设备发送通知。因此，如果通知链接到用户的帐户，请使用用户的帐户信息存储设备令牌。由于用户可以拥有多个设备，因此需要处理多个设备令牌。</p>
+<p>如需获取如何将 payload 和 token 发送到 APNs 的信息，参考<a href="https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/sending_notification_requests_to_apns?language=objc">向APNs发送通知请求</a>。</p>
+<h2><a id="%E5%A3%B0%E6%98%8E%E5%8F%AF%E6%93%8D%E4%BD%9C%E7%9A%84%E9%80%9A%E7%9F%A5%E7%B1%BB%E5%9E%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>声明可操作的通知类型</h2>
+<blockquote>
+<p>区分通知并将操作按钮添加到通知界面</p>
+</blockquote>
+<p>*可操作的通知(Actionable notifications)*允许用户响应已发送的通知，而无需启动相应的app。其他通知在通知界面中显示信息，但用户唯一的操作方法是启动app。对于可操作的通知，除通知界面外，系统还显示一个或多个按钮。点击按钮会将所选操作发送到app，然后app在后台处理操作<sup class="footnote-ref"><a href="#fn-4" id="fnref-4_ref" data-footnote-ref>5</a></sup>。</p>
+<h3><a id="%E5%A3%B0%E6%98%8E%E8%87%AA%E5%AE%9A%E4%B9%89%E6%93%8D%E4%BD%9Ccustom-action%E5%92%8C%E9%80%9A%E7%9F%A5%E7%B1%BB%E5%9E%8B-notification-type" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>声明自定义操作(Custom Action)和通知类型(Notification Type)</h3>
+<p>必须在 app 启动时声明支持的所有<em>操作(action)</em>。你可以联合使用<em>类别</em>和<em>动作</em>对象来声明一个操作：使用<code>UNNotificationCategory</code>对象定义 app 支持的通知类型，使用<code>UNNotificationAction</code>对象定义要为每种类型显示的按钮。例如，一个会议邀请的通知可能包括接受或拒绝邀请的按钮。</p>
+<p>每一个<code>UNNotificationCategory</code>对象都有一个唯一标识和用于处理该类型通知的选项。<code>identifier</code>属性中的字符串是类别对象中最重要的部分，生成通知时，必须在通知的*有效载荷(payload)*中包含相同的字符串。系统使用该字符串来定位相应的类别对象和任何操作。</p>
+<p>要将操作与通知类别相关联，请为其分配一个或多个<code>UNNotificationAction</code>对象。每个操作对象都包含要显示给用户的本地化字符串以及表示你希望如何处理该操作的选项。例如，当您将操作标记为破坏性(destructive)时，系统会以不同的高亮形式显示该操作以指示其行为。</p>
+<p>下面的代码展示了如何使用两个操作注册自定义类别。除标题和选项外，每个操作都有唯一的标识符。当用户选择操作时，系统会将该标识符传递给app。</p>
+<pre class="line-numbers"><code class="language-objc">UNNotificationAction *acceptAction = [UNNotificationAction actionWithIdentifier:@&quot;ACCEPT_ACTION&quot; 
+																		  title:@&quot;Accept&quot; 
+																		options:UNNotificationActionOptionNone];
+UNNotificationAction *declineAction = [UNNotificationAction actionWithIdentifier:@&quot;DECLINE_ACTION&quot; 
+																		   title:@&quot;Decline&quot; 
+																		 options:UNNotificationActionOptionNone];
+
+// Define the notification type
+UNNotificationCategory *meetingInviteCategory = [UNNotificationCategory categoryWithIdentifier:@&quot;MEETING_INVITATION&quot; 
+																					   actions:@[acceptAction, declineAction] 
+																			 intentIdentifiers:@[] 
+																 hiddenPreviewsBodyPlaceholder:@&quot;&quot; 
+																 					   options:UNNotificationCategoryOptionCustomDismissAction];
+
+// Register the notification type
+UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+[center setNotificationCategories:[NSSet setWithObject:meetingInviteCategory]];
+</code></pre>
+<p><strong>注意</strong>：所有操作(action)对象都必须具有唯一标识符。处理操作时，标识符是区分一个操作与另一个操作的唯一方法，即使这些操作属于不同的类别。</p>
+<p>大多数操作只会让用户选择，但文本输入操作也允许用户键入基于自定义文本的<em>响应(response)</em>。然后，app可以将用户输入的响应合并到您对操作的处理中。例如，一个聊天app可以将键入的文本作为对传入消息的响应。要创建文本输入操作，需要创建<code>UNTextInputNotificationAction</code>对象而不是<code>UNNotificationAction</code>对象。当用户点击输入按钮时，系统显示可编辑的文本字段(test field)。当系统向app报告该操作时，系统会包含用户在响应中键入的文本。</p>
+<h3><a id="%E5%9C%A8%E6%9C%89%E6%95%88%E8%BD%BD%E8%8D%B7payload%E4%B8%AD%E5%8C%85%E5%90%AB%E9%80%9A%E7%9F%A5%E7%B1%BB%E5%88%AB-notification-category" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>在有效载荷(Payload)中包含通知类别(Notification Category)</h3>
+<p>系统仅显示那些payload包含有效类*别标识符字符串(Category Identifier)*的通知的操作。系统使用类别标识符来查找应用程序的已注册类别及其相关操作。然后，它使用该信息将操作按钮添加到通知界面。系统使用类别标识符来查找应用程序的已注册类别及其相关操作。然后，它使用该信息将操作按钮添加到通知界面。</p>
+<p>下面的代码展示了如何创建一条会议邀请本地通知的内容(content)。要将类别分配给本地通知，需要将相应的字符串赋值给<code>UNMutableNotificationContent</code>对象的<code>categoryIdentifier</code>属性。除了基本信息之外，此代码还会将自定义数据添加到通知的<code>userInfo</code>字典中，稍后将使用该字典来处理该会议邀请。</p>
+<pre class="line-numbers"><code class="language-objc">UNMutableNotificationContent *content = [[UNMutableNotificationContent alloc] init];
+content.title = @&quot;Weekly Staff Meeting&quot;;
+content.body = @&quot;Every Tuesday at 2pm&quot;;
+content.userInfo = @{
+	@&quot;MEETING_ID&quot;: meetingID,
+	@&quot;USER_ID&quot;: userID
+};
+content.categoryIdentifier = @&quot;MEETING_INVITATION&quot;;
+</code></pre>
+<p>如果是在远程通知中添加类别标识符，需要将<code>category</code>字段添加到 JSON payload的<code>aps</code>字典中。</p>
+<pre class="line-numbers"><code class="language-json">{
+   &quot;aps&quot; : {
+      &quot;category&quot; : &quot;MEETING_INVITATION&quot;
+      &quot;alert&quot; : {
+         &quot;title&quot; : &quot;Weekly Staff Meeting&quot;
+         &quot;body&quot; : &quot;Every Tuesday at 2pm&quot;
+      },
+   },
+   &quot;MEETING_ID&quot; : &quot;123456789&quot;,
+   &quot;USER_ID&quot; : &quot;ABCD1234&quot;
+}
+</code></pre>
+<h3><a id="%E5%A4%84%E7%90%86%E9%80%89%E5%AE%9A%E7%9A%84%E6%93%8D%E4%BD%9C" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>处理选定的操作</h3>
+<p>App必须处理它定义的所有操作。当用户选择一个操作时，系统会在后台启动 app 并通知共享的<code>UNUserNotificationCenter</code>对象实例，该对象会通知其<em>代理对象(delegate)</em>。使用代理对象的<code>userNotificationCenter:didReceiveNotificationResponse:withCompletionHandler:</code>方法来识别所选操作并提供适当的响应。</p>
+<p>下面的代码实现了管理会议邀请的 app 的委托方法。该方法使用响应的<code>actionIdentifier</code>属性来确定是接受还是拒绝给定的邀请。它还依赖于通知有效载荷中的自定义数据来成功处理通知。完成处理操作后，应当始终调用<em>完成处理程序(completion handler)</em>。</p>
+<pre class="line-numbers"><code class="language-objc">- (void)userNotificationCenter:(UNUserNotificationCenter *)center 
+didReceiveNotificationResponse:(UNNotificationResponse *)response 
+		 withCompletionHandler:(void(^)(void))completionHandler {
+
+	// Get the meeting ID from the original notification
+	NSDictionary *userInfo = response.notification.request.content.userInfo;
+	NSString *meetingID = userInfo[@&quot;MEETING_ID&quot;];
+	NSString *userID = userInfo[@&quot;USER_ID&quot;];
+
+	// Perform the task associated with the action
+	if ([response.actionIdentifier isEqualToString:@&quot;ACCEPT_ACTION&quot;]) {
+		[sharedMeetingManager acceptMeeting:meetingID forUser:userID];
+	}
+	else if ([response.actionIdentifier isEqualToString:@&quot;DECLINE_ACTION&quot;]) {
+		[sharedMeetingManager declineMeeting:meetingID forUser:userID];
+	}
+	else {
+		// Handle other actions…
+	}
+
+	// Always call the completion handler when done
+	completionHandler();
+}
+</code></pre>
+<h2><a id="%E5%A4%84%E7%90%86%E9%80%9A%E7%9F%A5%E5%92%8C%E4%B8%8E%E9%80%9A%E7%9F%A5%E7%9B%B8%E5%85%B3%E7%9A%84%E6%93%8D%E4%BD%9C" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>处理通知和与通知相关的操作</h2>
+<blockquote>
+<p>响应用户与系统通知界面的交互，包括处理应用程序的自定义操作</p>
+</blockquote>
+<p>通知(Notifications)是将信息呈现在用户面前的一种主要方式，同时 app 本身也可以响应这些通知。例如 app 可以响应这些操作<sup class="footnote-ref"><a href="#fn-5" id="fnref-5_ref" data-footnote-ref>6</a></sup>：</p>
+<ul>
+<li>用户从通知界面中选择的操作</li>
+<li>App 在前台运行时收到的通知</li>
+<li>静默通知</li>
+<li>与<a href="https://developer.apple.com/documentation/pushkit?language=objc">PushKit</a>相关的通知</li>
+</ul>
+<h3><a id="%E5%A4%84%E7%90%86app%E5%9C%A8%E5%89%8D%E5%8F%B0%E8%BF%90%E8%A1%8C%E6%97%B6%E7%9A%84%E9%80%9A%E7%9F%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>处理 app 在前台运行时的通知</h3>
+<p>如果 app 在前台运行时收到通知，系统会将该通知直接发送到 app。收到通知后，可以使用通知的有效负载(Payload)执行任何操作。例如，你可以更新 app 的界面以反映通知中包含的新信息。然后，你可以禁止或修改任何已规划的 alert。<br />
+当通知到达时，系统调用<code>UNUserNotificationCenter</code>的*委托对象(delegate)<em>的<code>userNotificationCenter:willPresentNotification:withCompletionHandler:</code>方法。使用该方法处理通知，并让系统知道你希望如何继续。<br />
+下面的代码实现了该方法。当会议邀请到达时，app 会调用其自定义的<code>queueMeetingForDelivery</code>方法在 app 界面中显示新邀请。App 还要求系统通过将值<code>UNNotificationPresentationOptionSound</code>传递给</em>完成处理程(completion handler)*来播放通知的声音。对于其他通知类型，该方法使通知静音。</p>
+<pre class="line-numbers"><code class="language-objc">- (void)userNotificationCenter:(UNUserNotificationCenter *)center 
+	   willPresentNotification:(UNNotification *)notification 
+	     withCompletionHandler:(void (^)(UNNotificationPresentationOptions options))completionHandler {
+	
+	if ([notification.request.content.categoryIdentifier isEqualToString:@&quot;MEETING_INVITATION&quot;]) {
+		// Retrieve the meeting details
+		NSString *meetingID = userInfo[@&quot;MEETING_ID&quot;];
+		NSString *userID = userInfo[@&quot;USER_ID&quot;];
+
+		// Add the meeting to the queue
+		[sharedMeetingManager queueMeetingForDelivery:meetingID forUser:userID];
+
+		// Play a sound to let the user know about the invitation
+		completionHandler(UNNotificationPresentationOptionSound);
+		return;
+	}
+	else {
+		// Handle other notification types...
+	}
+
+	// Don't alert the user for other types
+	completionHandler(UNNotificationPresentationOptionNone);
+}
+</code></pre>
+<p>如果你使用 PushKit 注册了应用，则针对 PushKit 类型的通知始终会直接发送到您的应用，并且永远不会向用户显示。如果 app 位于前台或后台，系统会为 app 提供处理通知的时间。如果 app 未运行，系统会在后台启动 app，以便它可以处理通知。要发送 PushKit 通知，你的服务器必须将通知的主题设置为适当的目标，例如您的应用程序的复杂性。有关注册PushKit通知的更多信息，请参阅<a href="https://developer.apple.com/documentation/pushkit?language=objc">PushKit</a>。</p>
+<h2><a id="%E4%BF%AE%E6%94%B9%E9%80%9A%E7%9F%A5%E4%B8%AD%E7%9A%84%E5%86%85%E5%AE%B9" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>修改通知中的内容</h2>
+<blockquote>
+<p>在用户的iOS设备上显示之前修改远程通知的有效负载(Payload)</p>
+</blockquote>
+<p>如果需要，你可能要在用户的iOS设备上修改远程通知的内容：</p>
+<ul>
+<li>解密以加密格式发送的数据。</li>
+<li>下载大小超过最大有效载荷大小的图像或其他媒体附件。</li>
+<li>更新通知的内容，可能是通过合并用户设备的数据。</li>
+</ul>
+<p>修改远程通知需要通知<em>服务应用程序扩展(service app extension)</em>，您可以将其包含在iOS应用程序包(bundle)中。应用程序扩展在向用户显示之前会接收远程通知的内容，从而在用户收到alert之前更新通知的有效负载(Payload)。你可以控制扩展程序处理哪些通知。</p>
+<p><strong>注意</strong>，通知服务应用程序扩展仅对配置为向用户显示alert的远程通知进行操作。如果您的应用程序禁用了alert，或者有效负载仅指定播放声音或图标的标记，则扩展程序不生效<sup class="footnote-ref"><a href="#fn-6" id="fnref-6_ref" data-footnote-ref>7</a></sup>。</p>
+<h3><a id="%E4%B8%BA%E9%A1%B9%E7%9B%AE%E6%B7%BB%E5%8A%A0%E6%9C%8D%E5%8A%A1%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E6%89%A9%E5%B1%95service-app-extension" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>为项目添加服务应用程序扩展(Service App Extension)</h3>
+<p>通知服务应用扩展程序在你的iOS应用中作为单独的捆绑包发布。要将此扩展程序添加到您的应用中：</p>
+<ol>
+<li>在Xcode中选择 File &gt; New &gt; Target。</li>
+<li>从 iOS &gt; Application section 中选择 Notification Service Extension。</li>
+<li>点击 Next。</li>
+<li>指定应用扩展程序的名称和其他配置详细信息。</li>
+<li>点击 Finish。</li>
+</ol>
+<h3><a id="%E5%AE%9E%E7%8E%B0%E6%89%A9%E5%B1%95%E7%9A%84%E6%96%B9%E6%B3%95" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>实现扩展的方法</h3>
+<p>Xcode提供的通知服务扩展模板包含了一个可供修改的默认实现：</p>
+<ul>
+<li><code>didReceiveNotificationRequest:withContentHandler:</code>方法可以使用更新的内容创建<code>UNMutableNotificationContent</code>对象。</li>
+<li>使用<code>serviceExtensionTimeWillExpire</code>方法终止仍在运行的任何有效载荷修改任务。</li>
+</ul>
+<p><code>didReceiveNotificationRequest:withContentHandler:</code>方法大概只有30秒的时间来修改有效负载并调用提供的<em>完成处理程序(completion handler)</em>。如果你的代码需要更长的时间，系统将调用<code>serviceExtensionTimeWillExpire</code>方法，此时你必须立即向系统返回任何内容。如果你无法从任一方法调用完成处理程序，系统将显示通知的原始内容。</p>
+<p>下面的代码实现了<code>UNNotificationServiceExtension</code>对象，该对象解密使用远程通知传递的加密消息的内容。<code>didReceiveNotificationRequest:withContentHandler:</code>方法解密数据并在通知内容成功时返回修改后的内容。如果不成功，或者时间到期，则扩展程序返回指示数据仍处于加密状态的内容。</p>
+<pre class="line-numbers"><code class="language-objc">// Storage for the completion handler and content
+@interface NotificationService ()
+@property (nonatomic, strong) void (^contentHandler)(UNNotificationContent *contentToDeliver);
+@property (nonatomic, strong) UNMutableNotificationContent *bestAttemptContent;
+@end
+
+@implementation NotificationService
+// Modify the payload contents
+- (void)didReceiveNotificationRequest:(UNNotificationRequest *)request 
+				   withContentHandler:(void (^)(UNNotificationContent * _Nonnull))contentHandler {
+	self.contentHandler = contentHandler;
+    self.bestAttemptContent = [request.content mutableCopy];
+
+	// Try to decode the encrypted message data
+	NSData *encryptedData = bestAttemptContent.userInfo[@&quot;ENCRYPTED_DATA&quot;] ?: [NSData data];
+	NSString *decryptedMessage = [self decript:encryptedData];
+	bestAttemptContent.body = decryptedMessage ?: @&quot;(Encrypted)&quot;;
+
+	// Always call the completion handler when done
+	contentHandler(bestAttemptContent)
+}
+
+// Return something before time expires
+- (void)serviceExtensionTimeWillExpire {
+	// Mark the message as still encrypted
+	bestAttemptContent.subtitle = @&quot;(Encrypted)&quot;;
+	bestAttemptContent.body = @&quot;&quot;;
+	contentHandler(bestAttemptContent);
+}
+@end
+</code></pre>
+<h3><a id="%E9%85%8D%E7%BD%AE%E8%BF%9C%E7%A8%8B%E9%80%9A%E7%9F%A5%E7%9A%84%E6%9C%89%E6%95%88%E8%B4%9F%E8%BD%BD" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>配置远程通知的有效负载</h3>
+<p>仅当远程通知的有效负载包含以下信息时，系统才会执行通知内容应用程序扩展：</p>
+<ul>
+<li>有效负载必须包含<code>mutable-content</code>值为<code>1</code>。</li>
+<li>有效负载必须包含<code>alert</code>字典，包含<code>title</code>，<code>subtitle</code>或<code>body</code>。</li>
+</ul>
+<p>下面的JSON数据展示了包含加密数据的通知 payload。设置<code>mutable-content</code>值为<code>1</code>，以便用户的设备知道运行相应的服务应用程序扩展。</p>
+<pre class="line-numbers"><code class="language-json">{
+   &quot;aps&quot; : {
+      &quot;category&quot; : &quot;SECRET&quot;,
+      &quot;mutable-content&quot; : 1,
+    &quot;alert&quot; : {
+         &quot;title&quot; : &quot;Secret Message!&quot;,
+         &quot;body&quot;  : &quot;(Encrypted)&quot;
+     },
+   },
+   &quot;ENCRYPTED_DATA&quot; : &quot;Salted__·öîQÊ$UDì_¶Ù∞è	Ω^¬%gq∞NÿÒQùw&quot;
+}
+</code></pre>
+<section class="footnotes" data-footnotes>
+<ol>
+<li id="fn-1">
+<p><a href="https://developer.apple.com/documentation/usernotifications?language=objc#topics">UserNotifications</a> <a href="#fnref-1_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-2">
+<p><a href="https://developer.apple.com/documentation/usernotifications/asking_permission_to_use_notifications?language=objc">Asking Permission to Use Notifications</a> <a href="#fnref-2_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-3">
+<p><a href="https://developer.apple.com/documentation/usernotifications/scheduling_a_notification_locally_from_your_app?language=objc">Scheduling a Notification Locally from Your App</a> <a href="#fnref-3_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-7">
+<p><a href="https://developer.apple.com/documentation/usernotifications/registering_your_app_with_apns?language=objc">Registering Your App with APNs</a> <a href="#fnref-7_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-4">
+<p><a href="https://developer.apple.com/documentation/usernotifications/declaring_your_actionable_notification_types?language=objc">Declaring Your Actionable Notification Types</a> <a href="#fnref-4_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-5">
+<p><a href="https://developer.apple.com/documentation/usernotifications/handling_notifications_and_notification_related_actions?language=objc">Handling Notifications and Notification-Related Actions</a> <a href="#fnref-5_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-6">
+<p><a href="https://developer.apple.com/documentation/usernotifications/modifying_content_in_newly_delivered_notifications?language=objc">Modifying Content in Newly Delivered Notifications</a> <a href="#fnref-6_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+</ol>
+</section>
+
+			</div>
+
+		
+	  
+		<footer>
+		 <p class="meta">
+
+			<strong>Categories:</strong>&nbsp; 
+			<span class="categories">
+			
+			    <a class='category' href='%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html'>《iOS面试之道》读书笔记</a>&nbsp;
+			 
+			</span>
+		    </p>
+		    <p class="meta">
+		      
+		 </p>
+	    
+		<div class="sharing">
+		  
+          
+
+          
+
+		</div>
+
+	    <p class="meta">
+	    
+	        <a class="basic-alignment left" href="15365724007469.html" 
+	        title="Previous Post: 《iOS面试之道》读书笔记 - 远程通知服务器">&laquo; 《iOS面试之道》读书笔记 - 远程通知服务器</a>
+	    
+	    
+	        <a class="basic-alignment right" href="15362253776879.html" 
+	        title="Next Post: 《iOS面试之道》读书笔记 - 并发编程">《iOS面试之道》读书笔记 - 并发编程 &raquo;</a>
+	    
+	    </p>
+	  </footer>
+	</article>
+</div>
+ <aside class="sidebar"> 
+
+	<section>
+	  <h1>Categories</h1>
+	  <ul id="recent_posts">
+	  
+	      <li class="post">
+	        <a href="%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html"><strong>《iOS面试之道》读书笔记&nbsp;(6)</strong></a>
+	        
+	        
+	        
+	      </li>
+	   
+	  </ul>
+	</section>
+	<section>
+	  <h1>Recent Posts</h1>
+	  <ul id="recent_posts">
+	  
+	      
+		      <li class="post">
+		        <a href="16566860725573.html">使用 framework 转换 XCFramework</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16558196375003.html">记一次私有 pod 发布报错</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="wan-zhuan-cocoapods-xu-yao-le.html">玩转 CocoaPods 需要了解的 Ruby 基础知识</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16553980014674.html">使用 LLDB Python API 自动存储后台请求数据用于单元测试</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="15372506301626.html">JavaScript for Automation(JXA) 入门</a>
+		      </li>
+	     
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	   
+	  </ul>
+	</section>
+	
+</aside> </div></div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 -  -
+  <span class="credit">Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a> &nbsp;&nbsp; Theme by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="asset/prism.js"></script>
+
+
+<style type="text/css">
+  
+/* PrismJS 1.14.0
+https://prismjs.com/download.html#themes=prism-solarizedlight&languages=markup+css+clike+javascript */
+/*
+ Solarized Color Schemes originally by Ethan Schoonover
+ http://ethanschoonover.com/solarized
+
+ Ported for PrismJS by Hector Matos
+ Website: https://krakendev.io
+ Twitter Handle: https://twitter.com/allonsykraken)
+*/
+
+/*
+SOLARIZED HEX
+--------- -------
+base03    #002b36
+base02    #073642
+base01    #586e75
+base00    #657b83
+base0     #839496
+base1     #93a1a1
+base2     #eee8d5
+base3     #fdf6e3
+yellow    #b58900
+orange    #cb4b16
+red       #dc322f
+magenta   #d33682
+violet    #6c71c4
+blue      #268bd2
+cyan      #2aa198
+green     #859900
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #657b83; /* base00 */
+  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+
+  line-height: 1.5;
+
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+  background: #073642; /* base02 */
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+  background: #073642; /* base02 */
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+  padding: 1em;
+  margin: .5em 0;
+  overflow: auto;
+  border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  background-color: #fdf6e3; /* base3 */
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+  padding: .1em;
+  border-radius: .3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #93a1a1; /* base1 */
+}
+
+.token.punctuation {
+  color: #586e75; /* base01 */
+}
+
+.namespace {
+  opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #268bd2; /* blue */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.url,
+.token.inserted {
+  color: #2aa198; /* cyan */
+}
+
+.token.entity {
+  color: #657b83; /* base00 */
+  background: #eee8d5; /* base2 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #859900; /* green */
+}
+
+.token.function,
+.token.class-name {
+  color: #b58900; /* yellow */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #cb4b16; /* orange */
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+
+pre[class*="language-"].line-numbers {
+    position: relative;
+    padding-left: 3.8em;
+    counter-reset: linenumber;
+}
+
+pre[class*="language-"].line-numbers > code {
+    position: relative;
+    white-space: inherit;
+}
+
+.line-numbers .line-numbers-rows {
+    position: absolute;
+    pointer-events: none;
+    top: 0;
+    font-size: 100%;
+    left: -3.8em;
+    width: 3em; /* works for line-numbers below 1000 lines */
+    letter-spacing: -1px;
+    border-right: 1px solid #999;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+}
+
+    .line-numbers-rows > span {
+        pointer-events: none;
+        display: block;
+        counter-increment: linenumber;
+    }
+
+        .line-numbers-rows > span:before {
+            content: counter(linenumber);
+            color: #999;
+            display: block;
+            padding-right: 0.8em;
+            text-align: right;
+        }
+
+</style>
+  
+    
+
+
+</body>
+</html>

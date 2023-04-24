@@ -1,0 +1,715 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>
+    
+  在Taf NodeJS工程中使用node-gyp - ltryee's blog
+  
+
+  </title>
+  <meta name="author" content="">
+  <meta name="description" content="ltryee's blog">
+
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link href="asset/css/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="atom.xml" rel="alternate" title="ltryee's blog" type="application/atom+xml">
+  <script src="asset/js/modernizr-2.0.js"></script>
+  <script src="asset/js/jquery.min.js"></script>
+  <style type="text/css">
+  .cat-children-p{ padding: 6px 0px;}
+  .hljs{background: none;}
+  </style>
+  <script type="text/javascript">
+  var isAddSildbar = true;
+  </script>
+  <script src="asset/js/octopress.js" type="text/javascript"></script>
+</head>
+<script type="text/javascript">
+//链接新开窗口
+function addBlankTargetForLinks () {
+  $('a[href^="http"]').each(function(){
+      $(this).attr('target', '_blank');
+  });
+}
+$(document).ready(function(event) {
+  addBlankTargetForLinks();
+});
+</script>
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="index.html">ltryee's blog</a></h1>
+  
+    <h2>ltryee's blog</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:ltryee.gitee.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+
+  <li id=""><a target="_self" href="index.html">Home</a></li>
+
+  <li id=""><a target="_self" href="archives.html">Archives</a></li>
+
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content"> 
+<div>
+	<article class="hentry" role="article">
+	<header>
+			  	<h1 class="entry-title">在Taf NodeJS工程中使用node-gyp</h1>
+				<p class="meta"><time datetime="2017-10-26T13:12:32+08:00" pubdate data-updated="true">2017/10/26</time></p>
+			 </header>
+		  	<div class="entry-content">
+			  	<div class="mweb_toc"><ul>
+<li><a href="#%E5%BC%80%E5%8F%91%E8%BF%87%E7%A8%8B">开发过程</a>
+<ul>
+<li><a href="#%E7%BC%96%E5%86%99%E4%BB%A3%E7%A0%81">编写代码</a></li>
+<li><a href="#%E7%BC%96%E8%AF%91%E6%89%93%E5%8C%85">编译打包</a></li>
+<li><a href="#%E9%83%A8%E7%BD%B2%E5%88%B0%E8%BF%9C%E7%A8%8B%E6%9C%8D%E5%8A%A1%E5%99%A8">部署到远程服务器</a></li>
+</ul>
+</li>
+<li><a href="#tips">Tips</a>
+<ul>
+<li><a href="#docker-taf">Docker &amp; Taf</a></li>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88tnpm-install%E5%91%BD%E4%BB%A4%E4%BC%9A%E8%A7%A6%E5%8F%91-node-gyp%E7%9A%84%E6%89%93%E5%8C%85%E6%B5%81%E7%A8%8B">为什么<code>tnpm install</code>命令会触发node-gyp的打包流程</a></li>
+<li><a href="#%E5%A6%82%E6%9E%9Cdocker%E5%AE%B9%E5%99%A8%E4%B8%AD%E6%B2%A1%E6%9C%89%E5%85%A8%E5%B1%80%E5%AE%89%E8%A3%85node-gyp">如果Docker容器中没有全局安装node-gyp</a></li>
+<li><a href="#%E5%9C%A8binding-gyp%E7%9A%84-source%E4%B8%AD%E5%BC%95%E7%94%A8%E6%96%87%E4%BB%B6">在<code>binding.gyp</code>的<code>source</code>中引用文件</a></li>
+</ul>
+</li>
+<li><a href="#%E5%85%B8%E5%9E%8B%E9%97%AE%E9%A2%98%E5%92%8C%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95">典型问题和解决方法</a>
+<ul>
+<li><a href="#the-program-node-gyp-is-currently-not-installed">The program 'node-gyp' is currently not installed.</a></li>
+<li><a href="#error-cannot-use-throw-with-exceptions-disabled">ERROR: cannot use 'throw' with exceptions disabled</a></li>
+<li><a href="#%E7%BC%96%E8%AF%91%E5%87%BA%E9%94%99%E7%9A%84%E4%B8%80%E7%A7%8D%E5%8F%AF%E8%83%BD">编译出错的一种可能</a></li>
+</ul>
+</li>
+<li><a href="#%E5%8F%82%E8%80%83">参考</a></li>
+</ul>
+</div>
+<p>最近需要将一个c++编写的功能模块部署到Node服务上，所以研究了一下node-gyp。整个过程中遇到不少坑，下面会列举一些典型问题和解决方法。</p>
+<p>Node模块上线和申请域名的过程暂且不表，有需要可以参考附录中列出的文章。</p>
+<h2><a id="%E5%BC%80%E5%8F%91%E8%BF%87%E7%A8%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>开发过程</h2>
+<h3><a id="%E7%BC%96%E5%86%99%E4%BB%A3%E7%A0%81" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>编写代码</h3>
+<p>开发一个c++插件需要编辑以下若干文件：</p>
+<ul>
+<li><code>binding.gyp</code>是node-gyp的配置文件，告诉node-gyp要编译哪些功能模块和需要的参数。这个文件需要放在工程根目录下。</li>
+<li><code>*.cc</code>可以理解为胶水代码，作用是为你的c++代码加上v8的壳，以便打包。</li>
+</ul>
+<h3><a id="%E7%BC%96%E8%AF%91%E6%89%93%E5%8C%85" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>编译打包</h3>
+<ol>
+<li>开发完成后，执行<code>sudo tnpm install node-gyp -g</code>命令，安装全局的node-gyp模块。</li>
+<li>第一次打包时，执行<code>node-gyp configure build</code>，等价于<code>node-gyp configure &amp;&amp; node-gyp build</code>。以后可以执行<code>node-gyp rebuild</code>命令，重新打包。</li>
+<li>也可以执行<code>tnpm install</code>命令，在安装完依赖模块之后node-gyp会开始打包流程(原理会在后面介绍)。</li>
+</ol>
+<p>这是一个执行<code>node-gyp configure build</code>的示例：</p>
+<pre class="line-numbers"><code class="language-bash">➜  QBDFInterpretServer git:(master) ✗ node-gyp configure build
+gyp info it worked if it ends with ok
+gyp info using node-gyp@3.6.0
+gyp info using node@8.7.0 | darwin | x64
+gyp info spawn /usr/local/bin/python2
+gyp info spawn args [ '/usr/local/lib/node_modules/node-gyp/gyp/gyp_main.py',
+gyp info spawn args   'binding.gyp',
+gyp info spawn args   '-f',
+gyp info spawn args   'make',
+gyp info spawn args   '-I',
+gyp info spawn args   '/Users/vectorliu/Documents/Projects/MttHDServer/QBDFInterpretServer/build/config.gypi',
+gyp info spawn args   '-I',
+gyp info spawn args   '/usr/local/lib/node_modules/node-gyp/addon.gypi',
+gyp info spawn args   '-I',
+gyp info spawn args   '/Users/vectorliu/.node-gyp/8.7.0/include/node/common.gypi',
+gyp info spawn args   '-Dlibrary=shared_library',
+gyp info spawn args   '-Dvisibility=default',
+gyp info spawn args   '-Dnode_root_dir=/Users/vectorliu/.node-gyp/8.7.0',
+gyp info spawn args   '-Dnode_gyp_dir=/usr/local/lib/node_modules/node-gyp',
+gyp info spawn args   '-Dnode_lib_file=node.lib',
+gyp info spawn args   '-Dmodule_root_dir=/Users/vectorliu/Documents/Projects/MttHDServer/QBDFInterpretServer',
+gyp info spawn args   '-Dnode_engine=v8',
+gyp info spawn args   '--depth=.',
+gyp info spawn args   '--no-parallel',
+gyp info spawn args   '--generator-output',
+gyp info spawn args   'build',
+gyp info spawn args   '-Goutput_dir=.' ]
+gyp info spawn make
+gyp info spawn args [ 'BUILDTYPE=Release', '-C', 'build' ]
+  CXX(target) Release/obj.target/interpret/addons/interpreter/interpret.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLScriptInterpreter.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLScriptMainDefine.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLTKProcess.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLToken.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLVarTypeHelper.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/main.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_reader.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_value.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_writer.o
+  SOLINK_MODULE(target) Release/interpret.node
+gyp info ok
+</code></pre>
+<p>这是一个执行<code>tnpm install</code>的示例：</p>
+<pre class="line-numbers"><code class="language-bash">➜  QBDFInterpretServer git:(master) ✗ tnpm install
+
+&gt; QBDFInterpretServer@0.1.0 install /Users/vectorliu/Documents/Projects/MttHDServer/QBDFInterpretServer
+&gt; node-gyp rebuild
+  CXX(target) Release/obj.target/interpret/addons/interpreter/interpret.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLScriptInterpreter.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLScriptMainDefine.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLTKProcess.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLToken.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLVarTypeHelper.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/main.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_reader.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_value.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_writer.o
+  SOLINK_MODULE(target) Release/interpret.node
+added 211 packages in 20.159s
+</code></pre>
+<h3><a id="%E9%83%A8%E7%BD%B2%E5%88%B0%E8%BF%9C%E7%A8%8B%E6%9C%8D%E5%8A%A1%E5%99%A8" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>部署到远程服务器</h3>
+<p>部署到测试环境，可以使用NodeTools。</p>
+<h2><a id="tips" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Tips</h2>
+<h3><a id="docker-taf" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Docker &amp; Taf</h3>
+<p>现在的服务基本上都是使用Docker部署的。所以部署出错时有可能需要进入Docker容器中查找问题。</p>
+<ol>
+<li>ssh到服务器</li>
+<li>查找Docker容器，执行<code>docker ps -a</code>，容器名就是server名。或查找名字以taf.QB开头的容器<code>docker ps -a -f name=taf.QB</code></li>
+<li>进入容器，执行<code>docker attach [CONTAINER ID or NAME]</code></li>
+</ol>
+<pre class="line-numbers"><code class="language-bash">[running]mqq@100.107.26.88:~$ docker ps -f name=taf.QB
+CONTAINER ID        IMAGE                                       COMMAND             CREATED             STATUS              PORTS               NAMES
+81085e4a4eb1        tafimage/taf-common-v2.0.20160526:1.0.1     &quot;/bin/bash&quot;         23 hours ago        Up 17 hours                             taf.QB.QBDFInterpretServer.P1
+a6106f0d7737        tafimage/pcqb_redis:20170922120733          &quot;/bin/bash&quot;         13 days ago         Up 13 days                              taf.QB.IndexBuilderServer.P3
+d47d60ca510b        tafimage/protobuf:20170913112258850         &quot;/bin/bash&quot;         6 weeks ago         Up 6 weeks                              taf.QB.QBWeiyunProxyTestServer.P1
+0616095f8d49        tafimage/taf-common-v1.0.20160219:1.0.0     &quot;/bin/bash&quot;         6 weeks ago         Up 6 weeks                              taf.QB.TranslatorCloudServer.P1
+c7bb64ea23bb        tafimage/taf-common-v2.0.20160526:1.0.1     &quot;/bin/bash&quot;         9 weeks ago         Up 9 weeks                              taf.QB.TranslatorCrawlerServer.P4
+9e08e262f33d        tafimage/taf-common-v2.0.20160526:1.0.1     &quot;/bin/bash&quot;         9 weeks ago         Up 9 weeks                              taf.QB.TranslatorNiuCalczh2en.P6
+338dc07851d7        tafimage/taf-common-v2.0.20160526:1.0.1     &quot;/bin/bash&quot;         9 weeks ago         Up 9 weeks                              taf.QB.UtherServer.P7
+1c7faa342e3f        tafimage/taf-common-v1.0.20160219:1.0.0     &quot;/bin/bash&quot;         9 weeks ago         Up 9 weeks                              taf.QB.TranslatorModulesTest.P2
+fe1b07f10951        tafimage/redis-pcqb-1.0:20170815213458233   &quot;/bin/bash&quot;         10 weeks ago        Up 10 weeks                             taf.QB.ReverseIndexServer.P3
+[running]mqq@100.107.26.88:~$ docker attach 81085e4a4eb1
+[running]mqq@:~/taf/QB.QBDFInterpretServer/bin/src/addons/interpreter/source$
+</code></pre>
+<p>这里需要注意的是，使用<code>docker attach</code>命令进入容器，并没有新开一个bash，而是所有终端共享一个bash，所以在一个终端内操作容器，所有进入该容器的终端都将显示同样的内容。如果退出bash，则容器中没有进程运行，<strong>容器将停止</strong>！重启容器可以使用<code>docker start [CONTAINER ID or NAME]</code>命令。</p>
+<p>个人以为<code>attach</code>没有<code>nsenter</code>命令好用，<code>nsenter</code>可以重开一个进程并且进入容器，所以每个bash之间是互不影响的。可惜服务器并没有安装这个命令……更过<code>nsenter</code>的讨论见参考。</p>
+<h3><a id="%E4%B8%BA%E4%BB%80%E4%B9%88tnpm-install%E5%91%BD%E4%BB%A4%E4%BC%9A%E8%A7%A6%E5%8F%91-node-gyp%E7%9A%84%E6%89%93%E5%8C%85%E6%B5%81%E7%A8%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>为什么<code>tnpm install</code>命令会触发node-gyp的打包流程</h3>
+<p>这要从npm脚本说起。在<code>package.json</code>文件中，<code>script</code>键值对定义了npm可执行的脚本命令，其中有两个命令是默认的：</p>
+<pre class="line-numbers"><code class="language-json">{
+  // ...
+  &quot;scripts&quot;: {
+    &quot;start&quot;: &quot;node server.js&quot;,
+    &quot;install&quot;: &quot;node-gyp rebuild&quot;
+  }
+}
+</code></pre>
+<p>如果存在<code>./binding.gyp</code>文件，则每当<code>npm install</code>执行时，会在安装完依赖包之后执行node-gyp的rebuild命令。</p>
+<h3><a id="%E5%A6%82%E6%9E%9Cdocker%E5%AE%B9%E5%99%A8%E4%B8%AD%E6%B2%A1%E6%9C%89%E5%85%A8%E5%B1%80%E5%AE%89%E8%A3%85node-gyp" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>如果Docker容器中没有全局安装node-gyp</h3>
+<p>这几乎是一定的，原因是并不是每一个node服务都会用到node-gyp。因此我们需要为工程单独安装一个node-gyp模块。在部署之前执行<code>tnpm install node-gyp --save</code>，安装完成之后会在<code>./node_modules/.bin/</code>生成<code>node-gyp.js</code>文件。</p>
+<p>同时<code>./node_modules/.bin/</code>这个路径会在运行时被加入到系统的PATH变量，因此在运行npm时，就可以不带路径，直接通过命令来调用这些脚本。所以上文提到的npm脚本<code>node-gyp rebuild</code>执行时不会报错。</p>
+<p>下面是一个使用本地node-gyp打包的例子，执行命令<code>../taf_nodejs/node node_modules/.bin/node-gyp rebuild</code></p>
+<pre class="line-numbers"><code class="language-bash">[running]mqq@:~/taf/QB.QBDFInterpretServer/bin/src$ ../taf_nodejs/node node_modules/.bin/node-gyp rebuild
+gyp info it worked if it ends with ok
+gyp info using node-gyp@3.6.2
+gyp info using node@8.7.0 | linux | x64
+gyp info spawn /usr/bin/python2
+gyp info spawn args [ '/usr/local/app/taf/QB.QBDFInterpretServer/bin/src/node_modules/node-gyp/gyp/gyp_main.py',
+gyp info spawn args   'binding.gyp',
+gyp info spawn args   '-f',
+gyp info spawn args   'make',
+gyp info spawn args   '-I',
+gyp info spawn args   '/usr/local/app/taf/QB.QBDFInterpretServer/bin/src/build/config.gypi',
+gyp info spawn args   '-I',
+gyp info spawn args   '/usr/local/app/taf/QB.QBDFInterpretServer/bin/src/node_modules/node-gyp/addon.gypi',
+gyp info spawn args   '-I',
+gyp info spawn args   '/usr/local/app/.node-gyp/8.7.0/include/node/common.gypi',
+gyp info spawn args   '-Dlibrary=shared_library',
+gyp info spawn args   '-Dvisibility=default',
+gyp info spawn args   '-Dnode_root_dir=/usr/local/app/.node-gyp/8.7.0',
+gyp info spawn args   '-Dnode_gyp_dir=/usr/local/app/taf/QB.QBDFInterpretServer/bin/src/node_modules/node-gyp',
+gyp info spawn args   '-Dnode_lib_file=/usr/local/app/.node-gyp/8.7.0/&lt;(target_arch)/node.lib',
+gyp info spawn args   '-Dmodule_root_dir=/usr/local/app/taf/QB.QBDFInterpretServer/bin/src',
+gyp info spawn args   '-Dnode_engine=v8',
+gyp info spawn args   '--depth=.',
+gyp info spawn args   '--no-parallel',
+gyp info spawn args   '--generator-output',
+gyp info spawn args   'build',
+gyp info spawn args   '-Goutput_dir=.' ]
+gyp info spawn make
+gyp info spawn args [ 'BUILDTYPE=Release', '-C', 'build' ]
+make: Entering directory `/usr/local/app/taf/QB.QBDFInterpretServer/bin/src/build'
+  CXX(target) Release/obj.target/interpret/addons/interpreter/interpret.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLScriptInterpreter.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLScriptMainDefine.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLTKProcess.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLToken.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/QBDFOLVarTypeHelper.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/main.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_reader.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_value.o
+  CXX(target) Release/obj.target/interpret/addons/interpreter/source/QBDFOLInterpreter/jsoncpp/json_writer.o
+  SOLINK_MODULE(target) Release/obj.target/interpret.node
+  COPY Release/interpret.node
+make: Leaving directory `/usr/local/app/taf/QB.QBDFInterpretServer/bin/src/build'
+gyp info ok
+</code></pre>
+<h3><a id="%E5%9C%A8binding-gyp%E7%9A%84-source%E4%B8%AD%E5%BC%95%E7%94%A8%E6%96%87%E4%BB%B6" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>在<code>binding.gyp</code>的<code>source</code>中引用文件</h3>
+<p>是的，如果不这么做，node-gyp无法将我们所需的c++文件全部打包进去。如果我们需要引用成百上千个文件，还好<code>sources</code>中可以接受shell命令：<code>&lt;!(cmd)</code>或<code>&lt;!@(cmd)</code>，前者返回值为string，后者返回值为list。</p>
+<p>这样，虽然gyp没有提供通配符，但是可以通过命令实现这个功能，如实现添加<code>addons/interpreter/source/QBDFOLInterpreter/</code>和<code>addons/interpreter/source/QBDFOLInterpreter/jsoncpp/</code>目录下所有<code>cpp</code>后缀的文件作为<code>sources</code>：</p>
+<pre class="line-numbers"><code class="language-python"># binding.gyp
+{
+  &quot;targets&quot;: [
+    {
+      ...
+      
+      &quot;sources&quot;: [&quot;addons/interpreter/interpret.cc&quot;,
+                  &quot;&lt;!@(ls -1 addons/interpreter/source/QBDFOLInterpreter/*.cpp)&quot;,
+                  &quot;&lt;!@(ls -1 addons/interpreter/source/QBDFOLInterpreter/jsoncpp/*.cpp)&quot;,
+                  ],
+                  
+      ...
+    }
+  ]
+}
+</code></pre>
+<h2><a id="%E5%85%B8%E5%9E%8B%E9%97%AE%E9%A2%98%E5%92%8C%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>典型问题和解决方法</h2>
+<h3><a id="the-program-node-gyp-is-currently-not-installed" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>The program 'node-gyp' is currently not installed.</h3>
+<p>在容器中打包时出现以下错误提示：</p>
+<pre class="line-numbers"><code class="language-bash">[mqq@100-107-26-88 ~/taf/QB.QBDFInterpretServer/bin/src]$ ../taf_nodejs/node node_modules/.bin/node-gyp rebuild
+gyp info it worked if it ends with ok
+gyp info using node-gyp@3.6.2
+gyp info using node@8.7.0 | linux | x64
+gyp http GET https://nodejs.org/download/release/v8.7.0/node-v8.7.0-headers.tar.gz
+gyp WARN install got an error, rolling back install
+gyp ERR! configure error
+gyp ERR! stack Error: connect ENETUNREACH 104.20.22.46:443
+gyp ERR! stack     at Object._errnoException (util.js:1021:11)
+gyp ERR! stack     at _exceptionWithHostPort (util.js:1043:20)
+gyp ERR! stack     at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1175:14)
+gyp ERR! System Linux 3.10.104-1-tlinux2-0041.tl1
+gyp ERR! command &quot;/usr/local/app/taf/QB.QBDFInterpretServer/bin/taf_nodejs/node&quot; &quot;/usr/local/app/taf/QB.QBDFInterpretServer/bin/src/node_modules/.bin/node-gyp&quot; &quot;rebuild&quot;
+gyp ERR! cwd /usr/local/app/taf/QB.QBDFInterpretServer/bin/src
+gyp ERR! node -v v8.7.0
+gyp ERR! node-gyp -v v3.6.2
+gyp ERR! not ok
+</code></pre>
+<p>原因是node-gyp在第一次运行之前要到<code>https://nodejs.org/</code>下载node源码头文件，然而开发网是连不上外网的(啊坑爹的开发网)。所以要指定公司内部的tnpm镜像路径：</p>
+<ol>
+<li>进入Docker容器</li>
+<li>在<code>~/.bash_profile</code>中添加一句<code>export NODEJS_ORG_MIRROR=http://tnpm.oa.com/mirrors/node/</code></li>
+<li>执行<code>source ~/.bash_profile</code>命令</li>
+<li>继续使用node-gyp</li>
+</ol>
+<h3><a id="error-cannot-use-throw-with-exceptions-disabled" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>ERROR: cannot use 'throw' with exceptions disabled</h3>
+<p>取消掉<code>-fno-exceptions</code>标记即可。可以在<code>binding.gyp</code>中加入：</p>
+<pre class="line-numbers"><code class="language-python">{
+  &quot;targets&quot;: [
+    {
+      ...
+      
+      &quot;cflags!&quot; : [
+        &quot;-fno-exceptions&quot;
+      ],
+      &quot;cflags_cc!&quot;: [
+        &quot;-fno-exceptions&quot;
+      ],
+      
+      ...
+    }
+  ]
+}
+</code></pre>
+<p>如果是在<code>macOS</code>下开发，还需要加入：</p>
+<pre class="line-numbers"><code class="language-python">{
+  &quot;targets&quot;: [
+    {
+      ...
+      
+      'conditions': [
+        ['OS==&quot;mac&quot;', {
+          'xcode_settings': {
+            'GCC_ENABLE_CPP_EXCEPTIONS': 'YES'
+          }
+        }]
+      ],
+      
+      ...
+    }
+  ]
+}
+</code></pre>
+<h3><a id="%E7%BC%96%E8%AF%91%E5%87%BA%E9%94%99%E7%9A%84%E4%B8%80%E7%A7%8D%E5%8F%AF%E8%83%BD" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>编译出错的一种可能</h3>
+<p>如果在开发环境写好的代码，部署到服务器后出现一些莫名其妙的编译错误，请注意开发环境和部署环境c++编译器的版本差异。<br />
+我拿macOS下clang编译好的代码放到g++里编译，想想真是无知者无畏啊……</p>
+<h2><a id="%E5%8F%82%E8%80%83" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>参考</h2>
+<ul>
+<li><a href="http://km.oa.com/articles/show/314098">taf nodejs快速入门教程（一）-- hello word</a> 这篇文章介绍了如何上线一个基于nodejs的hello world服务</li>
+<li><a href="http://km.oa.com/group/2804/articles/show/285311">Sparta业务接入和变更指引</a> 这篇文章介绍了如何申请域名</li>
+<li><a href="https://github.com/nodejs/node-gyp/issues/17">error: exception handling disabled, use -fexceptions to enable</a></li>
+<li><a href="http://km.oa.com/group/22525/articles/show/225277">使用c++编写node.js插件</a></li>
+<li><a href="http://erikge.com/articles/HelloGyp/">Hello GYP</a></li>
+<li><a href="https://yeasy.gitbooks.io/docker_practice/content/container/enter.html">docker attach &amp; nsenter</a></li>
+<li><a href="http://www.ruanyifeng.com/blog/2016/10/npm_scripts.html">npm scripts 使用指南</a></li>
+<li><a href="http://javascript.ruanyifeng.com/nodejs/packagejson.html">package.json文件</a></li>
+</ul>
+
+			</div>
+
+		
+	  
+		<footer>
+		 <p class="meta">
+
+			
+			<span class="categories">
+			 
+			</span>
+		    </p>
+		    <p class="meta">
+		      
+		 </p>
+	    
+		<div class="sharing">
+		  
+          
+
+          
+
+		</div>
+
+	    <p class="meta">
+	    
+	        <a class="basic-alignment left" href="15220417245604.html" 
+	        title="Previous Post: 使用XcodeCoverage统计增量代码单元测试覆盖率">&laquo; 使用XcodeCoverage统计增量代码单元测试覆盖率</a>
+	    
+	    
+	        <a class="basic-alignment right" href="14822246956860.html" 
+	        title="Next Post: 依赖注入实现内存释放">依赖注入实现内存释放 &raquo;</a>
+	    
+	    </p>
+	  </footer>
+	</article>
+</div>
+ <aside class="sidebar"> 
+
+	<section>
+	  <h1>Categories</h1>
+	  <ul id="recent_posts">
+	  
+	      <li class="post">
+	        <a href="%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html"><strong>《iOS面试之道》读书笔记&nbsp;(6)</strong></a>
+	        
+	        
+	        
+	      </li>
+	   
+	  </ul>
+	</section>
+	<section>
+	  <h1>Recent Posts</h1>
+	  <ul id="recent_posts">
+	  
+	      
+		      <li class="post">
+		        <a href="16566860725573.html">使用 framework 转换 XCFramework</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16558196375003.html">记一次私有 pod 发布报错</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="wan-zhuan-cocoapods-xu-yao-le.html">玩转 CocoaPods 需要了解的 Ruby 基础知识</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16553980014674.html">使用 LLDB Python API 自动存储后台请求数据用于单元测试</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="15372506301626.html">JavaScript for Automation(JXA) 入门</a>
+		      </li>
+	     
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	   
+	  </ul>
+	</section>
+	
+</aside> </div></div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 -  -
+  <span class="credit">Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a> &nbsp;&nbsp; Theme by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="asset/prism.js"></script>
+
+
+<style type="text/css">
+  
+/* PrismJS 1.14.0
+https://prismjs.com/download.html#themes=prism-solarizedlight&languages=markup+css+clike+javascript */
+/*
+ Solarized Color Schemes originally by Ethan Schoonover
+ http://ethanschoonover.com/solarized
+
+ Ported for PrismJS by Hector Matos
+ Website: https://krakendev.io
+ Twitter Handle: https://twitter.com/allonsykraken)
+*/
+
+/*
+SOLARIZED HEX
+--------- -------
+base03    #002b36
+base02    #073642
+base01    #586e75
+base00    #657b83
+base0     #839496
+base1     #93a1a1
+base2     #eee8d5
+base3     #fdf6e3
+yellow    #b58900
+orange    #cb4b16
+red       #dc322f
+magenta   #d33682
+violet    #6c71c4
+blue      #268bd2
+cyan      #2aa198
+green     #859900
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #657b83; /* base00 */
+  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+
+  line-height: 1.5;
+
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+  background: #073642; /* base02 */
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+  background: #073642; /* base02 */
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+  padding: 1em;
+  margin: .5em 0;
+  overflow: auto;
+  border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  background-color: #fdf6e3; /* base3 */
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+  padding: .1em;
+  border-radius: .3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #93a1a1; /* base1 */
+}
+
+.token.punctuation {
+  color: #586e75; /* base01 */
+}
+
+.namespace {
+  opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #268bd2; /* blue */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.url,
+.token.inserted {
+  color: #2aa198; /* cyan */
+}
+
+.token.entity {
+  color: #657b83; /* base00 */
+  background: #eee8d5; /* base2 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #859900; /* green */
+}
+
+.token.function,
+.token.class-name {
+  color: #b58900; /* yellow */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #cb4b16; /* orange */
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+
+pre[class*="language-"].line-numbers {
+    position: relative;
+    padding-left: 3.8em;
+    counter-reset: linenumber;
+}
+
+pre[class*="language-"].line-numbers > code {
+    position: relative;
+    white-space: inherit;
+}
+
+.line-numbers .line-numbers-rows {
+    position: absolute;
+    pointer-events: none;
+    top: 0;
+    font-size: 100%;
+    left: -3.8em;
+    width: 3em; /* works for line-numbers below 1000 lines */
+    letter-spacing: -1px;
+    border-right: 1px solid #999;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+}
+
+    .line-numbers-rows > span {
+        pointer-events: none;
+        display: block;
+        counter-increment: linenumber;
+    }
+
+        .line-numbers-rows > span:before {
+            content: counter(linenumber);
+            color: #999;
+            display: block;
+            padding-right: 0.8em;
+            text-align: right;
+        }
+
+</style>
+  
+    
+
+
+</body>
+</html>

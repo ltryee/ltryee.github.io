@@ -1,0 +1,508 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>
+    
+  记一次私有 pod 发布报错 - ltryee's blog
+  
+
+  </title>
+  <meta name="author" content="">
+  <meta name="description" content="ltryee's blog">
+
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link href="asset/css/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="atom.xml" rel="alternate" title="ltryee's blog" type="application/atom+xml">
+  <script src="asset/js/modernizr-2.0.js"></script>
+  <script src="asset/js/jquery.min.js"></script>
+  <style type="text/css">
+  .cat-children-p{ padding: 6px 0px;}
+  .hljs{background: none;}
+  </style>
+  <script type="text/javascript">
+  var isAddSildbar = true;
+  </script>
+  <script src="asset/js/octopress.js" type="text/javascript"></script>
+</head>
+<script type="text/javascript">
+//链接新开窗口
+function addBlankTargetForLinks () {
+  $('a[href^="http"]').each(function(){
+      $(this).attr('target', '_blank');
+  });
+}
+$(document).ready(function(event) {
+  addBlankTargetForLinks();
+});
+</script>
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="index.html">ltryee's blog</a></h1>
+  
+    <h2>ltryee's blog</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:ltryee.gitee.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+
+  <li id=""><a target="_self" href="index.html">Home</a></li>
+
+  <li id=""><a target="_self" href="archives.html">Archives</a></li>
+
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content"> 
+<div>
+	<article class="hentry" role="article">
+	<header>
+			  	<h1 class="entry-title">记一次私有 pod 发布报错</h1>
+				<p class="meta"><time datetime="2022-06-21T21:53:57+08:00" pubdate data-updated="true">2022/06/21</time></p>
+			 </header>
+		  	<div class="entry-content">
+			  	<div class="mweb_toc"><ul>
+<li><a href="#%E4%B8%B4%E6%97%B6%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88">临时解决方案</a></li>
+<li><a href="#%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90">深入分析</a>
+<ul>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%A6%82%E6%AD%A4%E5%A4%9A%E7%9A%84%E6%9E%B6%E6%9E%84%E4%BC%9A%E5%8F%82%E4%B8%8E%E9%93%BE%E6%8E%A5%EF%BC%9F">为什么如此多的架构会参与链接？</a></li>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%93%BE%E6%8E%A5arm64%E6%9E%B6%E6%9E%84%E4%BA%8C%E8%BF%9B%E5%88%B6%E4%BC%9A%E5%A4%B1%E8%B4%A5%EF%BC%9F">为什么链接 arm64 架构二进制会失败？</a></li>
+</ul>
+</li>
+<li><a href="#%E5%BD%BB%E5%BA%95%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88">彻底的解决方案</a></li>
+</ul>
+</div>
+<p>我们在发布组件新版本到私有 pod 的过程中，遇到一个报错。通过分析 log，定位到报错信息：</p>
+<pre class="line-numbers"><code class="language-log">ld: in /Users/kuaikan/jenkins/workspace/iOS-component-pipeline/component_source_Protobuf/Protobuf/Protobuf.framework/Protobuf(Api.pbobjc.o), building for iOS Simulator, but linking in object file built for iOS, file '/Users/kuaikan/jenkins/workspace/iOS-component-pipeline/component_source_Protobuf/Protobuf/Protobuf.framework/Protobuf' for architecture arm64
+
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+</code></pre>
+<h2><a id="%E4%B8%B4%E6%97%B6%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>临时解决方案</h2>
+<p>google 了关键字 <code>building for iOS Simulator, but linking in object file built for iOS</code>，发现网上给出的大部分解决方案是在工程 project 中指定排除的架构，即模拟器排除 arm64 架构。如果涉及到使用 pod 管理组件，则需要修改 podspec。<br />
+我们的私有 pod 方案是将使用的组件打成二进制，再发布到私有 spec repo 中，之前确实是在组件的 podspec 中加入了这两行：</p>
+<pre class="line-numbers"><code class="language-ruby"># File: protobuf.podspec
+
+s.pod_target_xcconfig = { 
+  'EXCLUDED_ARCHS[sdk=iphonesimulator*]' =&gt; 'arm64' 
+}
+s.user_target_xcconfig = { 
+  'EXCLUDED_ARCHS[sdk=iphonesimulator*]' =&gt; 'arm64' 
+}
+</code></pre>
+<p>但是 cocoapods 的维护者并不推荐这么做：</p>
+<blockquote>
+<p>So my feeling is that pre-built pods that do not include <code>arm64</code> architecture will not work for apps that consume them <em>unless</em> the apps themselves add <code>EXCLUDED_ARCHS</code> to exclude arm64 for simulator.<br />
+I generally strongly discourage using <code>s.user_target_xcconfig</code> and has been there for avoiding a breaking change as it changes the users project. It kinda make sense to add it though because a pod author is signaling that &quot;my pre-built pod does not support this architecture&quot;<sup class="footnote-ref"><a href="#fn-1" id="fnref-1_ref" data-footnote-ref>1</a></sup>.</p>
+</blockquote>
+<p>这么做确实能规避这个报错。但长远来看，排除编译模拟器的 arm64 架构，会阻碍我们后续迁移到 M1 处理的 Mac。原因是此 Mac 使用了 arm64 架构的模拟器。当然也不是没有解决方案，那就是在 M1 处理器的 Mac 上，使用 Rosetta 打开 Xcode，在 Rosetta 模式下运行的 Xcode，模拟器将会像在 Intel 处理器上一样，使用 x86_64 架构。<br />
+如果这么做了，我们将永远看不到架构大一统的一天。</p>
+<h2><a id="%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>深入分析</h2>
+<p>继续分析 pod lint 输出日志，我们发现在 lint 过程中，pod 自己生成了一个 project，并用此 project 进行编译验证。<br />
+基于此我们在 执行 lint 命令时加入 <code>--no-clean</code> 参数，告知 pod 在 lint 过程中保存中间执行结果：</p>
+<pre class="line-numbers"><code class="language-sh">pod lib lint protobuf.podspec \
+    --allow-warnings \
+    --verbose \
+    --use-libraries \
+    --no-clean
+</code></pre>
+<p>然后手动打开这个 pod 自动创建的 project 一探究竟。<br />
+经过测试，手动触发 project 的 build，同样会构建失败。并且从 xcode 日志中可以看到，链接过程中会尝试链接多种架构：</p>
+<p><img src="media/16558196375003/CleanShot%202022-06-23%20at%2018.35.26@2x.png" alt="CleanShot 2022-06-23 at 18.35.26@2x" /></p>
+<p>链接 x86_64 和 i386 都是成功的，唯独 arm64 失败。所以问提来了：</p>
+<h3><a id="%E4%B8%BA%E4%BB%80%E4%B9%88%E5%A6%82%E6%AD%A4%E5%A4%9A%E7%9A%84%E6%9E%B6%E6%9E%84%E4%BC%9A%E5%8F%82%E4%B8%8E%E9%93%BE%E6%8E%A5%EF%BC%9F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>为什么如此多的架构会参与链接？</h3>
+<p>仔细分析报错信息，我们发现log中提到的 framework 路径 <code>/Users/kuaikan/jenkins/workspace/iOS-component-pipeline/component_source_Protobuf/Protobuf/Protobuf.framework/Protobuf</code>，是我们自己为组件打包生成的二进制的文件路径。<br />
+我们也确实在 podspec 里指定了组件引用了此 framework。这里的 podspec 是制作私有组件时修改过的，写死使用二进制的方式引用这个组件。</p>
+<pre class="line-numbers"><code class="language-ruby"># File: protobuf.podspec
+s.vendored_frameworks = 'Protobuf/Protobuf.framework'
+</code></pre>
+<p>也就是说，pod lint 的过程是把 pod 的产出物引入 project，然后通过构建 project 来判断此产出物是否可用。因为我们的 podspec 里指定了使用 framework，而 framework 里塞进了多个架构的二进制，所以构建过程中把每一种模拟器可能用到的架构都验证了一遍。<br />
+这就解释了为什么模拟器下会链接 arm64 架构的二进制。这并不是 xcode 作妖，而是我们自己的锅。</p>
+<h3><a id="%E4%B8%BA%E4%BB%80%E4%B9%88%E9%93%BE%E6%8E%A5arm64%E6%9E%B6%E6%9E%84%E4%BA%8C%E8%BF%9B%E5%88%B6%E4%BC%9A%E5%A4%B1%E8%B4%A5%EF%BC%9F" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>为什么链接 arm64 架构二进制会失败？</h3>
+<p>还得继续从日志中找答案，日志中提到，正在为模拟器构建，但是链接进来的二进制（即我们自己打包出来的 framework），是为真机构建的。<br />
+同时，我们发现真机的 arm64 二进制与模拟器 arm64 二进制是<strong>不一样</strong>的：</p>
+<blockquote>
+<p>Alright, we got a match! Seems that the Simulator binary contains an <code>LC_BUILD_VERSION</code> load command, while the native binary contains an <code>LC_VERSION_MIN_IPHONEOS</code> load command in the same place. A pass with <code>otool</code> on our unsupported, native-only <code>.framework</code> confirms this theory. A bit of Googling reveals that <a href="https://reviews.llvm.org/D85358">this specific difference</a><sup class="footnote-ref"><a href="#fn-3" id="fnref-3_ref" data-footnote-ref>2</a></sup> is used by LLDB to distinguish Simulator and native binaries. We are on the right track then - looks like substituting <code>LC_VERSION_MIN_IPHONEOS</code> with <code>LC_BUILD_VERSION</code> might be just enough to fool <code>ld</code>.<sup class="footnote-ref"><a href="#fn-2" id="fnref-2_ref" data-footnote-ref>3</a></sup></p>
+</blockquote>
+<p>因此可以得出结论：使用真机 arm64 二进制构建 arm64 架构的模拟器，会导致链接失败。真机的 arm64 二进制与模拟器 arm64 二进制存在差异，因此已经打出的 arm64 二进制是不能用在模拟器上的，这会妨碍我们向 arm64 模拟器迁移。<br />
+在迁移到 arm64 模拟之前，已有的二进制全部需要处理。</p>
+<h2><a id="%E5%BD%BB%E5%BA%95%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>彻底的解决方案</h2>
+<p>鉴于以往打过的 framework 都已失效，<strong>稳妥的</strong>解决方案是：在三方库中，找回所有组件的源码，再更新 podsepc，把二进制引入修改为源码引入。</p>
+<p>当然也有<strong>骚操作</strong>：使用 <a href="https://github.com/bogo/arm64-to-sim">arm64-to-sim</a> 工具，把以前为真机构建的 arm64 架构的二进制转换成模拟器可用的 arm64 二进制，然后用 lipo 合成新的胖二进制<sup class="footnote-ref"><a href="#fn-2" id="fnref-2-2_ref" data-footnote-ref>3</a></sup>。</p>
+<section class="footnotes" data-footnotes>
+<ol>
+<li id="fn-1">
+<p>GitHub / <a href="https://github.com/CocoaPods/CocoaPods/issues/10065">Pod trunk push command Failed with Xcode12 #10065</a> <a href="#fnref-1_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-3">
+<p><a href="https://reviews.llvm.org/D85358">Correctly detect legacy iOS simulator Mach-O objectfiles</a> <a href="#fnref-3_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-2">
+<p><a href="https://bogo.wtf/arm64-to-sim.html">Hacking native ARM64 binaries to run on the iOS Simulator</a> <a href="#fnref-2_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a> <a href="#fnref-2-2_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<sup class="footnote-ref">2</sup></a></p>
+</li>
+</ol>
+</section>
+
+			</div>
+
+		
+	  
+		<footer>
+		 <p class="meta">
+
+			
+			<span class="categories">
+			 
+			</span>
+		    </p>
+		    <p class="meta">
+		      
+		 </p>
+	    
+		<div class="sharing">
+		  
+          
+
+          
+
+		</div>
+
+	    <p class="meta">
+	    
+	        <a class="basic-alignment left" href="16566860725573.html" 
+	        title="Previous Post: 使用 framework 转换 XCFramework">&laquo; 使用 framework 转换 XCFramework</a>
+	    
+	    
+	        <a class="basic-alignment right" href="wan-zhuan-cocoapods-xu-yao-le.html" 
+	        title="Next Post: 玩转 CocoaPods 需要了解的 Ruby 基础知识">玩转 CocoaPods 需要了解的 Ruby 基础知识 &raquo;</a>
+	    
+	    </p>
+	  </footer>
+	</article>
+</div>
+ <aside class="sidebar"> 
+
+	<section>
+	  <h1>Categories</h1>
+	  <ul id="recent_posts">
+	  
+	      <li class="post">
+	        <a href="%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html"><strong>《iOS面试之道》读书笔记&nbsp;(6)</strong></a>
+	        
+	        
+	        
+	      </li>
+	   
+	  </ul>
+	</section>
+	<section>
+	  <h1>Recent Posts</h1>
+	  <ul id="recent_posts">
+	  
+	      
+		      <li class="post">
+		        <a href="16566860725573.html">使用 framework 转换 XCFramework</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16558196375003.html">记一次私有 pod 发布报错</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="wan-zhuan-cocoapods-xu-yao-le.html">玩转 CocoaPods 需要了解的 Ruby 基础知识</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16553980014674.html">使用 LLDB Python API 自动存储后台请求数据用于单元测试</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="15372506301626.html">JavaScript for Automation(JXA) 入门</a>
+		      </li>
+	     
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	   
+	  </ul>
+	</section>
+	
+</aside> </div></div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 -  -
+  <span class="credit">Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a> &nbsp;&nbsp; Theme by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="asset/prism.js"></script>
+
+
+<style type="text/css">
+  
+/* PrismJS 1.14.0
+https://prismjs.com/download.html#themes=prism-solarizedlight&languages=markup+css+clike+javascript */
+/*
+ Solarized Color Schemes originally by Ethan Schoonover
+ http://ethanschoonover.com/solarized
+
+ Ported for PrismJS by Hector Matos
+ Website: https://krakendev.io
+ Twitter Handle: https://twitter.com/allonsykraken)
+*/
+
+/*
+SOLARIZED HEX
+--------- -------
+base03    #002b36
+base02    #073642
+base01    #586e75
+base00    #657b83
+base0     #839496
+base1     #93a1a1
+base2     #eee8d5
+base3     #fdf6e3
+yellow    #b58900
+orange    #cb4b16
+red       #dc322f
+magenta   #d33682
+violet    #6c71c4
+blue      #268bd2
+cyan      #2aa198
+green     #859900
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #657b83; /* base00 */
+  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+
+  line-height: 1.5;
+
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+  background: #073642; /* base02 */
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+  background: #073642; /* base02 */
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+  padding: 1em;
+  margin: .5em 0;
+  overflow: auto;
+  border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  background-color: #fdf6e3; /* base3 */
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+  padding: .1em;
+  border-radius: .3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #93a1a1; /* base1 */
+}
+
+.token.punctuation {
+  color: #586e75; /* base01 */
+}
+
+.namespace {
+  opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #268bd2; /* blue */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.url,
+.token.inserted {
+  color: #2aa198; /* cyan */
+}
+
+.token.entity {
+  color: #657b83; /* base00 */
+  background: #eee8d5; /* base2 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #859900; /* green */
+}
+
+.token.function,
+.token.class-name {
+  color: #b58900; /* yellow */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #cb4b16; /* orange */
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+
+pre[class*="language-"].line-numbers {
+    position: relative;
+    padding-left: 3.8em;
+    counter-reset: linenumber;
+}
+
+pre[class*="language-"].line-numbers > code {
+    position: relative;
+    white-space: inherit;
+}
+
+.line-numbers .line-numbers-rows {
+    position: absolute;
+    pointer-events: none;
+    top: 0;
+    font-size: 100%;
+    left: -3.8em;
+    width: 3em; /* works for line-numbers below 1000 lines */
+    letter-spacing: -1px;
+    border-right: 1px solid #999;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+}
+
+    .line-numbers-rows > span {
+        pointer-events: none;
+        display: block;
+        counter-increment: linenumber;
+    }
+
+        .line-numbers-rows > span:before {
+            content: counter(linenumber);
+            color: #999;
+            display: block;
+            padding-right: 0.8em;
+            text-align: right;
+        }
+
+</style>
+  
+    
+
+
+</body>
+</html>

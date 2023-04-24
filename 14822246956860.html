@@ -1,0 +1,546 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>
+    
+  依赖注入实现内存释放 - ltryee's blog
+  
+
+  </title>
+  <meta name="author" content="">
+  <meta name="description" content="ltryee's blog">
+
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link href="asset/css/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="atom.xml" rel="alternate" title="ltryee's blog" type="application/atom+xml">
+  <script src="asset/js/modernizr-2.0.js"></script>
+  <script src="asset/js/jquery.min.js"></script>
+  <style type="text/css">
+  .cat-children-p{ padding: 6px 0px;}
+  .hljs{background: none;}
+  </style>
+  <script type="text/javascript">
+  var isAddSildbar = true;
+  </script>
+  <script src="asset/js/octopress.js" type="text/javascript"></script>
+</head>
+<script type="text/javascript">
+//链接新开窗口
+function addBlankTargetForLinks () {
+  $('a[href^="http"]').each(function(){
+      $(this).attr('target', '_blank');
+  });
+}
+$(document).ready(function(event) {
+  addBlankTargetForLinks();
+});
+</script>
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="index.html">ltryee's blog</a></h1>
+  
+    <h2>ltryee's blog</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:ltryee.gitee.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+
+  <li id=""><a target="_self" href="index.html">Home</a></li>
+
+  <li id=""><a target="_self" href="archives.html">Archives</a></li>
+
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content"> 
+<div>
+	<article class="hentry" role="article">
+	<header>
+			  	<h1 class="entry-title">依赖注入实现内存释放</h1>
+				<p class="meta"><time datetime="2016-12-20T17:04:55+08:00" pubdate data-updated="true">2016/12/20</time></p>
+			 </header>
+		  	<div class="entry-content">
+			  	<p>本文介绍了一种名为<strong>依赖注入</strong>(Dependency Injection)的设计模式，并使用这种模式释放不必一直持有的对象，用来达到释放内存的效果。</p>
+<h2><a id="%E4%BB%80%E4%B9%88%E6%98%AF%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>什么是依赖注入</h2>
+<p>举个栗子：</p>
+<blockquote>
+<p>“When you go and get things out of the refrigerator for yourself, you can cause problems. You might leave the door open, you might get something Mommy or Daddy doesn’t want you to have. You might even be looking for something we don’t even have or which has expired.</p>
+</blockquote>
+<blockquote>
+<p>What you should be doing is stating a need, “I need something to drink with lunch,” and then we will make sure you have something when you sit down to eat.”</p>
+</blockquote>
+<p>以上答案来自<a href="http://stackoverflow.com/questions/1638919/how-to-explain-dependency-injection-to-a-5-year-old">Stack Overflow</a>，大概意思是，对于一个5岁大的小朋友来说，从冰箱里取东西出来是一件危险的事情，你可能忘记关冰箱门，或者取出爸爸的伏特加，也可能寻找根本不存在的食物或者用舌头舔冷冻室的铁栏杆……</p>
+<p>因此，这件事的解决办法就是，对你的父母说：“我想在吃午饭时喝点什么”，然后父母就会拿出一些喝的给你。</p>
+<p>换成程序员能听懂的话就是：高层类(5岁小孩)应该依赖底层基础设施(家长)来提供必要的服务。</p>
+<p>依赖注入是一个将行为从依赖中分离的技术，简单地说，它允许开发者定义一个方法函数依赖于外部其他各种交互，而不需要编码如何获得这些外部交互的实例。 这样就在各种组件之间解耦，从而获得干净的代码，相比依赖的硬编码， 一个组件只有在运行时才调用其所需要的其他组件，因此在代码运行时，通过特定的框架或容器，将其所需要的其他依赖组件进行注入，主动推入。</p>
+<h2><a id="%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>为什么需要依赖注入</h2>
+<p>依赖注入框架的运用可以帮我们将APP的设计分割成好几个模块，分给不同的开人员，当完成开发之后再进行合并充分解决了团队之间模块化分工的不足。<br />
+借用objccn.io的话说：</p>
+<blockquote>
+<p>我最初决定钻研DI是因为在执行测试驱动开发 (TDD)，而在 TDD 的过程中有一个很纠结的问题会时常跳出来：“对于这个实现，如何编写单元测试？”。后来我发现其实 DI 本身是在彰显一个更高层面的概念：代码组成了模块，模块拼接构建成了应用本身。</p>
+</blockquote>
+<h2><a id="%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>如何实现依赖注入</h2>
+<p>以下例子来自<a href="http://objccn.io/issue-15-3/">objeccn.io</a>。</p>
+<h3><a id="%E6%9E%84%E9%80%A0%E5%99%A8%E6%B3%A8%E5%85%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>构造器注入</h3>
+<p>构造器注入，即将某个依赖对象传入到构造器中 (在 Objective- C中指 designated 初始化方法) 并存储起来，以便在后续过程中使用：</p>
+<pre class="line-numbers"><code class="language-Objc">- (NSNumber *)nextReminderId
+{
+    NSNumber *currentReminderId = [self.userDefaults objectForKey:@&quot;currentReminderId&quot;];
+    if (currentReminderId) {
+        currentReminderId = @([currentReminderId intValue] + 1);
+    } else {
+        currentReminderId = @0;
+    }
+    [self.userDefaults setObject:currentReminderId forKey:@&quot;currentReminderId&quot;];
+    return currentReminderId;
+}
+</code></pre>
+<h3><a id="%E5%B1%9E%E6%80%A7%E6%B3%A8%E5%85%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>属性注入</h3>
+<p>对于属性注入，<code>nextReminderId</code> 的代码看起来和 <code>self.userDefaults</code> 的做法是一致的。只是这次不是将依赖对象传递给初始化方法，而是采用属性赋值方式：</p>
+<pre class="line-numbers"><code class="language-Objc">@interface Example
+@property (nonatomic, strong) NSUserDefaults *userDefaults;
+- (NSNumber *)nextReminderId;
+@end
+</code></pre>
+<p>现在可以在单元测试中创建一个对象，然后将需要的东西通过对 userDefaults 属性进行赋值。但是要是这个属性没有被预先设定的话要怎么办呢？这时，我们可以使用 lazy 加载的方法为其设置一个适当的默认值，这能保证始终可以通过 getter 拿到一个确切的值：</p>
+<pre class="line-numbers"><code class="language-Objc">- (NSUserDefaults *)userDefaults
+{
+    if (!_userDefaults) {
+        _userDefaults = [NSUserDefaults standardUserDefaults];
+    }
+    return _userDefaults;
+}
+</code></pre>
+<p>这样的话，对 <code>userDefaults</code> 来说，如果在使用者取值之前做过赋值操作，那么从 <code>self.userDefaults</code> 得到的就是通过 setter 赋的值。如果这个属性在使用前未被赋值，从 self.userDefaults 得到的就是<code>[NSUserDefaults standardUserDefaults]</code>。</p>
+<h3><a id="%E6%96%B9%E6%B3%95%E6%B3%A8%E5%85%A5" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>方法注入</h3>
+<p>如果依赖对象只在某一个方法中被使用，则可以利用方法参数做注入：</p>
+<pre class="line-numbers"><code class="language-Objc">- (NSNumber *)nextReminderIdWithUserDefaults:(NSUserDefaults *)userDefaults
+{
+    NSNumber *currentReminderId = [userDefaults objectForKey:@&quot;currentReminderId&quot;];
+    if (currentReminderId) {
+        currentReminderId = @([currentReminderId intValue] + 1);
+    } else {
+        currentReminderId = @0;
+    }
+    [userDefaults setObject:currentReminderId forKey:@&quot;currentReminderId&quot;];
+    return currentReminderId;
+}
+</code></pre>
+<p>再一次说明，这样看起来可能会很奇怪，并不是所有的例子中 <code>NSUserDefaults</code>作为依赖都显得恰如其分。比如说这个例子中，如果使用 <code>NSDate</code> 做注入参数传入可能更会彰显其特点。</p>
+<h2><a id="%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%86%85%E5%AD%98%E9%87%8A%E6%94%BE" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>如何实现内存释放</h2>
+<p>上面提到的几种实现依赖注入的方法中，可以用来释放不必一直持有的对象的方法是<strong>属性注入</strong>。如果在一个对象的生命周期中，有什么属性是可以随时从文件系统中(或是其他方法)恢复的，那就让我们注入它吧！</p>
+<p>举个例子，设备横屏时显示红色按钮<code>redButton</code>，设备竖屏时显示绿色按钮<code>greenButton</code>，同时两个button的行为完全一致，对外暴露的接口可以统一为一个<code>button</code>：</p>
+<pre class="line-numbers"><code class="language-Objc">// 这是对外接口，属性注入
+- (UIButton *)button
+{
+    if(UIInterfaceOrientationIsLandscape([[UIApplication sharedApplication] statusBarOrientation])) {
+        return self.redButton;
+    }
+    else {
+        return self.greenButton;
+    }
+}
+
+// 继续注入两个button
+- (UIButton *)redButton
+{
+    if(!_redButton) {
+        _redButton = [UIButton new];
+        // do sth.
+    }
+    return _redButton;
+}
+- (UIButton *)greenButton
+{
+    if(!_greenButton) {
+        _greenButton = [UIButton new];
+        // do sth.
+    }
+    return _greenButton;
+}
+</code></pre>
+<p>设备处于某个方向时，同时只有一个button被显示，因此可以释放掉不被显示的一个以节约内存</p>
+<pre class="line-numbers"><code class="language-objc">- (UIButton *)removeHiddenButton
+{
+    if(UIInterfaceOrientationIsLandscape([[UIApplication sharedApplication] statusBarOrientation])) {
+        [_greenButton removeFromSuperView];
+        _greenButton = nil;
+    }
+    else {
+        [_redButton removeFromSuperView];
+        _redButton = nil;
+    }
+}
+- (void)layoutSubviews
+{
+    [self button];
+    [self removeHiddenButton];
+}
+</code></pre>
+<p>属性注入保证了调用者（高级类）不必关心被调用对象的初始化情况，所以即使被调用对象已经释放，通过调用注入接口，仍然可以在需要时生成。利用这一特性，我们可以在收到内存警告时释放掉暂时不用的对象，同时也必须注意，<strong>被释放的对象必须是可恢复的</strong>。</p>
+
+			</div>
+
+		
+	  
+		<footer>
+		 <p class="meta">
+
+			
+			<span class="categories">
+			 
+			</span>
+		    </p>
+		    <p class="meta">
+		      
+		 </p>
+	    
+		<div class="sharing">
+		  
+          
+
+          
+
+		</div>
+
+	    <p class="meta">
+	    
+	        <a class="basic-alignment left" href="15089947525979.html" 
+	        title="Previous Post: 在Taf NodeJS工程中使用node-gyp">&laquo; 在Taf NodeJS工程中使用node-gyp</a>
+	    
+	    
+	        <a class="basic-alignment right" href="14822246957173.html" 
+	        title="Next Post: iOS 控件设置圆角（上）">iOS 控件设置圆角（上） &raquo;</a>
+	    
+	    </p>
+	  </footer>
+	</article>
+</div>
+ <aside class="sidebar"> 
+
+	<section>
+	  <h1>Categories</h1>
+	  <ul id="recent_posts">
+	  
+	      <li class="post">
+	        <a href="%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html"><strong>《iOS面试之道》读书笔记&nbsp;(6)</strong></a>
+	        
+	        
+	        
+	      </li>
+	   
+	  </ul>
+	</section>
+	<section>
+	  <h1>Recent Posts</h1>
+	  <ul id="recent_posts">
+	  
+	      
+		      <li class="post">
+		        <a href="16566860725573.html">使用 framework 转换 XCFramework</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16558196375003.html">记一次私有 pod 发布报错</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="wan-zhuan-cocoapods-xu-yao-le.html">玩转 CocoaPods 需要了解的 Ruby 基础知识</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16553980014674.html">使用 LLDB Python API 自动存储后台请求数据用于单元测试</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="15372506301626.html">JavaScript for Automation(JXA) 入门</a>
+		      </li>
+	     
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	   
+	  </ul>
+	</section>
+	
+</aside> </div></div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 -  -
+  <span class="credit">Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a> &nbsp;&nbsp; Theme by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="asset/prism.js"></script>
+
+
+<style type="text/css">
+  
+/* PrismJS 1.14.0
+https://prismjs.com/download.html#themes=prism-solarizedlight&languages=markup+css+clike+javascript */
+/*
+ Solarized Color Schemes originally by Ethan Schoonover
+ http://ethanschoonover.com/solarized
+
+ Ported for PrismJS by Hector Matos
+ Website: https://krakendev.io
+ Twitter Handle: https://twitter.com/allonsykraken)
+*/
+
+/*
+SOLARIZED HEX
+--------- -------
+base03    #002b36
+base02    #073642
+base01    #586e75
+base00    #657b83
+base0     #839496
+base1     #93a1a1
+base2     #eee8d5
+base3     #fdf6e3
+yellow    #b58900
+orange    #cb4b16
+red       #dc322f
+magenta   #d33682
+violet    #6c71c4
+blue      #268bd2
+cyan      #2aa198
+green     #859900
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #657b83; /* base00 */
+  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+
+  line-height: 1.5;
+
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+  background: #073642; /* base02 */
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+  background: #073642; /* base02 */
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+  padding: 1em;
+  margin: .5em 0;
+  overflow: auto;
+  border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  background-color: #fdf6e3; /* base3 */
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+  padding: .1em;
+  border-radius: .3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #93a1a1; /* base1 */
+}
+
+.token.punctuation {
+  color: #586e75; /* base01 */
+}
+
+.namespace {
+  opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #268bd2; /* blue */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.url,
+.token.inserted {
+  color: #2aa198; /* cyan */
+}
+
+.token.entity {
+  color: #657b83; /* base00 */
+  background: #eee8d5; /* base2 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #859900; /* green */
+}
+
+.token.function,
+.token.class-name {
+  color: #b58900; /* yellow */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #cb4b16; /* orange */
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+
+pre[class*="language-"].line-numbers {
+    position: relative;
+    padding-left: 3.8em;
+    counter-reset: linenumber;
+}
+
+pre[class*="language-"].line-numbers > code {
+    position: relative;
+    white-space: inherit;
+}
+
+.line-numbers .line-numbers-rows {
+    position: absolute;
+    pointer-events: none;
+    top: 0;
+    font-size: 100%;
+    left: -3.8em;
+    width: 3em; /* works for line-numbers below 1000 lines */
+    letter-spacing: -1px;
+    border-right: 1px solid #999;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+}
+
+    .line-numbers-rows > span {
+        pointer-events: none;
+        display: block;
+        counter-increment: linenumber;
+    }
+
+        .line-numbers-rows > span:before {
+            content: counter(linenumber);
+            color: #999;
+            display: block;
+            padding-right: 0.8em;
+            text-align: right;
+        }
+
+</style>
+  
+    
+
+
+</body>
+</html>

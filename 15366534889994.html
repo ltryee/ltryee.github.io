@@ -1,0 +1,681 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>
+    
+  《iOS面试之道》读书笔记 - 网络请求相关 - ltryee's blog
+  
+
+  </title>
+  <meta name="author" content="">
+  <meta name="description" content="ltryee's blog">
+
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link href="asset/css/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="atom.xml" rel="alternate" title="ltryee's blog" type="application/atom+xml">
+  <script src="asset/js/modernizr-2.0.js"></script>
+  <script src="asset/js/jquery.min.js"></script>
+  <style type="text/css">
+  .cat-children-p{ padding: 6px 0px;}
+  .hljs{background: none;}
+  </style>
+  <script type="text/javascript">
+  var isAddSildbar = true;
+  </script>
+  <script src="asset/js/octopress.js" type="text/javascript"></script>
+</head>
+<script type="text/javascript">
+//链接新开窗口
+function addBlankTargetForLinks () {
+  $('a[href^="http"]').each(function(){
+      $(this).attr('target', '_blank');
+  });
+}
+$(document).ready(function(event) {
+  addBlankTargetForLinks();
+});
+</script>
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="index.html">ltryee's blog</a></h1>
+  
+    <h2>ltryee's blog</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:ltryee.gitee.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+
+  <li id=""><a target="_self" href="index.html">Home</a></li>
+
+  <li id=""><a target="_self" href="archives.html">Archives</a></li>
+
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content"> 
+<div>
+	<article class="hentry" role="article">
+	<header>
+			  	<h1 class="entry-title">《iOS面试之道》读书笔记 - 网络请求相关</h1>
+				<p class="meta"><time datetime="2018-09-11T16:11:28+08:00" pubdate data-updated="true">2018/09/11</time></p>
+			 </header>
+		  	<div class="entry-content">
+			  	<div class="mweb_toc"><ul>
+<li><a href="#url-loading-system">URL Loading System</a>
+<ul>
+<li><a href="#nsurlsession">NSURLSession</a>
+<ul>
+<li><a href="#session%E7%B1%BB%E5%9E%8B">Session类型</a></li>
+<li><a href="#task%E7%B1%BB%E5%9E%8B">Task类型</a></li>
+<li><a href="#%E4%BD%BF%E7%94%A8delegate">使用delegate</a></li>
+<li><a href="#%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E6%80%A7">线程安全性</a></li>
+</ul>
+</li>
+<li><a href="#nsurlsessiontask">NSURLSessionTask</a></li>
+<li><a href="#nsurlsessionconfiguration">NSURLSessionConfiguration</a>
+<ul>
+<li><a href="#%E5%88%9B%E5%BB%BA">创建</a></li>
+<li><a href="#%E5%8F%AF%E9%85%8D%E7%BD%AE%E9%A1%B9">可配置项</a></li>
+</ul>
+</li>
+<li><a href="#%E5%A4%84%E7%90%86%E9%89%B4%E6%9D%83%E6%9F%A5%E8%AF%A2authentication-challenge">处理鉴权查询(Authentication Challenge)</a></li>
+</ul>
+</li>
+<li><a href="#nsurlconnection-vs-nsurlsession">NSURLConnection vs. NSURLSession</a></li>
+<li><a href="#ats">ATS</a>
+<ul>
+<li><a href="#ats%E5%9F%BA%E6%9C%AC%E9%85%8D%E7%BD%AE">ATS 基本配置</a></li>
+<li><a href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E9%85%8D%E7%BD%AE">自定义配置</a>
+<ul>
+<li><a href="#%E5%85%A8%E9%83%A8%E5%90%AF%E7%94%A8ats">全部启用 ATS</a></li>
+<li><a href="#%E5%85%A8%E9%83%A8%E5%90%AF%E7%94%A8ats%EF%BC%8C%E4%BD%86%E6%9C%89%E4%B8%80%E4%BA%9B%E4%BE%8B%E5%A4%96">全部启用 ATS，但有一些例外</a></li>
+<li><a href="#%E5%85%A8%E9%83%A8%E7%A6%81%E7%94%A8ats%EF%BC%8C%E4%BD%86%E6%9C%89%E4%B8%80%E4%BA%9B%E4%BE%8B%E5%A4%96">全部禁用 ATS，但有一些例外</a></li>
+<li><a href="#%E9%99%8D%E7%BA%A7%E7%9A%84ats">降级的 ATS</a></li>
+<li><a href="#%E5%85%A8%E9%83%A8%E7%A6%81%E7%94%A8ats">全部禁用 ATS</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<h2><a id="url-loading-system" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>URL Loading System</h2>
+<p>URL加载系统使用诸如标准的<em>https</em>或自定义协议，提供访问基于URL标识的资源的能力。加载是异步执行的，因此您的应用程序可以响应其他事件并在加载数据或错误到达时转回处理。<br />
+您可以使用<a href="https://developer.apple.com/documentation/foundation/nsurlsession?language=objc"><code>NSURLSession</code></a>实例创建一个或多个<a href="https://developer.apple.com/documentation/foundation/nsurlsessiontask?language=objc"><code>NSURLSessionTask</code></a>实例，这些实例可以获取数据并将数据返回到应用程序，下载文件或将数据和文件上载到远程位置。要配置会话，请使用一个<a href="https://developer.apple.com/documentation/foundation/nsurlsessionconfiguration?language=objc"><code>NSURLSessionConfiguration</code></a>对象，该对象控制如何使用cache和cookie，或者是否允许在蜂窝网络上进行连接。<br />
+您可以重复使用一个会话(session)来创建任务(task)。例如，Web浏览器可能使用多个会话，分别负责常规和隐私浏览，其中私有会话不提供缓存数据的能力。下图显示了具有这些配置的两个会话如何创建多个任务。</p>
+<p><img src="https://docs-assets.developer.apple.com/published/4bf9c6d271/6789dd96-afdc-4c18-b8eb-01f9012dc04d.png" alt="Creating tasks from URL sessions" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<p>每个会话都与一个*委托(delegate)*相关联，以接收定期更新（或error）。默认委托调用您提供的completion handler block; 如果您选择提供自己的自定义delegate，则不会调用此block。<br />
+您可以将会话配置为在后台运行，以便在应用程序暂停时，系统可以代为下载数据并唤醒app以提供结果<sup class="footnote-ref"><a href="#fn-1" id="fnref-1_ref" data-footnote-ref>1</a></sup>。</p>
+<h3><a id="nsurlsession" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>NSURLSession</h3>
+<blockquote>
+<p><code>NSURLSession</code>: 协调一组相关网络数据传输任务的对象。</p>
+</blockquote>
+<p>NSURLSession类和相关类提供下载内容的API。你可以使用NSURLSession API创建一个或多个会话，每个会话都会协调一组相关的数据传输任务<sup class="footnote-ref"><a href="#fn-2" id="fnref-2_ref" data-footnote-ref>2</a></sup>。</p>
+<h4><a id="session%E7%B1%BB%E5%9E%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Session类型</h4>
+<p>NSURLSession拥有一个没有配置对象的单例<a href="https://developer.apple.com/documentation/foundation/nsurlsession/1409000-sharedsession?language=objc"><code>sharedSession</code></a>，可用于处理基本请求。对于其他类型的session，你可以使用以下配置：</p>
+<ul>
+<li>*默认会话(Default session)*类似共享session，允许更多的配置，并允许使用delegate获取增量数据。</li>
+<li>*临时会话(Ephemeral session)*类似共享session，但不缓存cache，cookie或凭据到磁盘。</li>
+<li>*后台会话(Background session)*可以在app未运行时在后台执行上传或下载内容的操作。</li>
+</ul>
+<h4><a id="task%E7%B1%BB%E5%9E%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>Task类型</h4>
+<p>在使用session的过程中，你可以通过创建task的方式完成上传、下载数据等操作。NSURLSession API提供了三种类型的任务：</p>
+<ul>
+<li>*数据任务(Data task)*用于发送和接收<code>NSData</code>。</li>
+<li>*上传任务(Upload task)*类似于数据任务，但也能用于发送文件数据，并支持在app未运行时后台上传。</li>
+<li>*下载任务(Download task)*以文件的形式获取数据，同时支持后台下载。</li>
+</ul>
+<h4><a id="%E4%BD%BF%E7%94%A8delegate" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>使用delegate</h4>
+<p>Session中的task共享一个公共delegate，用于处理各种事件。如果不需要通过delegate处理事件，可以在创建session时传入<code>nil</code>。<br />
+<strong>注意</strong>，<code>NSURLSession</code>会强引用<code>delegate</code>属性直到app退出或显式使session失效。如果你没有使session失效，会造成app内存泄漏。</p>
+<pre class="line-numbers"><code class="language-objc">@interface NSURLSession : NSObject
+
+...
+
+@property (nullable, readonly, retain) id &lt;NSURLSessionDelegate&gt; delegate;
+
+... 
+
+@end
+</code></pre>
+<h4><a id="%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E6%80%A7" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>线程安全性</h4>
+<p>URL Session API本身是完全<strong>线程安全</strong>的。您可以在任何线程上下文中自由创建session和task，并且当您的delegate方法调用completion handler时，工作将自动安排在正确的*委托队列(delegate queue)*中。</p>
+<h3><a id="nsurlsessiontask" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>NSURLSessionTask</h3>
+<blockquote>
+<p>在URL会话中执行的任务，如下载特定资源。</p>
+</blockquote>
+<p><code>NSURLSessionTask</code>类是session中task的基类，有三个子类可以使用：<code>NSURLSessionDataTask</code>、<code>NSURLSessionUploadTask</code>、<code>NSURLSessionDownloadTask</code>。</p>
+<p><img src="https://objccn.io/images/issues/issue-5/NSURLSession.png" alt="" /></p>
+<p>不同于直接使用 alloc-init 初始化方法，task 是由一个<code>NSURLSession</code>创建的。每个 task 的构造方法都有两个版本，一个带<code>completionHandler</code>，一个不带，例如下面<code>NSURLSessionDataTask</code>的构造方法。通过指定<code>completionHandler</code>这个 block 将创建一个隐式的 delegate，来替代该 task 原来的 delegate——session。对于需要override 原有 session task 的 delegate 的默认行为的情况，我们需要使用这种不带<code>completionHandler</code>的版本<sup class="footnote-ref"><a href="#fn-3" id="fnref-3_ref" data-footnote-ref>3</a></sup>。</p>
+<pre class="line-numbers"><code class="language-objc">/* Creates a data task with the given request.  The request may have a body stream. */
+- (NSURLSessionDataTask *)dataTaskWithRequest:(NSURLRequest *)request;
+
+/*
+ * data task convenience methods.  These methods create tasks that
+ * bypass the normal delegate calls for response and data delivery,
+ * and provide a simple cancelable asynchronous interface to receiving
+ * data.  Errors will be returned in the NSURLErrorDomain, 
+ * see &lt;Foundation/NSURLError.h&gt;.  The delegate, if any, will still be
+ * called for authentication challenges.
+ */
+- (NSURLSessionDataTask *)dataTaskWithRequest:(NSURLRequest *)request 
+                            completionHandler:(void (^)(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error))completionHandler;
+</code></pre>
+<p>所有的task都是可以取消，暂停或者恢复的。当一个 download task 取消时，可以通过选项来创建一个<em>恢复数据(resume data)</em>，然后可以传递给下一次新创建的 download task，以便继续之前的下载。</p>
+<p><strong>注意</strong>，task的所有属性均支持KVO。</p>
+<h3><a id="nsurlsessionconfiguration" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>NSURLSessionConfiguration</h3>
+<blockquote>
+<p>用于定义URL会话的行为和策略的配置对象。</p>
+</blockquote>
+<p><code>NSURLSessionConfiguration</code> 对象用于对 <code>NSURLSession</code> 对象进行初始化。在初始化<code>NSURLSession</code>对象之前，必须正确配置<code>NSURLSessionConfiguration</code>对象，session 对象会 copy 一份配置数据，保存在自己的<code>configuration</code>属性中。一旦初始化完成，再次修改<code>NSURLSessionConfiguration</code>对象是不会影响到 session 对象的。</p>
+<h4><a id="%E5%88%9B%E5%BB%BA" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>创建</h4>
+<p><code>NSURLSessionConfiguration</code>类提供了三个方法创建配置对象：</p>
+<ul>
+<li><code>defaultSessionConfiguration</code>返回一个默认配置，具有相同的共享 <code>NSHTTPCookieStorage</code>，共享 <code>NSURLCache</code> 和共享 <code>NSURLCredentialStorage</code>。</li>
+<li><code>ephemeralSessionConfiguration</code>返回一个临时配置，不会对cache，cookie或证书进行缓存。</li>
+<li><code>+backgroundSessionConfigurationWithIdentifier:</code>返回一个后台配置，可用于创建后台session，可以子啊app未运行时在后台执行上传和下载。初始化时指定的标识符用于向任何可能在进程外恢复后台传输的*守护进程(daemon)*提供上下文。</li>
+</ul>
+<h4><a id="%E5%8F%AF%E9%85%8D%E7%BD%AE%E9%A1%B9" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>可配置项</h4>
+<p>参考苹果<a href="https://developer.apple.com/documentation/foundation/nsurlsessionconfiguration?language=objc">官方文档</a>。</p>
+<h3><a id="%E5%A4%84%E7%90%86%E9%89%B4%E6%9D%83%E6%9F%A5%E8%AF%A2authentication-challenge" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>处理鉴权查询(Authentication Challenge)</h3>
+<blockquote>
+<p>当服务器要求对URL请求进行身份验证时，适当地做出响应。</p>
+</blockquote>
+<p>当客户端第一次发送请求的时候，服务器会返回一个包含公钥的受保护空间（也成为证书），当我们发送请求的时候，公钥会将请求加密再发送给服务器，服务器接到请求之后，用自带的私钥进行解密，如果正确再返回数据。这就是 HTTPS 的安全性所在<sup class="footnote-ref"><a href="#fn-4" id="fnref-4_ref" data-footnote-ref>4</a></sup>。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/266345-9caefa5798c3660e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/554" alt="HTTPS请求" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<p>在把请求发送给服务器的过程中，服务器可能会发出<em>鉴权查询(authentication challenge)</em>，这可以由共享的 cookie 或*机密存储(credential storage)*来自动响应，或者由被委托对象来响应。<br />
+你需要根据收到的鉴权查询的性质，决定实现下面哪个代理方法：</p>
+<ul>
+<li>实现<code>NSURLSessionDelegate</code>协议的<code> URLSession:didReceiveChallenge:completionHandler:</code>方法，用来处理session范围的鉴权查询，这些查询可能来自*传输层安全协议(Transport Layer Security, TLS)*验证。成功处理这种查询将对 session 内的所有 task 有效。</li>
+<li>实现<code>NSURLSessionTaskDelegate</code>协议的<code> URLSession:task:didReceiveChallenge:completionHandler</code>方法，用来处理特定 task 的鉴权查询，通常用于验证用户名/密码。Session 中的每个 task 都可以发起自己的鉴权查询。</li>
+</ul>
+<pre class="line-numbers"><code class="language-objc">/* If implemented, when a connection level authentication challenge
+ * has occurred, this delegate will be given the opportunity to
+ * provide authentication credentials to the underlying
+ * connection. Some types of authentication will apply to more than
+ * one request on a given connection to a server (SSL Server Trust
+ * challenges).  If this delegate message is not implemented, the 
+ * behavior will be to use the default handling, which may involve user
+ * interaction. 
+ */
+- (void)URLSession:(NSURLSession *)session didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
+                                             completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential * _Nullable credential))completionHandler;
+                                             
+/* The task has received a request specific authentication challenge.
+ * If this delegate is not implemented, the session specific authentication challenge
+ * will *NOT* be called and the behavior will be the same as using the default handling
+ * disposition. 
+ */
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
+                            didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge 
+                              completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential * _Nullable credential))completionHandler;
+</code></pre>
+<p><strong>注意</strong>，从苹果的<a href="https://developer.apple.com/documentation/foundation/nsurlprotectionspace/nsurlprotectionspace_authentication_method_constants?language=objc">官方文档</a>可以获取所有鉴权查询的类型。</p>
+<p>当 app 使用 https 协议发送请求时，<code>NSURLSessionDelegate</code>会收到<code>NSURLAuthenticationMethodServerTrust</code>类型的鉴权查询。不同于服务器要求验证你的app的身份，这个类型的鉴权查询提供了使你验证服务器证书的机会。大多数情况下，你应该让系统自动处理。除非你想要接受原本会被系统拒绝的服务器证书，或希望拒绝某个被系统接受的证书。<br />
+下面的代码展示了如何访问服务器证书，以及如何验证证书并接受或拒绝它：</p>
+<ul>
+<li>如果证书有效，使用<code>serverTrust</code>创建一个<code>NSURLCredential</code>实例，然后调用<code>completionHandler()</code>，传入<code>NSURLSessionAuthChallengeUseCredential</code>和 credential 对象。这样系统将接受服务器证书。</li>
+<li>如果证书无效，调用<code>completionHandler()</code>，传入<code>NSURLSessionAuthChallengeCancelAuthenticationChallenge</code>和<code>nil</code>。这样系统将拒绝服务器证书。</li>
+</ul>
+<pre class="line-numbers"><code class="language-objc">- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
+                            didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge 
+                              completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential * _Nullable credential))completionHandler {
+
+    NSURLSessionAuthChallengeDisposition disposition = NSURLSessionAuthChallengePerformDefaultHandling;
+    NSURLCredential *credential = nil;
+    
+    if (![challenge.protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust]) {
+        completionHandler(disposition, credential);
+        return;
+    }
+    
+    SecTrustRef trust = challenge.protectionSpace.serverTrust;
+    SecTrustResultType checkResult;
+    OSStatus trustEvalStatus = SecTrustEvaluate(trust, &amp;checkResult);
+    if (trustEvalStatus == errSecSuccess 
+        &amp;&amp; (checkResult == kSecTrustResultProceed 
+            || checkResult == kSecTrustResultUnspecified)) {
+            
+        credential = [NSURLCredential credentialForTrust:trust];
+        disposition = NSURLSessionAuthChallengeUseCredential;     
+    }
+    else {
+        // Show a UI here warning the user the server credentials are invalid, and cancel the load.
+        disposition = NSURLSessionAuthChallengeCancelAuthenticationChallenge;
+    }
+    
+    completionHandler(disposition, credential);
+}
+
+</code></pre>
+<p><strong>注意</strong>，参考苹果<a href="https://developer.apple.com/documentation/security/certificate_key_and_trust_services?language=objc">官方文档</a>，了解如何验证<code>SecTrustRef</code>实例或从中访问证书或实例的详细信息。</p>
+<h2><a id="nsurlconnection-vs-nsurlsession" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>NSURLConnection vs. NSURLSession</h2>
+<p><code>NSURLSession</code> 的 delegate 方法是 <code>NSURLConnection</code> 的演化的十年中对于 ad-hoc 模式的一个显著改善。您可以查看这个<a href="https://gist.github.com/floriankugler/6870499">映射表</a>来进行一个完整的概览。</p>
+<h2><a id="ats" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>ATS</h2>
+<p>在 Apple 平台上，应用程序和应用程序扩展可以使用名为*App Transport Security(ATS)*的网络安全功能，默认情况下已启用。它通过确保您的应用程序的网络连接仅使用行业标准协议和没有已知缺陷的密码，从而提高了隐私和数据完整性。这有助于让用户相信您的应用程序不会意外地将传输的数据泄露给恶意方。</p>
+<h3><a id="ats%E5%9F%BA%E6%9C%AC%E9%85%8D%E7%BD%AE" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>ATS 基本配置</h3>
+<p>通过在应用程序<code>Info.plist</code>文件中配置<code>NSAppTransportSecurity</code>键的方式自定义网络连接的安全性。<br />
+默认情况下 ATS 在 iOS 9 和 macOS 10.11 及以后的系统上默认为开启状态。启用 ATS 后，所有的http请求必须使用HTTPS协议，尝试连接不安全的HTTP协议将会失败。ATS使用<em>Transport Layer Security(TLS)</em>，协议版本<code>1.2</code>。<br />
+以下列表展示了<code>NSAppTransportSecurity</code>字典的整体结构，显示了所有可能的键，所有的键都是<em>可选(optional</em>)的<sup class="footnote-ref"><a href="#fn-6" id="fnref-6_ref" data-footnote-ref>5</a></sup>:</p>
+<pre class="line-numbers"><code class="language-plain_text">NSAppTransportSecurity : Dictionary {
+    NSAllowsArbitraryLoads : Boolean
+    NSAllowsArbitraryLoadsForMedia : Boolean
+    NSAllowsArbitraryLoadsInWebContent : Boolean
+    NSAllowsLocalNetworking : Boolean
+    NSExceptionDomains : Dictionary {
+        &lt;domain-name-string&gt; : Dictionary {
+            NSIncludesSubdomains : Boolean
+            NSExceptionAllowsInsecureHTTPLoads : Boolean
+            NSExceptionMinimumTLSVersion : String
+            NSExceptionRequiresForwardSecrecy : Boolean   // Default value is YES
+            NSRequiresCertificateTransparency : Boolean
+        }
+    }
+}
+</code></pre>
+<h3><a id="%E8%87%AA%E5%AE%9A%E4%B9%89%E9%85%8D%E7%BD%AE" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>自定义配置</h3>
+<p>有以下几种常见的自定义配置方式可供使用<sup class="footnote-ref"><a href="#fn-5" id="fnref-5_ref" data-footnote-ref>6</a></sup>：</p>
+<h4><a id="%E5%85%A8%E9%83%A8%E5%90%AF%E7%94%A8ats" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>全部启用 ATS</h4>
+<p>这是默认状态，直接使用 NSURLSession，NSURLConnection，CFURL 而不需要做任何配置。当然只能在 iOS 9 和 macOS 10.11 及以后的系统上有效。</p>
+<h4><a id="%E5%85%A8%E9%83%A8%E5%90%AF%E7%94%A8ats%EF%BC%8C%E4%BD%86%E6%9C%89%E4%B8%80%E4%BA%9B%E4%BE%8B%E5%A4%96" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>全部启用 ATS，但有一些例外</h4>
+<p>如果需要向不使用 ATS 的域发送请求，需要将这些域加入到<code>NSExceptionDomains</code>字典中。如果希望该域的所有子域全部禁用 ATS，需要设置<code>NSExceptionAllowsInsecureHTTPLoads</code>为<code>YES</code>，同时将<code>NSIncludesSubdomains</code>设置为<code>YES</code>。</p>
+<p><img src="http://www.neglectedpotential.com/wp-content/uploads/ExampleB.png" alt="所有请求均启用 ATS，但有一些例外" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<h4><a id="%E5%85%A8%E9%83%A8%E7%A6%81%E7%94%A8ats%EF%BC%8C%E4%BD%86%E6%9C%89%E4%B8%80%E4%BA%9B%E4%BE%8B%E5%A4%96" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>全部禁用 ATS，但有一些例外</h4>
+<p>如果需要全部禁用 ATS，需要设置<code>NSAllowsArbitraryLoads</code>为<code>YES</code>，则所有的请求将不会使用 ATS。如果希望在一些例外的域使用 ATS，需要将这些域加入<code>NSExceptionDomains</code>字典。每个希望启用 ATS 的域都要在字典中将<code>NSExceptionAllowsInsecureHTTPLoads</code>设置为<code>NO</code>。</p>
+<p><img src="http://www.neglectedpotential.com/wp-content/uploads/ExampleC.png" alt="全部禁用 ATS，但有一些例外" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<h4><a id="%E9%99%8D%E7%BA%A7%E7%9A%84ats" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>降级的 ATS</h4>
+<p>某些情况下你可能需要全部启用 ATS，但实际上并没有完全支持 ATS 的最佳实践。例如服务器支持 TLS1.2，但不支持<em>前向保密(forward secrecy)</em>。为了解决这个问题，可以使指定于支持 ATS，同时禁用前向保密，需要在<code>NSExceptionDomains</code>字典中加入该域，同时设置域的<code>NSExceptionRequiresForwardSecrecy</code>为<code>NO</code>。<br />
+同样，如果需要支持前向保密，而TLS版本只有<code>1.1</code>，则需要设置<code>NSExceptionMinimumTLSVersion</code>为<code>TLSv1.1</code>。</p>
+<p><img src="http://www.neglectedpotential.com/wp-content/uploads/ExampleD.png" alt="降级的 ATS" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<h4><a id="%E5%85%A8%E9%83%A8%E7%A6%81%E7%94%A8ats" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>全部禁用 ATS</h4>
+<p>如果需要全部禁用 ATS，只需将<code>NSAllowsArbitraryLoads</code>设置为<code>YES</code>。</p>
+<p><img src="http://www.neglectedpotential.com/wp-content/uploads/ExampleE.png" alt="全部禁用 ATS" class="mw_img_center" style="display: block; clear:both; margin: 0 auto;" /></p>
+<section class="footnotes" data-footnotes>
+<ol>
+<li id="fn-1">
+<p><a href="https://developer.apple.com/documentation/foundation/url_loading_system?language=objc">URL Loading System</a> <a href="#fnref-1_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-2">
+<p><a href="https://developer.apple.com/documentation/foundation/nsurlsession?language=objc">NSURLSession</a> <a href="#fnref-2_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-3">
+<p><a href="https://objccn.io/issue-5-4/">从 NSURLConnection 到 NSURLSession</a> <a href="#fnref-3_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-4">
+<p><a href="https://www.jianshu.com/p/4b5d2d47833d">iOS - HTTPS</a> <a href="#fnref-4_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-6">
+<p><a href="https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CocoaKeys.html#//apple_ref/doc/uid/TP40009251-SW33">NSAppTransportSecurity</a> <a href="#fnref-6_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-5">
+<p><a href="http://www.neglectedpotential.com/2015/06/working-with-apples-application-transport-security/">WORKING WITH APPLE’S APP TRANSPORT SECURITY</a> <a href="#fnref-5_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+</ol>
+</section>
+
+			</div>
+
+		
+	  
+		<footer>
+		 <p class="meta">
+
+			<strong>Categories:</strong>&nbsp; 
+			<span class="categories">
+			
+			    <a class='category' href='%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html'>《iOS面试之道》读书笔记</a>&nbsp;
+			 
+			</span>
+		    </p>
+		    <p class="meta">
+		      
+		 </p>
+	    
+		<div class="sharing">
+		  
+          
+
+          
+
+		</div>
+
+	    <p class="meta">
+	    
+	        <a class="basic-alignment left" href="15372506301626.html" 
+	        title="Previous Post: JavaScript for Automation(JXA) 入门">&laquo; JavaScript for Automation(JXA) 入门</a>
+	    
+	    
+	        <a class="basic-alignment right" href="15365724007469.html" 
+	        title="Next Post: 《iOS面试之道》读书笔记 - 远程通知服务器">《iOS面试之道》读书笔记 - 远程通知服务器 &raquo;</a>
+	    
+	    </p>
+	  </footer>
+	</article>
+</div>
+ <aside class="sidebar"> 
+
+	<section>
+	  <h1>Categories</h1>
+	  <ul id="recent_posts">
+	  
+	      <li class="post">
+	        <a href="%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html"><strong>《iOS面试之道》读书笔记&nbsp;(6)</strong></a>
+	        
+	        
+	        
+	      </li>
+	   
+	  </ul>
+	</section>
+	<section>
+	  <h1>Recent Posts</h1>
+	  <ul id="recent_posts">
+	  
+	      
+		      <li class="post">
+		        <a href="16566860725573.html">使用 framework 转换 XCFramework</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16558196375003.html">记一次私有 pod 发布报错</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="wan-zhuan-cocoapods-xu-yao-le.html">玩转 CocoaPods 需要了解的 Ruby 基础知识</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="16553980014674.html">使用 LLDB Python API 自动存储后台请求数据用于单元测试</a>
+		      </li>
+	     
+	  
+	      
+		      <li class="post">
+		        <a href="15372506301626.html">JavaScript for Automation(JXA) 入门</a>
+		      </li>
+	     
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	  
+	      
+	   
+	  </ul>
+	</section>
+	
+</aside> </div></div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 -  -
+  <span class="credit">Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a> &nbsp;&nbsp; Theme by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="asset/prism.js"></script>
+
+
+<style type="text/css">
+  
+/* PrismJS 1.14.0
+https://prismjs.com/download.html#themes=prism-solarizedlight&languages=markup+css+clike+javascript */
+/*
+ Solarized Color Schemes originally by Ethan Schoonover
+ http://ethanschoonover.com/solarized
+
+ Ported for PrismJS by Hector Matos
+ Website: https://krakendev.io
+ Twitter Handle: https://twitter.com/allonsykraken)
+*/
+
+/*
+SOLARIZED HEX
+--------- -------
+base03    #002b36
+base02    #073642
+base01    #586e75
+base00    #657b83
+base0     #839496
+base1     #93a1a1
+base2     #eee8d5
+base3     #fdf6e3
+yellow    #b58900
+orange    #cb4b16
+red       #dc322f
+magenta   #d33682
+violet    #6c71c4
+blue      #268bd2
+cyan      #2aa198
+green     #859900
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #657b83; /* base00 */
+  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+
+  line-height: 1.5;
+
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+  background: #073642; /* base02 */
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+  background: #073642; /* base02 */
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+  padding: 1em;
+  margin: .5em 0;
+  overflow: auto;
+  border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  background-color: #fdf6e3; /* base3 */
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+  padding: .1em;
+  border-radius: .3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #93a1a1; /* base1 */
+}
+
+.token.punctuation {
+  color: #586e75; /* base01 */
+}
+
+.namespace {
+  opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #268bd2; /* blue */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.url,
+.token.inserted {
+  color: #2aa198; /* cyan */
+}
+
+.token.entity {
+  color: #657b83; /* base00 */
+  background: #eee8d5; /* base2 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #859900; /* green */
+}
+
+.token.function,
+.token.class-name {
+  color: #b58900; /* yellow */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #cb4b16; /* orange */
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+
+pre[class*="language-"].line-numbers {
+    position: relative;
+    padding-left: 3.8em;
+    counter-reset: linenumber;
+}
+
+pre[class*="language-"].line-numbers > code {
+    position: relative;
+    white-space: inherit;
+}
+
+.line-numbers .line-numbers-rows {
+    position: absolute;
+    pointer-events: none;
+    top: 0;
+    font-size: 100%;
+    left: -3.8em;
+    width: 3em; /* works for line-numbers below 1000 lines */
+    letter-spacing: -1px;
+    border-right: 1px solid #999;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+}
+
+    .line-numbers-rows > span {
+        pointer-events: none;
+        display: block;
+        counter-increment: linenumber;
+    }
+
+        .line-numbers-rows > span:before {
+            content: counter(linenumber);
+            color: #999;
+            display: block;
+            padding-right: 0.8em;
+            text-align: right;
+        }
+
+</style>
+  
+    
+
+
+</body>
+</html>
