@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+    <meta name="renderer" content="webkit">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-transform"/>
+
+
+    <title>
+      
+    UIStackView 的另类玩法（二） - ltryee's blog
+    
+    </title>
+
+
+  <link href="asset/css/style.css" rel="stylesheet" > 
+  <link href="asset/js/xcode.min.css" rel="stylesheet">
+  <script src="asset/js/headroom.js"></script>
+
+  <!-- <link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <link rel="stylesheet" href="asset/css/font-awesome.css">
+ -->
+
+  <script src="asset/highlightjs/highlight.pack.js"></script>
+  <link href="asset/highlightjs/styles/github.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script>hljs.initHighlightingOnLoad();</script>
+
+
+  </head>
+
+  <!-- 主体开始 -->
+  <!-- <body class="" gtools_scp_screen_capture_injected="true"> -->
+  <!-- 上面为主页白底色版本 -->
+    
+<body class="bg-grey" gtools_scp_screen_capture_injected="true" data-feedly-mini="yes">
+<!-- 上面是主页灰底色版本 -->
+
+<!--[if lt IE 8]>
+<div class="browsehappy" role="dialog">
+    当前网页 <strong>不支持</strong> 你正在使用的浏览器. 为了正常的访问, 请 <a href="http://browsehappy.com/" target="_blank">升级你的浏览器</a>。
+</div>
+<![endif]-->
+<!-- 头部位置 -->
+
+<header id="header" class="header bg-white headroom">
+  <div class="navbar-container"> 
+    <a href="index.html" class="navbar-logo"><img src="asset/img/avatar.jpg"> </a>
+    <div class="navbar-menu"> 
+
+        
+        <a href="index.html">Home</a>
+        
+        <a href="archives.html">Archives</a>
+        
+        <a href="atom.xml">RSS</a>
+        
+        
+    </div> 
+    <!-- 搜索框体 -->
+    <!--  <div class="navbar-search" onclick="">
+        <span class="icon-search"></span>
+        <form id="search" method="post" action="/" role="search">
+          <span class="search-box">
+            <input type="text" id="input" class="input" name="s" required="true" placeholder="Search..." maxlength="30" autocomplete="off">
+          </span>
+        </form>
+    </div> -->
+
+    <div class="navbar-mobile-menu" onclick=""> 
+      <span class="icon-menu cross"><span class="middle"></span></span> 
+        <ul> 
+          
+          <li>
+          <a href="index.html">Home</a>
+          </li>
+          
+          <li>
+          <a href="archives.html">Archives</a>
+          </li>
+          
+          <li>
+          <a href="atom.xml">RSS</a>
+          </li>
+          
+        </ul> 
+    </div> 
+  </div> 
+</header>
+<!-- 头部结束 --> <!-- post 开始 -->
+<div class="bg-white" gtools_scp_screen_capture_injected="true" data-feedly-mini="yes">
+	<article class="main-content page-page" style="max-width: 700px;padding: 110px 25px 20px" itemscope="" itemtype="http://schema.org/Article">
+		<div class="post-header">
+			<!-- title -->
+			<div class="post-header">
+				<h1 class="post-title itemprop="name headline">UIStackView 的另类玩法（二）</h1>	
+				<div class="post-data">
+					<time datetime="2023-12-23T22:02:08+08:00" pubdate data-updated="true">2023/12/23</time>
+				</div>
+			</div>
+		</div>
+	<div id="post-content" class="post-content" itemprop="articleBody"> 
+		<p class="post-tags"> 
+		
+		<a href='iOS.html'>iOS</a>&nbsp;
+		
+		</p>
+	<!-- 正文 -->
+		<p>
+		<p>在<a href="17032606548617.html">前文</a>中，我们设计了一种基于 UIStackView 的界面布局方案，实现了样式声明与事件响应的分离。我们首先使用 UIStackView 来创建了一个登录界面，通过对代码进行重构，实现了界面声明与实现的分离，这不仅提高了代码的解耦性，还增加了代码的可复用性。最后，我们在新的架构上更进一步，增加了一个界面样式，使得界面更加丰富多样。在本文中，我们将引入面向协议编程范式和依赖注入设计模式，进一步优化代码架构。</p>
+<h2><a id="%E8%83%BD%E7%94%A8%E4%BD%86%E4%B8%8D%E5%A5%BD%E7%94%A8" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>能用但不好用</h2>
+<p>在现有的代码中，我们已经实现了一些接口。在 View Controller 中，我们利用这些接口完成界面的构建，包括控件的添加、样式的设定和事件的绑定等。而在 generator 中 ，我们实现这些接口以完成具体功能，例如绘制 UI、处理用户输入、响应事件等。</p>
+<p>为了评估接口的可用性，我们在同一界面展示了两个“登录 / 注册”模块，并修改代码以检查：</p>
+<ul>
+<li>在构建两个相同功能的界面时是否存在代码冗余？</li>
+<li>使用我们的接口构建“登录 / 注册”界面是否足够方便？</li>
+</ul>
+<p>新增一种类型的 generator，为了与原有界面有所区别，我们会在界面样式上做一点点修改<sup class="footnote-ref"><a href="#fn-%E6%96%B0%E5%A2%9Egenerator" id="fnref-%E6%96%B0%E5%A2%9Egenerator_ref" data-footnote-ref>1</a></sup>。</p>
+<pre class="line-numbers"><code class="language-swift">// FILE: AnotherElementGenerator.swift
+
+struct AnotherElementGenerator {
+    private(set) weak var containerView: UIStackView?
+    
+    func elementView(from element: ElementType) -&gt; UIView {
+        switch element {
+        case let .centeredText(title: title):
+            return createSingleLineText(title)
+        // ....
+        }
+    }
+    
+    func addArrangedElements(_ elements: [ElementType]) {
+        for element in elements {
+            let subview = elementView(from: element)
+            containerView.addArrangedSubview(subview)
+            configureView(subview, for: element)
+        }
+    }
+    
+    func configureView(_ view: UIView, for element: ElementType) {
+        switch element {
+        case let .spacer(height: height):
+            view.snp.makeConstraints { make in
+                make.height.equalTo(height)
+            }
+        default: break
+        }
+    }
+}
+
+private extension AnotherElementGenerator {
+    func createSingleLineText(_ title: String) -&gt; UILabel {
+        // ....
+    }
+    
+    // ....
+}
+</code></pre>
+<p>此时 View Controller 中的调用方式如下：</p>
+<pre class="line-numbers"><code class="language-swift">// FILE: StackViewController.swift
+
+class StackViewController: UIViewController {
+    lazy var stackView = {
+        // ....
+        return stackView
+    }()
+    
+    lazy var generator: ConcreteElementGenerator = {
+        return ConcreteElementGenerator(base: stackView)
+    }()
+
+    // 1
+    lazy var anotherStackView = {
+        // ....
+        return stackView
+    }()
+    
+    lazy var anotherGenerator: AnotherElementGenerator = {
+        return AnotherElementGenerator(base: anotherStackView)
+    }()
+    
+    override func viewDidLoad() {
+    
+        // ....
+
+        // 2
+        view.addSubview(stackView)
+        view.addSubview(anotherStackView)
+    }
+
+    func loginElementList()-&gt; [EType] {
+        return [
+            .segment(items: [&quot;登录&quot;, &quot;注册&quot;], defaultIndex: 0, onTapped: nil),
+            .spacer(height: 15),
+            .commonInput(label: &quot;User Name:&quot;, placeHolder: &quot;Email/Phone/ID&quot;, onTextChanged: { text in
+                print(&quot;User Name: \(String(describing: text))&quot;)
+            }),
+            .spacer(height: 15),
+            .commonInput(label: &quot;Password:&quot;, placeHolder: &quot;Password&quot;, onTextChanged: { text in
+                print(&quot;Password: \(String(describing: text))&quot;)
+            }),
+            .spacer(height: 10),
+            .checker(title: &quot;记住用户名&quot;, checked: false, onTapped: { checked in
+                print(&quot;checked: \(checked)&quot;)
+            }),
+            .spacer(height: 10),
+            .button(title: &quot;登录&quot;, onTapped: nil)
+        ]
+    }
+
+    func setupSubviews() {
+        let elementList = loginElementList()
+        generator.addArrangedElements(elementList)
+        
+        // 3
+        anotherGenerator.addArrangedElements(elementList)
+    }
+}
+</code></pre>
+<ol>
+<li>新增一个 UIStackView 及其使用的 generator</li>
+<li>添加 UIStackView 到界面</li>
+<li>为新增的 UIStackView 添加子控件</li>
+</ol>
+<p>代码运行结果如下：<br />
+<img src="media/17033401283300/17034913500468.jpg" alt="" style="width:300px;" /></p>
+<p>那么问题来了。</p>
+<h3><a id="%E6%8E%A5%E5%8F%A3%E5%AE%9E%E7%8E%B0%E6%98%AF%E5%90%A6%E5%AD%98%E5%9C%A8%E5%86%97%E4%BD%99" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>接口实现是否存在冗余</h3>
+<p>两个 generator 代码结构几乎一模一样，大概可以分为两部分，第一部分 <code>struct AnotherElementGenerator</code> 主要用来添加子控件，第二部分 <code>extension AnotherElementGenerator</code> 中定义了子控件的实际创建过程。</p>
+<p>在第一部分中，<code>addArrangedElements</code> 函数没有直接使用 <code>ElementType</code> 类型的枚举值，因此可以抽出公共代码。</p>
+<p>在第二部分的代码中，为了方便，我们直接复制了 <code>ConcreteElementGenerator</code>。在实际需求中，不同的 generator 可能会生成非常不同的子控件，因此这部分的代码几乎没有冗余。即使有部分子控件的样式相同，我们也可以通过抽象出工厂方法来解决。</p>
+<h3><a id="%E8%B0%83%E7%94%A8%E6%8E%A5%E5%8F%A3%E6%98%AF%E5%90%A6%E8%B6%B3%E5%A4%9F%E6%96%B9%E4%BE%BF" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>调用接口是否足够方便</h3>
+<p>在 View Controller 中，generator 的 <code>addArrangedElements</code> 函数与 UIStackView 的 <code>addArrangedSubview</code> 函数功能和参数相似，因此我们可以考虑将 <code>addArrangedElements</code> 函数迁移到 UIStackView。这样，通过调用 UIStackView 的 <code>addArrangedElements</code> 函数来添加子控件，更符合接口使用者的习惯。</p>
+<p>为了创建两个登录界面，我们需要声明两个 view 和两个 generator，这在只创建一个登录界面时不明显，但在多个界面时显得繁琐。因此，我们需要在 View Controller 的属性选择中做出决定，是保留 view 还是 generator？考虑到 generator 的接口只在调用 <code>addArrangedElements</code> 时使用，并且我们已经决定将 <code>addArrangedElements</code> 函数迁移到 view，View Controller 将不再直接调用 generator 的函数，除了创建 generator。同时，View Controller 持有 view 是合理的，因为无论如何，View Controller 都需要写 <code>addSubview</code>。</p>
+<p>总的来说，我们的代码修改将主要关注 view 和 generator 之间的依赖关系。当前的实现是 generator 弱引用 view，但在接下来的重构中，我们将改为 view 引用 generator。</p>
+<p>我们的目标是将接口的调用方式改为：</p>
+<pre class="line-numbers"><code class="language-swift">// FILE: StackViewController.swift
+
+class StackViewController: UIViewController {
+    lazy var stackView = {
+        // ....
+        return stackView
+    }()
+    
+    override func viewDidLoad() {
+        // ....
+        setupSubviews() 
+    }
+    
+    func setupSubviews() {
+        // ....
+        stackView.addArrangedElements(elementList)
+    }
+}
+</code></pre>
+<p>而 view 如何引用 generator 将放在下一个章节讨论。</p>
+<h2><a id="%E8%A7%A3%E5%86%B3%E9%97%AE%E9%A2%98" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>解决问题</h2>
+<h3><a id="%E4%BD%BF%E7%94%A8%E5%8D%8F%E8%AE%AE" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>使用协议</h3>
+<p>在对比两个 generator 的代码后，我们发现了一些共同的逻辑。我们可以通过定义<strong>协议</strong>来描述这些共性的代码执行逻辑，并为该协议添加默认实现。</p>
+<pre class="line-numbers"><code class="language-swift">// FILE: ElementGenerator.swift
+
+// 1
+protocol ElementGenerator {
+    
+    /// 向 stack view 添加子控件
+    /// - Parameters:
+    ///   - elements: 子控件列表
+    ///   - stackView: stack view
+    func addArrangedElements(_ elements: [ElementType], to stackView: UIStackView)
+    
+    /// 根据子控件类型描述生成子控件
+    /// - Parameter element: 子控件类型描述
+    /// - Returns: 子控件
+    func elementView(from element: ElementType) -&gt; UIView
+    
+    /// 在子控件添加到 stack view 之后，继续设置子控件的属性
+    /// - Parameters:
+    ///   - view: 子控件
+    ///   - element: 子控件描述
+    func configureView(_ view: UIView, for element: ElementType)
+}
+
+extension ElementGenerator {
+    // 2
+    func addArrangedElements(_ elements: [ElementType], to stackView: UIStackView) -&gt; Void {
+        for element in elements {
+            let subview = elementView(from: element)
+            stackView.addArrangedSubview(subview)
+            configureView(subview, for: element)
+        }
+    }
+}
+</code></pre>
+<ol>
+<li><code>ElementGenerator</code> 声明了生成并添加子控件的流程，整个流程分为三个函数。</li>
+<li><code>ElementGenerator</code> 的扩展中定义了 <code>addArrangedElements</code> 的默认实现。因为 <code>addArrangedElements</code> 函数没有直接使用 <code>ElementType</code> 的具体值，且内部调用了 <code>elementView(from:) -&gt; UIView</code> 和 <code>configureView(_:for:)</code> 函数，因此可以在协议中直接写成默认实现。</li>
+</ol>
+<p>观察协议代码，我们发现 <code>ElementGenerator</code> 协议和 <code>ElementType</code> 仍然紧密耦合。在实际需求中，generator 和子控件类型通常没有如此紧密的联系，generator 生成其他类型的子控件也是合理的。比如，我们在 demo 中实现了一个登录界面，下一个需求可能是实现一个信息流列表页，所使用的子控件类型会有很大的不同。</p>
+<p>当协议 <code>ElementGenerator</code> 和 <code>ElementType</code> 紧密相关时，它们之间的耦合性较高，这意味着更改其中一个可能会影响到另一个。在实际开发中，generator 应该具有更高的灵活性，能够生成各种类型的子控件，而不仅仅限于一种特定的 <code>ElementType</code>。为了降低耦合性，可以使用泛型来设计 <code>ElementGenerator</code> 协议。这样，生成器可以指定生成任意类型的子控件。Swift 支持在协议中使用关联类型（associated types）来实现类似泛型的功能<sup class="footnote-ref"><a href="#fn-%E6%96%B0%E5%A2%9Egenerator%E5%8D%8F%E8%AE%AE" id="fnref-%E6%96%B0%E5%A2%9Egenerator%E5%8D%8F%E8%AE%AE_ref" data-footnote-ref>2</a></sup>。</p>
+<pre class="line-numbers"><code class="language-swift">// FILE: ElementGenerator.swift
+
+protocol ElementGenerator {
+    // 1
+    associatedtype EType
+    
+    /// 向 stack view 添加子控件
+    /// - Parameters:
+    ///   - elements: 子控件列表
+    ///   - stackView: stack view
+    func addArrangedElements(_ elements: [EType], to stackView: UIStackView)
+    
+    /// 根据子控件类型描述生成子控件
+    /// - Parameter element: 子控件类型描述
+    /// - Returns: 子控件
+    func elementView(from element: EType) -&gt; UIView
+    
+    /// 在子控件添加到 stack view 之后，继续设置子控件的属性
+    /// - Parameters:
+    ///   - view: 子控件
+    ///   - element: 子控件描述
+    func configureView(_ view: UIView, for element: EType)
+}
+
+extension ElementGenerator {
+    func addArrangedElements(_ elements: [EType], to stackView: UIStackView) -&gt; Void {
+        for element in elements {
+            let subview = elementView(from: element)
+            stackView.addArrangedSubview(subview)
+            configureView(subview, for: element)
+        }
+    }
+}
+</code></pre>
+<ol>
+<li>通过引入关联类型，可以定义一个可以使用任意类型元素 <code>EType</code> 的 <code>ElementGenerator</code> 协议。</li>
+</ol>
+<p>此时只需对 <code>ConcreteElementGenerator</code> 和 <code>AnotherElementGenerator</code> 稍加改造，使其遵守 <code>ElementGenerator</code> 协议，即可自动获得 <code>addArrangedElements</code> 函数。</p>
+<pre class="line-numbers"><code class="language-swift">// FILE: ConcreteElementGenerator.swift
+
+struct ConcreteElementGenerator: ElementGenerator {
+    // 1
+    typealias EType = ElementType
+    
+    // ....
+    
+    //2
+    func elementView(from element: EType) -&gt; UIView {
+        switch element {
+            // ....
+        }
+    }
+}
+</code></pre>
+<ol>
+<li>设置类型别名，用 <code>EType</code> 表示 <code>ElementType</code>。</li>
+<li>实现协议方法时就可以直接使用 <code>EType</code>，此时类型推断系统会正确地把协议中的关联类型 <code>EType</code> 推断为 <code>ElementType</code>。</li>
+</ol>
+<p>通过这种方式，<code>ElementGenerator</code> 协议就不再与任何特定的 <code>ElementType</code> 耦合，提高了代码的可维护性和可扩展性。进而确保 <code>ElementGenerator</code> 协议的通用性和灵活性，使其能够适应不同的开发需求，同时减少了代码间的依赖，便于后续的扩展和维护。</p>
+<h3><a id="%E4%BD%BF%E7%94%A8%E6%B3%9B%E5%9E%8B" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>使用泛型</h3>
+<p>接下来考虑 UIStackView 的改造。前面章节已提到，我们要让 UIStackView 持有一个 generator，并且为 UIStackView 添加一个函数 <code>addArrangedElements</code>。我们添加这个函数的目的是使得添加子控件更符合开发者的习惯，因为直接通过 view 添加子控件，比通过 generator 完成相同功能，更易于开发者理解。</p>
+<pre class="line-numbers"><code class="language-swift">func addArrangedElements&lt;E&gt;(_ elements: [E]) -&gt; Void where E == EType {
+    elementGenerator.addArrangedElements(elements, to: self)
+}
+</code></pre>
+<p>其中：</p>
+<ul>
+<li><code>EType</code> 表示子控件类型，对应 demo 中的 <code>ElementType</code>。</li>
+<li><code>E</code> 表示函数入参的类型。这里给函数加了约束，入参的子控件类型（<code>E</code>）必须与 <code>EType</code> 相同。</li>
+</ul>
+<p>接下来，我们需要考虑如何让 UIStackView 持有一个 generator。新建一个 <code>ElementStackView</code> 继承自 <code>UIStackView</code>，并增加一个 elementGenerator 属性。</p>
+<pre class="line-numbers"><code class="language-swift">// FILE: StackViewExtention.swift
+
+class ElementStackView&lt;T: ElementGenerator&gt;: UIStackView {
+    // 1
+    typealias EType = T.EType
+    
+    // 2
+    let elementGenerator: T
+    
+    // 3
+    init(elementGenerator: T) {
+        self.elementGenerator = elementGenerator
+        super.init(frame: CGRectZero)
+    }
+    
+    required init(coder: NSCoder) {
+        fatalError(&quot;init(coder:) has not been implemented&quot;) 
+    }
+    
+    func addArrangedElements&lt;E&gt;(_ elements: [E]) -&gt; Void where E == EType {
+        elementGenerator.addArrangedElements(elements, to: self)
+    }
+}
+</code></pre>
+<p>在 View Controller 中使用如下方式调用 <code>ElementStackView</code>：</p>
+<pre class="line-numbers"><code class="language-swift">// FILE: StackViewController.swift
+
+class StackViewController: UIViewController {
+    
+    lazy var stackView = {
+        // 4
+        let stackView = ElementStackView&lt;ConcreteElementGenerator&gt;(elementGenerator: ConcreteElementGenerator())
+        stackView.axis = .vertical
+        stackView.distribution = .equalSpacing
+        stackView.alignment = .fill
+        stackView.backgroundColor = .lightGray.withAlphaComponent(0.1)
+        return stackView
+    }()
+    
+    // ....
+    
+    func setupSubviews() {
+        let elementList = loginElementList()
+        
+        // 5
+        stackView.addArrangedElements(elementList)
+    }
+
+}
+</code></pre>
+<ol>
+<li><code>EType</code> 表示子控件类型，对应 demo 中的 <code>ElementType</code>。</li>
+<li>新增的 generator 属性，这里使用泛型指定 generator 的类型。</li>
+<li><code>ElementStackView</code> 的构造器。</li>
+<li>生成 stackView。</li>
+<li>调用 <code>ElementStackView</code> 的函数添加子控件。</li>
+</ol>
+<p>我们注意到，在创建 <code>stackView</code> 的代码中，我们指定了 <code>ConcreteElementGenerator</code> 泛型类型并创建了一个此类型的结构体，这种使用方式较为繁琐。理想情况下，<code>ConcreteElementGenerator</code> 应只出现一次，既声明了泛型类型，又能生成此类型的结构体。这里有两种实现方式：一种是将 <code>2</code> 处改为 <code>lazy</code> 属性，根据传入的泛型类型创建 generator 结构体；另一种是在 <code>3</code> 处的构造器上加入默认参数，创建一个 generator 结构体。无论选择哪种方案，我们都需要为 <code>ElementGenerator</code> 协议添加一个构造器 <sup class="footnote-ref"><a href="#fn-%E6%A0%B9%E6%8D%AE%E6%B3%9B%E5%9E%8B%E7%B1%BB%E5%9E%8B%E8%87%AA%E5%8A%A8%E7%94%9F%E6%88%90Generator" id="fnref-%E6%A0%B9%E6%8D%AE%E6%B3%9B%E5%9E%8B%E7%B1%BB%E5%9E%8B%E8%87%AA%E5%8A%A8%E7%94%9F%E6%88%90Generator_ref" data-footnote-ref>3</a></sup>。</p>
+<pre class="line-numbers"><code class="language-swift">// FILE: ElementGenerator.swift
+
+protocol ElementGenerator {
+    associatedtype EType
+    
+    init()
+    
+    /// 向 stack view 添加子控件
+    /// - Parameters:
+    ///   - elements: 子控件列表
+    ///   - stackView: stack view
+    func addArrangedElements(_ elements: [EType], to stackView: UIStackView)
+    
+    /// 根据子控件类型描述生成子控件
+    /// - Parameter element: 子控件类型描述
+    /// - Returns: 子控件
+    func elementView(from element: EType) -&gt; UIView
+    
+    /// 在子控件添加到 stack view 之后，继续设置子控件的属性
+    /// - Parameters:
+    ///   - view: 子控件
+    ///   - element: 子控件描述
+    func configureView(_ view: UIView, for element: EType)
+}
+</code></pre>
+<p>在 <code>ElementStackView</code> 中使用 lazy 属性创建 <code>elementGenerator</code>：</p>
+<pre class="line-numbers"><code class="language-swift">// FILE: StackViewExtention.swift
+
+class ElementStackView&lt;T: ElementGenerator&gt;: UIStackView {
+    typealias EType = T.EType
+    
+    lazy var elementGenerator: T = T()
+    
+    func addArrangedElements&lt;E&gt;(_ elements: [E]) -&gt; Void where E == EType {
+        elementGenerator.addArrangedElements(elements, to: self)
+    }
+}
+</code></pre>
+<p>或给 <code>ElementStackView</code> 的构造器加上默认参数：</p>
+<pre class="line-numbers"><code class="language-swift">class ElementStackView&lt;T: ElementGenerator&gt;: UIStackView {
+    typealias EType = T.EType
+    
+    let elementGenerator: T
+    
+    init(elementGenerator: T = T()) {
+        self.elementGenerator = elementGenerator
+        super.init(frame: CGRectZero)
+    }
+    
+    required init(coder: NSCoder) {
+        fatalError(&quot;init(coder:) has not been implemented&quot;) 
+    }
+    
+    func addArrangedElements&lt;E&gt;(_ elements: [E]) -&gt; Void where E == EType {
+        elementGenerator.addArrangedElements(elements, to: self)
+    }
+}
+</code></pre>
+<p>通过对比很容易发现，使用 lazy 属性创建 <code>elementGenerator</code> 这种实现方式更加简洁。因为它避免了初始化时的复杂设置，将创建逻辑保持在属性的访问逻辑中。同时 lazy 属性可以提高性能，因为它们仅在需要时才创建，这避免了不必要的计算和内存使用。然而，开发者需要根据具体场景考虑是否需要立即初始化属性，以及多线程环境下的线程安全问题。在那些不需要立即使用属性或者初始化开销较大的场景中，lazy 属性是一个很好的选择。</p>
+<h3><a id="%E4%BD%BF%E7%94%A8%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5dependency-injection" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>使用依赖注入(Dependency Injection)</h3>
+<p>在上一章节中，我们为 <code>ElementGenerator</code> 协议添加了一个构造器，以满足 <code>ElementStackView</code> 中创建 generator 的需求。但在协议中声明一个构造器显得有些突兀，我们希望找到一种方案，能移除协议中的构造器，同时不影响 <code>ElementStackView</code> 使用 generator。</p>
+<p>因此，我们将使用依赖注入（Dependency Injection）技术来继续完善解决方案。依赖注入是一种设计模式，它允许将依赖（如服务或对象）传递给使用它们的组件，而不是让组件自己构建依赖。这样做的好处是可以增加组件的可测试性、可维护性和模块化。在 <code>ElementGenerator</code> 协议中声明构造器可能会导致实现该协议的类型必须实现特定的构造器，这限制了类型的灵活性。通过使用依赖注入，我们可以移除协议中的构造器声明，而是在需要使用 <code>ElementGenerator</code> 的地方（如 <code>ElementStackView</code>）将其作为参数传递进去。</p>
+<p>Resolver 是一个轻量级的依赖注入框架，它为 Swift 应用程序提供了服务定位和依赖注入的功能。使用 Resolver 可以帮助开发者管理对象的生命周期和依赖关系<sup class="footnote-ref"><a href="#fn-%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5" id="fnref-%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5_ref" data-footnote-ref>4</a></sup>：</p>
+<pre class="line-numbers"><code class="language-swift">// FILE: StackViewController.swift
+
+import Resolver
+
+extension Resolver: ResolverRegistering {
+    public static func registerAllServices() {
+        // 1
+        register {
+            ConcreteElementGenerator()
+        }.scope(.application)
+    }
+}
+</code></pre>
+<pre class="line-numbers"><code class="language-swift">// FILE: StackViewExtension.swift
+
+class ElementStackView&lt;T: ElementGenerator&gt;: UIStackView {
+    typealias EType = T.EType
+    
+    // 2
+    @LazyInjected var elementGenerator: T
+
+    func addArrangedElements&lt;E&gt;(_ elements: [E]) -&gt; Void where E == EType {
+        elementGenerator.addArrangedElements(elements, to: self)
+    }
+}
+</code></pre>
+<ol>
+<li>将<code>ConcreteElementGenerator</code>的实现类注册到 Resolver 的容器中。</li>
+<li>通过 Resolver 来解析依赖的 generator</li>
+</ol>
+<p>利用 Resolver 库，我们可以方便地将依赖注入到需要它们的对象中，而不必在协议中定义构造器。这种方法简化了 ElementStackView 和 ElementGenerator 的实现，使得它们之间的关系更加灵活和松耦合。通过 Resolver，开发者可以更容易地管理和配置依赖关系，同时保持代码的清晰和可维护性，同时也便于单元测试，因为可以很容易地为 ElementStackView 提供模拟的 ElementGenerator 实现。使用依赖注入库如 Resolver，可以让我们的应用架构更加模块化，易于测试和扩展。</p>
+<h2><a id="%E6%80%BB%E7%BB%93" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>总结</h2>
+<h3><a id="%E4%BC%98%E5%8C%96%E5%9F%BA%E4%BA%8Euistackview%E7%9A%84%E7%95%8C%E9%9D%A2%E5%B8%83%E5%B1%80%E6%96%B9%E6%A1%88" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>优化基于UIStackView的界面布局方案</h3>
+<p>在本文中我们继续对基于 UIStackView 的界面布局方案进行优化，引入了面向协议编程范式和依赖注入设计模式。</p>
+<ul>
+<li>
+<p>引入面向协议编程范式：面向协议编程(Protocol-Oriented Programming, POP)是 Swift 语言的核心范式之一，它强调了在设计接口和交互时使用协议来定义蓝图，并通过扩展来提供默认实现。在布局方案中应用POP可以使得各个组件的职责更加明确，同时增加了代码的复用性和可维护性。</p>
+</li>
+<li>
+<p>应用依赖注入设计模式：依赖注入(Dependency Injection, DI)是一种设计模式，用于减少代码之间的耦合关系。通过这种方式，一个对象的依赖关系是由外部传入，而不是由对象自己创建。在布局方案中，通过依赖注入可以动态地向<code>UIStackView</code>中的<code>ElementStackView</code>提供<code>ElementGenerator</code>实例，这样做可以降低模块间的直接依赖，提高模块的可测试性和灵活性。</p>
+</li>
+<li>
+<p>移除冗余代码：利用依赖注入和面向协议的范式，我们能够移除一些在<code>ElementStackView</code>和<code>ElementGenerator</code>之间硬编码的构造器调用，从而减少冗余代码。这种优化使得代码更加简洁，降低了出错的可能性，并且使得未来的维护和扩展变得更加容易。</p>
+</li>
+<li>
+<p>降低模块间耦合：通过将 <code>ElementGenerator</code> 的创建和配置从 <code>ElementStackView</code> 中分离出来，我们降低了这两个模块之间的耦合度。使用 Resolver 库作为依赖注入的工具，进一步抽象了对象创建的过程，使得 <code>ElementStackView</code> 不再依赖于具体的 <code>ElementGenerator</code> 实现，而是依赖于一个能够产生 <code>ElementGenerator</code> 的抽象。</p>
+</li>
+<li>
+<p>提升接口的易用性：在这个优化过程中，<code>ElementStackView</code> 的使用者不再需要关心如何创建<code>ElementGenerator</code>，只需要关注如何使用它。通过简化接口，使得其他开发者能够更加容易地使用和集成 <code>ElementStackView</code>，无需深入了解其内部实现细节。</p>
+</li>
+</ul>
+<h4><a id="%E7%BB%93%E8%AE%BA" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>结论</h4>
+<ul>
+<li>通过引入面向协议编程范式和依赖注入设计模式，我们优化了基于<code>UIStackView</code>的界面布局方案。</li>
+<li>这些改进不仅减少了代码的冗余，还降低了模块间的耦合，同时提高了整体代码的易用性和可维护性。</li>
+<li>这种灵活的设计使得界面组件更加通用和可配置，为后续的功能扩展和维护奠定了良好的基础。</li>
+</ul>
+<h3><a id="%E8%A1%A1%E9%87%8F%E6%A8%A1%E5%9D%97%E2%80%9C%E5%A5%BD%E7%94%A8%E2%80%9D%E6%80%A7%E7%9A%84%E5%88%A4%E6%96%AD%E6%A0%87%E5%87%86" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>衡量模块“好用”性的判断标准</h3>
+<p>在衡量一个模块是否“好用”的过程中，我们提出了两点判断标准，即在完成两个相同功能时模块内部是否存在代码冗余，以及使用模块对外公开的接口是否足够方便。</p>
+<h4><a id="%E4%BB%A3%E7%A0%81%E5%86%97%E4%BD%99%E7%A8%8B%E5%BA%A6" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>代码冗余程度</h4>
+<ul>
+<li>代码冗余是指在模块内部进行功能开发时，相同或相似的代码被重复编写的情况。这不仅会导致项目体积增大，还会增加维护成本和出错的风险。</li>
+<li>一个“好用”的模块应该最大限度地减少代码冗余。通过函数复用、面向协议编程、设计模式等技术手段，可以有效地避免冗余代码的产生。</li>
+</ul>
+<h4><a id="%E6%8E%A5%E5%8F%A3%E7%9A%84%E4%BE%BF%E5%88%A9%E6%80%A7" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>接口的便利性</h4>
+<ul>
+<li>接口的便利性涉及到模块对外提供的 API 是否简洁明了，是否能够让使用者容易理解和使用，以及是否能够方便地与其他模块或系统集成。</li>
+<li>一个“好用”的模块应该提供清晰、文档化良好的公共接口，隐藏内部实现细节，减少使用者的学习成本，使得接口的使用直观且容易。</li>
+</ul>
+<h4><a id="%E7%BB%93%E8%AE%BA" class="anchor" aria-hidden="true"><span class="octicon octicon-link"></span></a>结论</h4>
+<ul>
+<li>衡量模块“好用”性的两个重要指标是内部的代码冗余程度和对外公开接口的便利性。</li>
+<li>优秀的模块设计应该力求在这两个方面都做到最优，以提供高效、简洁、易于维护和扩展的代码，确保模块的高可用性和良好的用户体验。</li>
+</ul>
+<section class="footnotes" data-footnotes>
+<ol>
+<li id="fn-%E6%96%B0%E5%A2%9Egenerator">
+<p><a href="https://gist.github.com/ltryee/b21a41c0c62a8dacfb1dc8f5a03ff31e">https://gist.github.com/ltryee/b21a41c0c62a8dacfb1dc8f5a03ff31e</a> <a href="#fnref-%E6%96%B0%E5%A2%9Egenerator_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-%E6%96%B0%E5%A2%9Egenerator%E5%8D%8F%E8%AE%AE">
+<p><a href="https://gist.github.com/ltryee/333d41118a5c3450b2bdf8739eef14b4">https://gist.github.com/ltryee/333d41118a5c3450b2bdf8739eef14b4</a> <a href="#fnref-%E6%96%B0%E5%A2%9Egenerator%E5%8D%8F%E8%AE%AE_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-%E6%A0%B9%E6%8D%AE%E6%B3%9B%E5%9E%8B%E7%B1%BB%E5%9E%8B%E8%87%AA%E5%8A%A8%E7%94%9F%E6%88%90Generator">
+<p><a href="https://gist.github.com/ltryee/08a22ed5f8be4635ea112c52ba6ca200">https://gist.github.com/ltryee/08a22ed5f8be4635ea112c52ba6ca200</a> <a href="#fnref-%E6%A0%B9%E6%8D%AE%E6%B3%9B%E5%9E%8B%E7%B1%BB%E5%9E%8B%E8%87%AA%E5%8A%A8%E7%94%9F%E6%88%90Generator_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+<li id="fn-%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5">
+<p><a href="https://gist.github.com/ltryee/932f9bb617e059155911a637acfe4ce0">https://gist.github.com/ltryee/932f9bb617e059155911a637acfe4ce0</a> <a href="#fnref-%E4%BE%9D%E8%B5%96%E6%B3%A8%E5%85%A5_ref" class="footnote-backref" data-footnote-backref aria-label="Back to content">&#8617;<a></p>
+</li>
+</ol>
+</section>
+
+		</p>
+		<!-- 侧边导航条 -->
+		<div id="directory-content" class="directory-content">
+    		<div id="directory" style="margin-left: 50px;margin-top: 120px"></div>
+		</div>
+	<!-- JS -->
+	<script>
+		var postDirectoryBuild = function() {
+		    var postChildren = function children(childNodes, reg) {
+		        var result = [],
+		            isReg = typeof reg === 'object',
+		            isStr = typeof reg === 'string',
+		            node, i, len;
+		        for (i = 0, len = childNodes.length; i < len; i++) {
+		            node = childNodes[i];
+		            if ((node.nodeType === 1 || node.nodeType === 9) &&
+		                (!reg ||
+		                isReg && reg.test(node.tagName.toLowerCase()) ||
+		                isStr && node.tagName.toLowerCase() === reg)) {
+		                result.push(node);
+		            }
+		        }
+		        return result;
+		    },
+		    createPostDirectory = function(article, directory, isDirNum) {
+		        var contentArr = [],
+		            titleId = [],
+		            levelArr, root, level,
+		            currentList, list, li, link, i, len;
+		        levelArr = (function(article, contentArr, titleId) {
+		            var titleElem = postChildren(article.childNodes, /^h\d$/),
+		                levelArr = [],
+		                lastNum = 1,
+		                lastRevNum = 1,
+		                count = 0,
+		                guid = 1,
+		                id = 'directory' + (Math.random() + '').replace(/\D/, ''),
+		                lastRevNum, num, elem;
+		            while (titleElem.length) {
+		                elem = titleElem.shift();
+		                contentArr.push(elem.innerHTML);
+		                num = +elem.tagName.match(/\d/)[0];
+		                if (num > lastNum) {
+		                    levelArr.push(1);
+		                    lastRevNum += 1;
+		                } else if (num === lastRevNum ||
+		                    num > lastRevNum && num <= lastNum) {
+		                    levelArr.push(0);
+		                    lastRevNum = lastRevNum;
+		                } else if (num < lastRevNum) {
+		                    levelArr.push(num - lastRevNum);
+		                    lastRevNum = num;
+		                }
+		                count += levelArr[levelArr.length - 1];
+		                lastNum = num;
+		                elem.id = elem.id || (id + guid++);
+		                titleId.push(elem.id);
+		            }
+		            if (count !== 0 && levelArr[0] === 1) levelArr[0] = 0;
+
+		            return levelArr;
+		        })(article, contentArr, titleId);
+		        currentList = root = document.createElement('ul');
+		        dirNum = [0];
+		        for (i = 0, len = levelArr.length; i < len; i++) {
+		            level = levelArr[i];
+		            if (level === 1) {
+		                list = document.createElement('ul');
+		                if (!currentList.lastElementChild) {
+		                    currentList.appendChild(document.createElement('li'));
+		                }
+		                currentList.lastElementChild.appendChild(list);
+		                currentList = list;
+		                dirNum.push(0);
+		            } else if (level < 0) {
+		                level *= 2;
+		                while (level++) {
+		                    if (level % 2) dirNum.pop();
+		                    currentList = currentList.parentNode;
+		                }
+		            }
+		            dirNum[dirNum.length - 1]++;
+		            li = document.createElement('li');
+		            link = document.createElement('a');
+		            link.href = '#' + titleId[i];
+		            link.innerHTML = !isDirNum ? contentArr[i] :
+		                dirNum.join('.') + ' ' + contentArr[i] ;
+		            li.appendChild(link);
+		            currentList.appendChild(li);
+		        }
+		        directory.appendChild(root);
+		    };
+		    createPostDirectory(document.getElementById('post-content'),document.getElementById('directory'), true);
+		};
+		postDirectoryBuild();
+	</script>	
+	<!-- 版权声明 -->
+		<p class="post-info" style="color: #BCBDB6">
+				本文由 <a style="color: #BCBDB6" href="#">Ltryee
+				</a> 创作，采用 <a style="color: #BCBDB6" href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="external nofollow">知识共享署名4.0</a> 国际许可协议进行许可<br>本站文章除注明转载/出处外，均为本站原创或翻译，转载前请务必署名<br>最后编辑时间为: 2023-12-23T22:02:08+08:00
+		</p>
+	<!-- 导航 -->
+			<div id="comments" class="clearfix" style="padding: 0px;">
+				<footer class="post-footer clearfix">	    			
+				    <div class="meta">
+					    
+					    	
+					        <a href="17032606548617.html" 
+					        title="Next Post: UIStackView 的另类玩法（一）">UIStackView 的另类玩法（一） &raquo;</a>
+					    </p> 
+					    
+				    </div>
+			  	</footer>
+	<!-- footer end -->
+			</div>		
+	</div>
+</article>
+			<!-- 评论区 -->
+			<div id="respond-post-269" class="comment-container"> 
+				<div id="comments" class="clearfix">
+
+				<script type="text/javascript" src="asset/Hashover/hashover.js"></script>
+<noscript>You must have JavaScript enabled to use the comments.</noscript>
+
+<!-- 评论区结束 -->
+					<div>
+					
+					<div id="disqus_thread"></div>
+					
+					</div>
+
+				</div>
+			</div>
+</div>
+<!-- headroom -->
+<script type="text/javascript"> 
+(function() {
+    var header = new Headroom(document.querySelector("#header"), {
+        tolerance: 3,
+        offset : 80,
+        classes: {
+          initial: "animated",
+          pinned: "slideDown",
+          unpinned: "slideUp"
+        }
+    });
+    header.init();
+}());
+</script>  <footer id="footer" class="footer" style="background-color: #030501;color: #FFFFFE;">
+  <div class="footer-meta">
+    <div class="footer-container">
+      <!-- 版权说明 -->
+      <div class="meta-item meta-copyright">
+        <div class="meta-copyright-info">
+          <h2 class="meta-title">INFO</h2>
+          <div class="info-text">  
+              <p>Copyright &copy; 2017 <br>
+              <span class="credit">Powered by 
+              <a target="_blank" href="http://zh.mweb.im/">MWeb</a> 
+              </span>
+              <p>Theme Design by <a href="https://www.linpx.com/" target="_blank">Chakhsu</a></p>
+              <p>Migrating to Mweb by <a href="http://metaidea.cn">idken</a></p>
+              </p> 
+          </div>                  
+        </div>
+      </div>  
+      <!-- Categories -->
+      <div class="meta-item meta-comments">
+          <h2 class="meta-title">CATEGORIES</h2>  
+             
+            
+            <li>
+            <a href="%E3%80%8AiOS%E9%9D%A2%E8%AF%95%E4%B9%8B%E9%81%93%E3%80%8B%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0.html">《iOS面试之道》读书笔记&nbsp;(5)</a>
+            <p>
+            
+            </p>
+            </li>
+            
+             
+            
+            <li>
+            <a href="iOS.html">iOS&nbsp;(10)</a>
+            <p>
+            
+            </p>
+            </li>
+            
+             
+            
+            <li>
+            <a href="%E5%85%B6%E4%BB%96.html">其他&nbsp;(3)</a>
+            <p>
+            
+            </p>
+            </li>
+            
+             
+            
+            <li>
+            <a href="CocoaPods.html">CocoaPods&nbsp;(3)</a>
+            <p>
+            
+            </p>
+            </li>
+            
+             
+            
+            </p>
+            </li>
+            
+             
+      </div>
+      <!-- 最新文章 -->
+      <div class="meta-item meta-comments">
+          <h2 class="meta-title">RECENT POSTS</h2>
+
+          
+          
+         <li>
+           <a href="17033401283300.html">UIStackView 的另类玩法（二）</a><br>
+         </li>
+          
+          
+          
+         <li>
+           <a href="17032606548617.html">UIStackView 的另类玩法（一）</a><br>
+         </li>
+          
+          
+          
+         <li>
+           <a href="16566860725573.html">使用 framework 转换 XCFramework</a><br>
+         </li>
+          
+          
+          
+         <li>
+           <a href="16558196375003.html">记一次私有 pod 发布报错</a><br>
+         </li>
+          
+          
+          
+         <li>
+           <a href="wan-zhuan-cocoapods-xu-yao-le.html">玩转 CocoaPods 需要了解的 Ruby 基础知识</a><br>
+         </li>
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+           
+
+      </div>
+  </div>
+</div>
+</footer>
+
+<!--评论变量判断 -->
+
+<script type="text/javascript">
+    var disqus_shortname = 'ltryee'; 
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+
+<script type="text/javascript">
+var disqus_shortname = 'ltryee'; 
+
+(function () {
+var s = document.createElement('script'); s.async = true;
+s.type = 'text/javascript';
+s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+(document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+}());
+</script>
+      
+<!-- 评论end -->
+
+
+
+</body>
+</html>
