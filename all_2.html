@@ -10,7 +10,7 @@
 
     <title>
       
-    Xcode - ltryee's blog
+    ltryee's blog
     
     </title>
 
@@ -97,35 +97,28 @@
 					<div class="post-list-item-container">
  <!-- 自定post背景图 -->
 					 
-						<div class="item-thumb bg-deepgrey" style="background-image:url(media/16553980014674/17037808318750.jpg);">
+                         	<div class="item-thumb bg-deepgrey" style="background-image:url();">
 						
 						</div> 
-						<a href="16553980014674.html"> 
+						<a href="14822246957408.html"> 
 							<div class="item-desc"> 
 								<p>
-已有方法
-基于 LLDB Python API 的方案
+提升性能的几种方法
 
-方法简介
-环境准备
-存储流程
-
-
-最佳实践
-
-LLDB 的 Python 环境
-Python REPL
-导入自定义命令
-查看已导入 lldb 的自定义命令
-Python API 中的 lldb 模块
+光栅化
+裁剪图片
+圆角遮罩
+圆角背景图
+文本视图类上实现圆角
 
 
 总结
-参考
 
 
-在编写单元测试的过程中，我们经常需要编写一类用例，用于验证后台返回的数据的正确性。
-其中，用于验证的数据如何取得，受限于发送请求的安全性要求，一般 app 发送网络请求时会在数据中加入一些校验、防刷的额外信息，导致请求数据内容严重依赖于 app 上下文环境。目前获取后台响应数据主要有两种方法，一种是在 app 中发起真</p> 
+圆角是iOS系统中常见的视觉样式，从系统图标到导航栏按钮，圆角无处不在。因为圆角是符合人类视觉安全体验的，圆角让人觉得舒适，而尖角在潜意识层次是具有伤害体验的，因为尖尖的东西总是有可能对人造成伤害的，所以我们更喜欢圆角。在iOS开发过程中，苹果提供了一种添加圆角的方法，简单暴力有效，但并不是所有的开发者都清楚原理，因此设置圆角有时会带来一定的性能损耗。
+上一篇文章从理论上介绍设置圆角方法，性能损耗的原因这两方面展开讨论。本文将从具体项目的实践中介绍如何避免性能损耗。
+提升性能的几种方法
+前文已经</p> 
 							</div> 
 						</a> 
 <!-- 自定义Post颜色 -->
@@ -136,7 +129,7 @@ Python API 中的 lldb 模块
 						<div class="item-slant"></div>
 		 				<div class="item-label">
 	  						<div class="item-title">
-	  							<a href="16553980014674.html">使用 LLDB Python API 自动存储后台请求数据用于单元测试</a>
+	  							<a href="14822246957408.html">iOS 控件设置圆角（下）</a>
 	  						</div>
 		   					<div class="item-meta clearfix"> 
 <!-- 自定义Icon -->
@@ -147,126 +140,7 @@ Python API 中的 lldb 模块
 
 		   						<div class="item-meta-cat">
 	  							
-			    			<a class='category' href='Xcode.html'>Xcode</a>
-								
-			    			<a class='category' href='HowTo.html'>HowTo</a>
-								
-		   						</div> 
-		   					</div> 
-		   					
-		   				</div> 
-   					</div>
- 				</div>
- 			
-				<div class="post-list-item">
-					<div class="post-list-item-container">
- <!-- 自定post背景图 -->
-					 
-                         	<div class="item-thumb bg-deepgrey" style="background-image:url();">
-						
-						</div> 
-						<a href="15220556376633.html"> 
-							<div class="item-desc"> 
-								<p>
-为工程添加XcodeCoverage代码
-更新Xcode工程Scheme
-更新Pods的xcconfig文件
-注入提取环境变量的脚本
-运行XcodeCoverage
-Tips
-
-
-XcodeCoverage 是一个基于lcov的统计工具，用于计算Xcode项目的单元测试覆盖率，且能生成html格式的统计报表。配置过程可以分为以下几个步骤：
-
-为工程添加XcodeCoverage代码
-更新Xcode工程Scheme
-注入提取环境变量的脚本
-
-为工程添加XcodeCoverage代码
-使用CocoaPods可以方便地添加XcodeCoverage代码。修改Podfile并执行pod instal</p> 
-							</div> 
-						</a> 
-<!-- 自定义Post颜色 -->
-				
-						<div class="item-slant reverse-slant bg-deepgrey"></div>
-						
-
-						<div class="item-slant"></div>
-		 				<div class="item-label">
-	  						<div class="item-title">
-	  							<a href="15220556376633.html">使用XcodeCoverage统计单元测试覆盖率</a>
-	  						</div>
-		   					<div class="item-meta clearfix"> 
-<!-- 自定义Icon -->
-								
-		   						<div class="item-meta-ico bg-ico-note" style="background: url(asset/img/bg-ico.png) no-repeat;background-size: 40px auto;">
-		   						</div> 
-								
-
-		   						<div class="item-meta-cat">
-	  							
-			    			<a class='category' href='Xcode.html'>Xcode</a>
-								
-			    			<a class='category' href='HowTo.html'>HowTo</a>
-								
-		   						</div> 
-		   					</div> 
-		   					
-		   				</div> 
-   					</div>
- 				</div>
- 			
-				<div class="post-list-item">
-					<div class="post-list-item-container">
- <!-- 自定post背景图 -->
-					 
-                         	<div class="item-thumb bg-deepgrey" style="background-image:url();">
-						
-						</div> 
-						<a href="15220417245604.html"> 
-							<div class="item-desc"> 
-								<p>
-获取一个版本周期内存在修改的代码文件列表
-获取Xcode单元测试生成的每个代码文件的覆盖率数据
-
-Xcode执行单元测试时提取环境变量
-提取覆盖率数据
-
-
-筛选并计算
-Tips
-参考
-
-
-XcodeCoverage 是一个基于lcov的统计工具，用于计算Xcode项目的单元测试覆盖率，且能生成html格式的统计报表。
-现在需要统计在一个版本周期中增量代码的覆盖率，而XcodeCoverage只能统计全量的覆盖率，因此需要借助XcodeCoverage生成的数据，手动计算版本周期中修改过的文件的覆盖率。问题可以分解为三个子问题：
-
-获取一个版本周期内存在修改的代码文件列表
-获取Xcode单元测</p> 
-							</div> 
-						</a> 
-<!-- 自定义Post颜色 -->
-				
-						<div class="item-slant reverse-slant bg-deepgrey"></div>
-						
-
-						<div class="item-slant"></div>
-		 				<div class="item-label">
-	  						<div class="item-title">
-	  							<a href="15220417245604.html">使用XcodeCoverage统计增量代码单元测试覆盖率</a>
-	  						</div>
-		   					<div class="item-meta clearfix"> 
-<!-- 自定义Icon -->
-								
-		   						<div class="item-meta-ico bg-ico-note" style="background: url(asset/img/bg-ico.png) no-repeat;background-size: 40px auto;">
-		   						</div> 
-								
-
-		   						<div class="item-meta-cat">
-	  							
-			    			<a class='category' href='Xcode.html'>Xcode</a>
-								
-			    			<a class='category' href='HowTo.html'>HowTo</a>
+			    			<a class='category' href='iOS.html'>iOS</a>
 								
 		   						</div> 
 		   					</div> 
@@ -281,7 +155,7 @@ XcodeCoverage 是一个基于lcov的统计工具，用于计算Xcode项目的单
 	<nav class="lists-navigator clearfix" style="clear: all;">
             <ol class="page-navigator">
             
-            	<li class="  disabled "><a href="#index"><span aria-hidden="true">&larr;</span> 上一页</a></li>
+            	<li class=""><a href="all_1.html"><span aria-hidden="true">&larr;</span> 上一页</a></li>
             
 
 				<li class=""><a href="archives.html">归档</a></li>
